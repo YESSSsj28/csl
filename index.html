@@ -3,15 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Proxy App</title>
+    <title>Google Proxy</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
-        h1 { color: #333; }
-        p { color: #666; }
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: purple;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            text-align: center;
+            background-color: #6a0dad;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .container input[type="text"] {
+            padding: 10px;
+            border: none;
+            border-radius: 15px;
+            width: 80%;
+            margin-bottom: 10px;
+        }
+        .container button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 15px;
+            background-color: white;
+            color: #6a0dad;
+            cursor: pointer;
+        }
+        .container button:hover {
+            background-color: lightgray;
+        }
     </style>
 </head>
 <body>
-    <h1>Welcome to Google Proxy App</h1>
-    <p>This project is a proxy application built using Flask.</p>
+    <div class="container">
+        <h1>What's the key?</h1>
+        <input type="text" id="key" placeholder="Enter the key" />
+        <br />
+        <button onclick="submitKey()">Enter</button>
+    </div>
+    <script>
+        function submitKey() {
+            const key = document.getElementById('key').value;
+            if (key === 'Hiren611') {
+                window.location.href = 'https://your-app-name.herokuapp.com';
+            } else {
+                alert('Invalid key. Try again.');
+            }
+        }
+    </script>
 </body>
 </html>
+
+
