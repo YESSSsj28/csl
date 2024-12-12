@@ -1,9 +1,8 @@
-from flask import Flask, request, jsonify, render_template_string
+from flask import Flask, request, redirect, render_template_string
 import time
 
 app = Flask(__name__)
 
-# HTML, CSS, and JavaScript combined in one script
 html_template = '''
 <!DOCTYPE html>
 <html lang="en">
@@ -18,28 +17,30 @@ html_template = '''
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: black;
+            background-color: purple;
             color: white;
             font-family: Arial, sans-serif;
         }
         .container {
             text-align: center;
-            background-color: purple;
+            background-color: #6a0dad;
             padding: 30px;
-            border-radius: 10px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
         .container input[type="text"] {
             padding: 10px;
             border: none;
-            border-radius: 5px;
+            border-radius: 15px;
+            width: 80%;
+            margin-bottom: 10px;
         }
         .container button {
-            margin-top: 10px;
             padding: 10px 20px;
             border: none;
-            border-radius: 5px;
+            border-radius: 15px;
             background-color: white;
-            color: purple;
+            color: #6a0dad;
             cursor: pointer;
         }
         .container button:hover {
@@ -47,58 +48,53 @@ html_template = '''
         }
         .loading-container {
             display: none;
-            text-align: center;
-            background-color: darkblue;
-            padding: 30px;
-            border-radius: 10px;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: purple;
         }
-        .progress-bar {
-            width: 100%; height: 10px; background-color: lightgray; margin-top: 20px; border-radius: 5px; overflow: hidden;
+        .loading-text {
+            color: transparent;
         }
-        .progress-bar div {
-            height: 100%; background-color: white; width: 0%;
+        .half-image {
+            width: 50%;
+            height: 100vh;
+            display: inline-block;
+            background-size: cover;
+            background-position: center;
         }
     </style>
 </head>
 <body>
     <div class="container" id="auth-container">
-        <h1>Enter Key</h1>
-        <input type="text" id="key" placeholder="Enter your key here" />
+        <h1>What's the key?</h1>
+        <input type="text" id="key" placeholder="Enter the key" />
         <br />
-        <button onclick="submitKey()">Submit</button>
+        <button onclick="submitKey()">Enter</button>
     </div>
     <div class="loading-container" id="loading-container">
-        <h1>Loading Google Proxy...</h1>
-        <div class="progress-bar"><div id="progress"></div></div>
+        <div class="half-image" style="background-image: url('/static/your-first-image.png');"></div>
+        <div class="half-image" style="background-image: url('/static/your-second-image.png');"></div>
+        <div class="loading-text">Loading...</div>
     </div>
     <script>
         function submitKey() {
             const key = document.getElementById('key').value;
-            const authContainer = document.getElementById('auth-container');
-            const loadingContainer = document.getElementById('loading-container');
-            const progressBar = document.getElementById('progress');
-
-            fetch('/proxy', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ key })
-            }).then(response => {
-                if (response.ok) {
-                    authContainer.style.display = 'none';
-                    loadingContainer.style.display = 'block';
-
-                    let progress = 0;
-                    const interval = setInterval(() => {
-                        progress += 5;
-                        progressBar.style.width = progress + '%';
-                        if (progress >= 100) {
-                            clearInterval(interval);
-                        }
-                    }, 150); // 15 seconds to reach 100%
-                } else {
-                    alert('Invalid key. Try again.');
-                }
-            });
+            if (key === 'Hiren611') {
+                const authContainer = document.getElementById('auth-container');
+                const loadingContainer = document.getElementById('loading-container');
+                authContainer.style.display = 'none';
+                loadingContainer.style.display = 'flex';
+                setTimeout(() => {
+                    window.location.href = '/proxy';
+                }, 10000); // 10 seconds
+            } else {
+                alert('Invalid key. Try again.');
+            }
         }
     </script>
 </body>
@@ -109,15 +105,16 @@ html_template = '''
 def index():
     return html_template
 
-@app.route('/proxy', methods=['POST'])
+@app.route('/proxy')
 def proxy():
-    key = request.form.get('key')
-    if key != 'YUGISCOOL':
-        return jsonify({'error': 'Invalid key'}), 401
-
-    # Simulate loading time
-    time.sleep(15)
-    return jsonify({'message': 'Google Proxy is now ready!'})
+    key = request.args.get('key')
+    if key == 'Hiren611':
+        response = requests.get('https://www.google.com')
+        return response.content
+    else:
+        return 'Invalid key', 401
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
