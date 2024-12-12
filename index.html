@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Search</title>
+    <title>Google Custom Search</title>
     <script async src="https://cse.google.com/cse.js?cx=94f496af50e7446f0"></script>
     <style>
         body {
@@ -30,12 +30,45 @@
         .gcse-search {
             width: 100%;
         }
+        .gcse-search-results {
+            margin-top: 20px;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="title">Google Search</div>
-        <div class="gcse-search"></div> <!-- Google Custom Search Box -->
+        <div class="gcse-search"></div>
+        <!-- Custom Search Engine Results, Displayed Below the Search Box -->
+        <div class="gcse-search-results" id="search-results"></div>
     </div>
+
+    <script>
+        (function() {
+            var cx = '94f496af50e7446f0';  // Replace with your CSE ID
+            var gcse = document.createElement('script');
+            gcse.type = 'text/javascript';
+            gcse.async = true;
+            gcse.src = 'https://cse.google.com/cse.js?cx=' + cx;
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(gcse, s);
+
+            // This function overrides default behavior and keeps the search results on the same page.
+            window.onload = function() {
+                var searchResults = document.getElementById('search-results');
+                var gcseElement = document.querySelector('.gcse-search-results');
+
+                gcseElement.addEventListener('click', function(e) {
+                    // Prevent the default redirect behavior when clicking on results
+                    if (e.target.tagName === 'A') {
+                        e.preventDefault();
+                        var link = e.target.href;
+                        window.open(link, '_blank');  // Open the link in a new tab or within the page
+                    }
+                });
+            };
+        })();
+    </script>
 </body>
 </html>
