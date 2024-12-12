@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Proxy</title>
+    <title>Google Search Proxy</title>
+    <script async src="https://cse.google.com/cse.js?cx=94f496af50e7446f0"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -27,66 +28,15 @@
             font-size: 24px;
             margin-bottom: 20px;
         }
-        .input-container {
-            margin-bottom: 20px;
-        }
-        .input-container input {
-            padding: 10px;
-            width: 80%;
-            border-radius: 15px;
-            border: 2px solid #fff;
-            font-size: 16px;
-        }
-        .button-container {
-            margin-top: 20px;
-        }
-        .button-container button {
-            padding: 10px 20px;
-            background-color: white;
-            color: purple;
-            border: none;
-            border-radius: 10px;
-            font-size: 18px;
-            cursor: pointer;
-        }
-        .button-container button:hover {
-            background-color: lightgray;
-        }
-        iframe {
+        .gcse-search {
             width: 100%;
-            height: 80vh;
-            border-radius: 10px;
-            border: none;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="title">Enter Key to Access Google</div>
-        <div class="input-container">
-            <input type="text" id="apiKey" placeholder="Enter API Key" />
-        </div>
-        <div class="button-container">
-            <button onclick="submitKey()">Access</button>
-        </div>
-        <div id="googleIframeContainer" style="display: none;">
-            <iframe src="https://www.google.com" id="googleIframe"></iframe>
-        </div>
+        <div class="title">Google Search</div>
+        <div class="gcse-search"></div>
     </div>
-
-    <script>
-        function submitKey() {
-            const enteredKey = document.getElementById('apiKey').value;
-            const validKey = 'HIHIHI897';
-            const iframeContainer = document.getElementById('googleIframeContainer');
-
-            if (enteredKey === validKey) {
-                // Show Google iframe if key is valid
-                iframeContainer.style.display = 'block';
-            } else {
-                alert('Invalid key! Please try again.');
-            }
-        }
-    </script>
 </body>
 </html>
