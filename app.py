@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, Response
 import requests
 
 app = Flask(__name__)
@@ -122,7 +122,7 @@ def proxy():
     excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
     headers = [(name, value) for (name, value) in response.raw.headers.items() if name.lower() not in excluded_headers]
 
-    return response.content, response.status_code, headers
+    return Response(response.content, response.status_code, headers)
 
 if __name__ == '__main__':
     app.run(debug=True)
