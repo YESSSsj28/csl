@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Custom Search</title>
-    <script async src="https://cse.google.com/cse.js?cx=94f496af50e7446f0"></script>
+    <title>Custom Google Search</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -27,48 +26,59 @@
             font-size: 24px;
             margin-bottom: 20px;
         }
-        .gcse-search {
-            width: 100%;
-        }
-        .gcse-search-results {
+        .results {
             margin-top: 20px;
+            color: white;
             text-align: left;
+        }
+        .result-item {
+            margin-bottom: 10px;
+        }
+        .result-item a {
+            color: #FFD700;
+            text-decoration: none;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="title">Google Search</div>
-        <div class="gcse-search"></div>
-        <!-- Custom Search Engine Results, Displayed Below the Search Box -->
-        <div class="gcse-search-results" id="search-results"></div>
+        <div class="title">Search Google</div>
+        <input type="text" id="search-query" placeholder="Search..." style="width: 100%; padding: 10px;">
+        <button onclick="search()">Search</button>
+        <div class="results" id="results"></div>
     </div>
 
     <script>
-        (function() {
-            var cx = '94f496af50e7446f0';  // Replace with your CSE ID
-            var gcse = document.createElement('script');
-            gcse.type = 'text/javascript';
-            gcse.async = true;
-            gcse.src = 'https://cse.google.com/cse.js?cx=' + cx;
-            var s = document.getElementsByTagName('script')[0];
-            s.parentNode.insertBefore(gcse, s);
+        const apiKey = 'YOUR_GOOGLE_API_KEY'; // Get your API Key from Google Cloud Console
+        const searchEngineId = 'YOUR_CSE_ID'; // Get your Custom Search Engine ID
 
-            // This function overrides default behavior and keeps the search results on the same page.
-            window.onload = function() {
-                var searchResults = document.getElementById('search-results');
-                var gcseElement = document.querySelector('.gcse-search-results');
+        function search() {
+            const query = document.getElementById('search-query').value;
+            const resultsContainer = document.getElementById('results');
+            resultsContainer.innerHTML = ''; // Clear previous results
 
-                gcseElement.addEventListener('click', function(e) {
-                    // Prevent the default redirect behavior when clicking on results
-                    if (e.target.tagName === 'A') {
-                        e.preventDefault();
-                        var link = e.target.href;
-                        window.open(link, '_blank');  // Open the link in a new tab or within the page
+            if (!query) return;
+
+            // Use the Google Custom Search JSON API
+            fetch(`https://www.googleapis.com/customsearch/v1?q=${query}&key=${apiKey}&cx=${searchEngineId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.items) {
+                        data.items.forEach(item => {
+                            const result = document.createElement('div');
+                            result.classList.add('result-item');
+                            result.innerHTML = `<a href="${item.link}" target="_blank">${item.title}</a><br>${item.snippet}`;
+                            resultsContainer.appendChild(result);
+                        });
+                    } else {
+                        resultsContainer.innerHTML = 'No results found.';
                     }
+                })
+                .catch(error => {
+                    resultsContainer.innerHTML = 'Error fetching results.';
+                    console.error(error);
                 });
-            };
-        })();
+        }
     </script>
 </body>
 </html>
