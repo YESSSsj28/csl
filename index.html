@@ -20,20 +20,107 @@
             padding: 40px;
             width: 70%;
             text-align: center;
+            display: none;
         }
         .title {
             color: white;
             font-size: 24px;
             margin-bottom: 20px;
         }
+        #key-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: purple;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+        }
+        #key-container input {
+            margin: 10px 0;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        #key-container button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: white;
+            color: purple;
+        }
+        #key-container button:hover {
+            background-color: lightgray;
+        }
+        #progress-container {
+            display: none;
+            text-align: center;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+        .progress-bar div {
+            height: 100%;
+            background-color: green;
+            width: 0%;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div id="key-container">
+        <div class="title">Enter API Key</div>
+        <input type="text" id="api-key" placeholder="Enter your API key here" />
+        <button onclick="validateKey()">Submit</button>
+    </div>
+    <div id="progress-container">
+        <div class="title">Loading...</div>
+        <div class="progress-bar">
+            <div id="progress"></div>
+        </div>
+    </div>
+    <div class="container" id="search-container">
         <div class="title">Search Google</div>
         <!-- Google Custom Search Engine Embed Code -->
         <script async src="https://cse.google.com/cse.js?cx=94f496af50e7446f0"></script>
-        <div class="gcse-search"></div>
+        <div class="gcse-search" data-newwindow="1"></div>
     </div>
+
+    <script>
+        const VALID_API_KEY = "HIHIHI897";
+
+        function validateKey() {
+            const key = document.getElementById('api-key').value;
+            const keyContainer = document.getElementById('key-container');
+            const progressContainer = document.getElementById('progress-container');
+            const searchContainer = document.getElementById('search-container');
+            const progressBar = document.getElementById('progress');
+
+            if (key === VALID_API_KEY) {
+                keyContainer.style.display = 'none';
+                progressContainer.style.display = 'block';
+
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += 100 / 16; // Increment progress every second
+                    progressBar.style.width = `${progress}%`;
+                    if (progress >= 100) {
+                        clearInterval(interval);
+                        progressContainer.style.display = 'none';
+                        searchContainer.style.display = 'block';
+                    }
+                }, 1000); // Update progress every second
+            } else {
+                alert('Invalid API Key. Please try again.');
+            }
+        }
+    </script>
 </body>
 </html>
