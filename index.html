@@ -7,32 +7,34 @@
     <style>
         body {
             font-family: 'Arial', sans-serif;
-            background-color: #1a1a1a;
+            background-color: #f4f4f9;
             margin: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             flex-direction: column;
             height: 100vh;
+            padding: 20px;
         }
 
         .container, #key-container {
             background: linear-gradient(145deg, #6a11cb, #2575fc);
             border-radius: 20px;
             padding: 40px;
-            width: 80%;
+            width: 100%;
             max-width: 500px;
             text-align: center;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
             color: white;
         }
 
-        #key-container h1 {
-            font-size: 28px;
+        h1 {
+            font-size: 24px;
             margin-bottom: 20px;
+            font-weight: 600;
         }
 
-        #key-container input {
+        input {
             width: 80%;
             padding: 15px;
             font-size: 18px;
@@ -40,9 +42,16 @@
             border: none;
             margin-bottom: 20px;
             outline: none;
+            transition: all 0.3s ease;
         }
 
-        #key-container button {
+        input:focus {
+            border: 2px solid #2575fc;
+            background-color: #ffffff;
+            color: #333;
+        }
+
+        button {
             padding: 15px 30px;
             font-size: 18px;
             font-weight: bold;
@@ -51,22 +60,27 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, transform 0.3s ease;
         }
 
-        #key-container button:hover {
+        button:hover {
             background-color: #f0f0f0;
+            transform: scale(1.05);
+        }
+
+        button:focus {
+            outline: none;
         }
 
         #progress-container {
             display: none;
-            width: 80%;
+            width: 100%;
             max-width: 500px;
             text-align: center;
             background: linear-gradient(145deg, #6a11cb, #2575fc);
             padding: 40px;
             border-radius: 20px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
         }
 
         .progress-title {
@@ -77,12 +91,11 @@
 
         .progress-bar {
             width: 100%;
-            height: 20px;
-            background-color: #333;
+            height: 10px;
+            background-color: #eee;
             border-radius: 10px;
             overflow: hidden;
             position: relative;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .progress-bar div {
@@ -94,11 +107,26 @@
 
         #search-container {
             display: none;
+            flex-direction: column;
+            width: 100%;
+            max-width: 100%;
+            height: 80%;
+            align-items: center;
         }
 
-        .search-title {
-            font-size: 24px;
-            margin-bottom: 20px;
+        iframe {
+            width: 100%;
+            height: 70vh;
+            border: none;
+            margin-top: 20px;
+            border-radius: 10px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+            transition: opacity 0.3s ease;
+            opacity: 0;
+        }
+
+        iframe.visible {
+            opacity: 1;
         }
     </style>
 </head>
@@ -106,7 +134,7 @@
     <!-- Key Input Container -->
     <div id="key-container">
         <h1>Enter Your API Key</h1>
-        <input type="text" id="api-key" placeholder="Enter your API key here" />
+        <input type="text" id="api-key" placeholder="Enter your API key here" aria-label="API Key" />
         <button onclick="validateKey()">Submit</button>
     </div>
 
@@ -124,17 +152,17 @@
         <!-- Google Custom Search Engine Embed Code -->
         <script>
             (function() {
-                var cx = '94f496af50e7446f0'; // Your custom search engine ID
-                var gcse = document.createElement('script');
+                const cx = '94f496af50e7446f0'; // Your custom search engine ID
+                const gcse = document.createElement('script');
                 gcse.type = 'text/javascript';
                 gcse.async = true;
                 gcse.src = 'https://cse.google.com/cse.js?cx=' + cx;
-                var s = document.getElementsByTagName('script')[0];
+                const s = document.getElementsByTagName('script')[0];
                 s.parentNode.insertBefore(gcse, s);
             })();
         </script>
         <div class="gcse-searchbox"></div>
-        <div class="gcse-searchresults" data-linktarget="_self"></div>
+        <iframe id="result-frame"></iframe>
     </div>
 
     <script>
@@ -160,13 +188,24 @@
                     if (progress >= 100) {
                         clearInterval(interval);
                         progressContainer.style.display = 'none';
-                        searchContainer.style.display = 'block';
+                        searchContainer.style.display = 'flex';
                     }
                 }, intervalTime);
             } else {
                 alert('Invalid API Key. Please try again.');
             }
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.addEventListener('click', (e) => {
+                if (e.target && e.target.tagName === 'A' && e.target.href) {
+                    e.preventDefault(); // Prevent redirection
+                    const iframe = document.getElementById('result-frame');
+                    iframe.classList.add('visible'); // Make iframe visible
+                    iframe.src = e.target.href; // Load content in iframe
+                }
+            });
+        });
     </script>
 </body>
 </html>
