@@ -12,33 +12,22 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            flex-direction: column;
             height: 100vh;
         }
-        .container {
+        .container, #key-container {
             background-color: purple;
             border-radius: 20px;
             padding: 40px;
             width: 70%;
             text-align: center;
-            display: none;
-        }
-        .title {
             color: white;
-            font-size: 24px;
-            margin-bottom: 20px;
-        }
-        #key-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background-color: purple;
-            border-radius: 20px;
-            padding: 40px;
-            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
         #key-container input {
             margin: 10px 0;
             padding: 10px;
+            width: 60%;
             border: none;
             border-radius: 5px;
             font-size: 16px;
@@ -51,6 +40,7 @@
             cursor: pointer;
             background-color: white;
             color: purple;
+            transition: background-color 0.3s;
         }
         #key-container button:hover {
             background-color: lightgray;
@@ -58,39 +48,60 @@
         #progress-container {
             display: none;
             text-align: center;
+            width: 70%;
+            background-color: purple;
+            padding: 40px;
+            border-radius: 20px;
+            color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .progress-title {
+            margin-bottom: 15px;
+            font-size: 18px;
         }
         .progress-bar {
             width: 100%;
             height: 20px;
-            background-color: white;
+            background-color: #ddd;
             border-radius: 10px;
             overflow: hidden;
-            margin-top: 20px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
         }
         .progress-bar div {
             height: 100%;
-            background-color: green;
+            background: linear-gradient(to right, #00c853, #b2ff59);
             width: 0%;
+            transition: width 0.2s ease-in-out;
+        }
+        .search-title {
+            font-size: 24px;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
+    <!-- Key Input Container -->
     <div id="key-container">
         <div class="title">Enter API Key</div>
         <input type="text" id="api-key" placeholder="Enter your API key here" />
         <button onclick="validateKey()">Submit</button>
     </div>
+
+    <!-- Progress Bar -->
     <div id="progress-container">
-        <div class="title">Loading...</div>
+        <div class="progress-title">Loading...</div>
         <div class="progress-bar">
             <div id="progress"></div>
         </div>
     </div>
-    <div class="container" id="search-container">
-        <div class="title">Search Google</div>
+
+    <!-- Google Search Container -->
+    <div id="search-container" class="container" style="display: none;">
+        <div class="search-title">Search Google</div>
         <!-- Google Custom Search Engine Embed Code -->
         <script async src="https://cse.google.com/cse.js?cx=94f496af50e7446f0"></script>
-        <div class="gcse-search" data-newwindow="1"></div>
+        <div class="gcse-searchbox"></div>
+        <div class="gcse-searchresults"></div>
     </div>
 
     <script>
@@ -108,15 +119,17 @@
                 progressContainer.style.display = 'block';
 
                 let progress = 0;
+                const duration = Math.floor(Math.random() * 5 + 10) * 1000; // Random time between 10–15 seconds
+                const intervalTime = duration / 100; // Smooth progress increase
                 const interval = setInterval(() => {
-                    progress += 100 / 16; // Increment progress every second
+                    progress += 1;
                     progressBar.style.width = `${progress}%`;
                     if (progress >= 100) {
                         clearInterval(interval);
                         progressContainer.style.display = 'none';
                         searchContainer.style.display = 'block';
                     }
-                }, 1000); // Update progress every second
+                }, intervalTime);
             } else {
                 alert('Invalid API Key. Please try again.');
             }
