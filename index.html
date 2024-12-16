@@ -22,7 +22,8 @@
             overflow: hidden;
             flex-direction: column;
             text-align: center;
-            transition: background-color 0.3s, color 0.3s;
+            transition: background-color 1s ease, color 1s ease;
+            animation: fadeIn 1s ease;
         }
 
         h1 {
@@ -31,6 +32,7 @@
             font-weight: 500;
             color: #fff;
             letter-spacing: 1px;
+            transition: color 1s ease;
         }
 
         .theme-selector {
@@ -45,6 +47,11 @@
             cursor: pointer;
             background-color: #3a3a3a;
             color: white;
+            transition: background-color 0.3s ease;
+        }
+
+        select:hover {
+            background-color: #4a4a4a;
         }
 
         .search-container {
@@ -54,7 +61,7 @@
             align-items: center;
             width: 100%;
             max-width: 550px;
-            background: #2c2c2c;
+            background: rgba(40, 40, 40, 0.8);
             border-radius: 12px;
             padding: 40px;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
@@ -126,9 +133,24 @@
             border-radius: 12px;
         }
 
+        /* Fade-in effect for initial page load */
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        /* Transition for themes */
+        .transition-background {
+            transition: background-color 2s ease, color 2s ease;
+        }
+
     </style>
 </head>
-<body>
+<body class="transition-background">
     <!-- Theme Selector -->
     <div class="theme-selector">
         <h3>Choose Theme:</h3>
@@ -156,24 +178,26 @@
     <iframe id="website-frame"></iframe>
 
     <script>
-        // Change Theme
+        // Change Theme with Smooth Transition
         function changeTheme() {
             const theme = document.getElementById("theme-select").value;
+            const body = document.body;
+
             if (theme === "blue-purple") {
-                document.body.style.backgroundColor = "#1a1a8c";
-                document.body.style.color = "#ffffff";
+                body.style.backgroundColor = "#1a1a8c";
+                body.style.color = "#ffffff";
             } else if (theme === "cyan-purple") {
-                document.body.style.backgroundColor = "#1e4ca2";
-                document.body.style.color = "#ffffff";
+                body.style.backgroundColor = "#1e4ca2";
+                body.style.color = "#ffffff";
             } else if (theme === "red-orange") {
-                document.body.style.backgroundColor = "#d95f02";
-                document.body.style.color = "#ffffff";
+                body.style.backgroundColor = "#d95f02";
+                body.style.color = "#ffffff";
             } else if (theme === "black-white") {
-                document.body.style.backgroundColor = "#000000";
-                document.body.style.color = "#ffffff";
+                body.style.backgroundColor = "#000000";
+                body.style.color = "#ffffff";
             } else {
-                document.body.style.backgroundColor = "#121212";
-                document.body.style.color = "#ffffff";
+                body.style.backgroundColor = "#121212";
+                body.style.color = "#ffffff";
             }
         }
 
