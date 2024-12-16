@@ -3,103 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search Integration</title>
+    <title>Custom Search Engine</title>
     <style>
-        body {
+        * {
             margin: 0;
-            font-family: Arial, sans-serif;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
+            align-items: center;
             height: 100vh;
-            background-color: #1a1a1a;
+            background-color: #1b1b1b;
             color: white;
+            overflow: hidden;
+            flex-direction: column;
         }
 
         h1 {
+            font-size: 36px;
             margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+            letter-spacing: 1px;
         }
 
         .search-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 100%;
-            max-width: 600px;
+            width: 80%;
+            max-width: 550px;
+            background: #2e2e2e;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+            transition: transform 0.3s ease-in-out;
         }
 
-        .search-box {
-            display: flex;
-            width: 100%;
+        .search-container:hover {
+            transform: scale(1.05);
         }
 
         input {
-            flex: 1;
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #555;
-            border-radius: 5px 0 0 5px;
+            padding: 12px 18px;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
             outline: none;
-            background-color: #333;
+            background-color: #3a3a3a;
             color: white;
+            width: 100%;
+            margin-bottom: 20px;
+            transition: background-color 0.3s;
         }
 
         input::placeholder {
             color: #777;
         }
 
+        input:focus {
+            background-color: #4a4a4a;
+        }
+
         button {
-            padding: 10px 20px;
-            font-size: 16px;
+            padding: 12px 25px;
+            font-size: 18px;
             border: none;
-            border-radius: 0 5px 5px 0;
-            background-color: #2575fc;
+            border-radius: 25px;
+            background-color: #4e8eff;
             color: white;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s, transform 0.2s ease-in-out;
         }
 
         button:hover {
-            background-color: #0056d2;
+            background-color: #1f5bb2;
+            transform: scale(1.05);
         }
 
-        iframe {
+        .error-message {
+            color: red;
             margin-top: 20px;
-            width: 100%;
-            height: 70vh;
-            border: none;
-            border-radius: 10px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .info-message {
+            font-size: 20px;
+            color: #d9d9d9;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .footer {
+            font-size: 14px;
+            margin-top: 30px;
+            color: #777;
         }
     </style>
 </head>
 <body>
-    <h1>DuckDuckGo Search</h1>
     <div class="search-container">
-        <div class="search-box">
-            <input 
-                id="search-input" 
-                type="text" 
-                placeholder="Enter your search here..."
-                onfocus="this.placeholder=''"
-                onblur="if(this.value==='') this.placeholder='Enter your search here...'"
-            />
-            <button onclick="performSearch()">Search</button>
-        </div>
-        <iframe id="search-results" src="https://duckduckgo.com/" title="Search Results"></iframe>
+        <h1>Enter a Valid Website</h1>
+        <input 
+            id="url-input" 
+            type="text" 
+            placeholder="e.g. www.google.com"
+            onfocus="this.placeholder=''"
+            onblur="if(this.value==='') this.placeholder='e.g. www.google.com'"
+        />
+        <button onclick="openWebsite()">Search</button>
+        <p id="error-message" class="error-message"></p>
+        <p id="info-message" class="info-message">Please enter a valid website URL.</p>
     </div>
 
-    <script>
-        function performSearch() {
-            const query = document.getElementById('search-input').value.trim();
-            const iframe = document.getElementById('search-results');
+    <p class="footer">Powered by Your Custom Search Engine</p>
 
-            if (query) {
-                const duckDuckGoUrl = `https://duckduckgo.com/?q=${encodeURIComponent(query)}`;
-                iframe.src = duckDuckGoUrl;
+    <script>
+        function isValidUrl(url) {
+            const regex = /^(https?:\/\/)?([a-zA-Z0-9\-]+\.)+[a-zA-Z]{2,6}(\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=]*)?$/;
+            return regex.test(url);
+        }
+
+        function openWebsite() {
+            const input = document.getElementById('url-input').value.trim();
+            const errorMessage = document.getElementById('error-message');
+            const infoMessage = document.getElementById('info-message');
+
+            // Reset error message and hide info message
+            errorMessage.textContent = '';
+            infoMessage.style.display = 'none';
+
+            if (!input) {
+                errorMessage.textContent = 'Please enter a URL.';
+                return;
+            }
+
+            // If input doesn't have the scheme (http:// or https://), add https://
+            let url = input;
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url;
+            }
+
+            // Validate URL
+            if (isValidUrl(url)) {
+                window.location.href = url;  // Redirect to the website
             } else {
-                alert('Please enter a search term.');
+                errorMessage.textContent = 'Please enter a valid URL.';
             }
         }
     </script>
