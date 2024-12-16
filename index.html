@@ -118,29 +118,12 @@
             margin-bottom: 15px;
         }
 
-        #search-results {
-            width: 80%;
-            max-width: 900px;
+        #website-frame {
             margin-top: 30px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .search-result {
             width: 100%;
-            padding: 15px;
-            margin: 10px 0;
-            background-color: #333;
-            border-radius: 10px;
-            color: white;
-            text-decoration: none;
-            display: block;
-            transition: background-color 0.3s ease;
-        }
-
-        .search-result:hover {
-            background-color: #444;
+            height: 80vh;
+            border: none;
+            border-radius: 12px;
         }
 
     </style>
@@ -169,8 +152,8 @@
         <div id="error-message" class="error-message"></div>
     </div>
 
-    <!-- Search Results -->
-    <div id="search-results"></div>
+    <!-- Website Display Area -->
+    <iframe id="website-frame"></iframe>
 
     <script>
         // Change Theme
@@ -210,11 +193,11 @@
             }
         }
 
-        // Load Website Function
+        // Load Website Function (without redirecting)
         function loadWebsite() {
             const url = document.getElementById("search-input").value.trim();
             const errorMessage = document.getElementById("error-message");
-            const searchResults = document.getElementById("search-results");
+            const websiteFrame = document.getElementById("website-frame");
 
             // Validate if URL is empty or not
             if (url === '') {
@@ -230,9 +213,8 @@
                 return;
             }
 
-            // Display loading message
-            searchResults.innerHTML = `<div class="info-message">Loading website...</div>`;
-            window.location.href = `https://${url}`;
+            // Set the iframe src to the website URL without redirecting
+            websiteFrame.src = `https://${url}`;
         }
 
     </script>
