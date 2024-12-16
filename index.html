@@ -22,6 +22,7 @@
             overflow: hidden;
             flex-direction: column;
             text-align: center;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         h1 {
@@ -30,6 +31,20 @@
             font-weight: 500;
             color: #fff;
             letter-spacing: 1px;
+        }
+
+        .theme-selector {
+            margin-bottom: 20px;
+        }
+
+        select {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            background-color: #3a3a3a;
+            color: white;
         }
 
         .search-container {
@@ -103,97 +118,123 @@
             margin-bottom: 15px;
         }
 
-        #website-container {
-            width: 100%;
-            height: 80vh;
+        #search-results {
+            width: 80%;
+            max-width: 900px;
             margin-top: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .search-result {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            background-color: #333;
             border-radius: 10px;
-            background-color: #2e2e2e;
-            overflow: hidden;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            color: white;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.3s ease;
         }
 
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
+        .search-result:hover {
+            background-color: #444;
         }
 
-        .footer {
-            font-size: 14px;
-            margin-top: 30px;
-            color: #777;
-            text-align: center;
-        }
     </style>
 </head>
 <body>
+    <!-- Theme Selector -->
+    <div class="theme-selector">
+        <h3>Choose Theme:</h3>
+        <select id="theme-select" onchange="changeTheme()">
+            <option value="default">Default</option>
+            <option value="blue-purple">Blue & Purple</option>
+            <option value="cyan-purple">Cyan & Purple</option>
+            <option value="red-orange">Red & Orange</option>
+            <option value="black-white">Black & White</option>
+        </select>
+    </div>
+
+    <!-- Title -->
+    <h1>Custom Search Engine</h1>
+
+    <!-- Search Form -->
     <div class="search-container">
-        <h1>Enter a Valid Website</h1>
-        <input 
-            id="url-input" 
-            type="text" 
-            placeholder="e.g. www.google.com"
-            onfocus="this.placeholder=''"
-            onblur="if(this.value==='') this.placeholder='e.g. www.google.com'"
-        />
-        <button onclick="openWebsite()">Search</button>
-        <p id="error-message" class="error-message"></p>
-        <p id="info-message" class="info-message">Please enter a valid website URL.</p>
+        <input type="text" id="search-input" placeholder="Enter a valid website (e.g., crazygames.com)" onfocus="clearPlaceholder()" onblur="restorePlaceholder()" />
+        <button onclick="loadWebsite()">Go</button>
+        <div class="info-message">Enter a website and we will load it here.</div>
+        <div id="error-message" class="error-message"></div>
     </div>
 
-    <div id="website-container">
-        <!-- Website content will load here -->
-    </div>
-
-    <p class="footer">Powered by Your Custom Search Engine</p>
+    <!-- Search Results -->
+    <div id="search-results"></div>
 
     <script>
-        function isValidUrl(url) {
-            const regex = /^(https?:\/\/)?([a-zA-Z0-9\-]+\.)+[a-zA-Z]{2,6}(\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=]*)?$/;
-            return regex.test(url);
+        // Change Theme
+        function changeTheme() {
+            const theme = document.getElementById("theme-select").value;
+            if (theme === "blue-purple") {
+                document.body.style.backgroundColor = "#1a1a8c";
+                document.body.style.color = "#ffffff";
+            } else if (theme === "cyan-purple") {
+                document.body.style.backgroundColor = "#1e4ca2";
+                document.body.style.color = "#ffffff";
+            } else if (theme === "red-orange") {
+                document.body.style.backgroundColor = "#d95f02";
+                document.body.style.color = "#ffffff";
+            } else if (theme === "black-white") {
+                document.body.style.backgroundColor = "#000000";
+                document.body.style.color = "#ffffff";
+            } else {
+                document.body.style.backgroundColor = "#121212";
+                document.body.style.color = "#ffffff";
+            }
         }
 
-        function openWebsite() {
-            const input = document.getElementById('url-input').value.trim();
-            const errorMessage = document.getElementById('error-message');
-            const infoMessage = document.getElementById('info-message');
+        // Clear Placeholder Text
+        function clearPlaceholder() {
+            const inputField = document.getElementById("search-input");
+            if (inputField.value === '') {
+                inputField.placeholder = '';
+            }
+        }
 
-            // Reset error message and hide info message
-            errorMessage.textContent = '';
-            infoMessage.style.display = 'none';
+        // Restore Placeholder Text
+        function restorePlaceholder() {
+            const inputField = document.getElementById("search-input");
+            if (inputField.value === '') {
+                inputField.placeholder = 'Enter a valid website (e.g., crazygames.com)';
+            }
+        }
 
-            if (!input) {
-                errorMessage.textContent = 'Please enter a URL.';
+        // Load Website Function
+        function loadWebsite() {
+            const url = document.getElementById("search-input").value.trim();
+            const errorMessage = document.getElementById("error-message");
+            const searchResults = document.getElementById("search-results");
+
+            // Validate if URL is empty or not
+            if (url === '') {
+                errorMessage.innerText = "Please enter a valid website!";
                 return;
             }
 
-            // If input doesn't have the scheme (http:// or https://), add https://
-            let url = input;
-            if (!url.startsWith('http://') && !url.startsWith('https://')) {
-                url = 'https://' + url;
+            errorMessage.innerText = '';
+
+            const isValidURL = /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,6}(:[0-9]{1,5})?(\/[a-zA-Z0-9#]+\/?)*$/i;
+            if (!isValidURL.test(url)) {
+                errorMessage.innerText = "Invalid website URL!";
+                return;
             }
 
-            // Validate URL
-            if (isValidUrl(url)) {
-                // Try loading in iframe
-                const iframeContainer = document.getElementById('website-container');
-                iframeContainer.innerHTML = `<iframe src="${url}" title="Website"></iframe>`; // Load the website in iframe
-                iframeContainer.style.display = 'block';
-
-                // Handle error if the iframe doesn't load due to restrictions
-                iframeContainer.onload = function() {
-                    console.log('Website loaded successfully!');
-                };
-
-                iframeContainer.onerror = function() {
-                    errorMessage.textContent = 'Unable to load the website in this frame. Please try again or open it in a new tab.';
-                    window.open(url, '_blank');
-                };
-            } else {
-                errorMessage.textContent = 'Please enter a valid URL.';
-            }
+            // Display loading message
+            searchResults.innerHTML = `<div class="info-message">Loading website...</div>`;
+            window.location.href = `https://${url}`;
         }
+
     </script>
 </body>
 </html>
