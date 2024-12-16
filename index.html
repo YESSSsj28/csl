@@ -199,7 +199,7 @@
             errorMessage.style.display = 'none';
             let websiteUrl = urlInput.value.trim();
 
-            // Ensure the URL starts with http:// or https://
+            // If no protocol (http:// or https://) is found, add it
             if (!websiteUrl.match(/^https?:\/\//)) {
                 websiteUrl = 'http://' + websiteUrl; // Add "http://" if it's missing
             }
