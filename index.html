@@ -104,6 +104,21 @@
             margin-top: 30px;
             color: #777;
         }
+
+        #website-container {
+            width: 100%;
+            height: 80vh;
+            margin-top: 30px;
+            border-radius: 10px;
+            background-color: #2e2e2e;
+            overflow: hidden;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
     </style>
 </head>
 <body>
@@ -119,6 +134,10 @@
         <button onclick="openWebsite()">Search</button>
         <p id="error-message" class="error-message"></p>
         <p id="info-message" class="info-message">Please enter a valid website URL.</p>
+    </div>
+
+    <div id="website-container">
+        <!-- Website content will load here -->
     </div>
 
     <p class="footer">Powered by Your Custom Search Engine</p>
@@ -151,7 +170,9 @@
 
             // Validate URL
             if (isValidUrl(url)) {
-                window.location.href = url;  // Redirect to the website
+                // Create an iframe to load the website within the page
+                const iframeContainer = document.getElementById('website-container');
+                iframeContainer.innerHTML = `<iframe src="${url}" title="Website"></iframe>`; // Load the website in iframe
             } else {
                 errorMessage.textContent = 'Please enter a valid URL.';
             }
