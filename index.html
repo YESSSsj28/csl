@@ -5,66 +5,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Google Custom Search</title>
     <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f4f4f9;
+        * {
+            box-sizing: border-box;
             margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background-color: #121212;
+            color: #f4f4f4;
             display: flex;
             justify-content: center;
             align-items: center;
-            flex-direction: column;
             height: 100vh;
             padding: 20px;
-        }
-
-        .container, #key-container {
-            background: linear-gradient(145deg, #6a11cb, #2575fc);
-            border-radius: 20px;
-            padding: 40px;
-            width: 100%;
-            max-width: 500px;
+            flex-direction: column;
             text-align: center;
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
-            color: white;
         }
 
         h1 {
             font-size: 24px;
             margin-bottom: 20px;
-            font-weight: 600;
+        }
+
+        input, button {
+            font-size: 18px;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #444;
+            transition: all 0.3s ease;
+            width: 80%;
+            max-width: 400px;
         }
 
         input {
-            width: 80%;
-            padding: 15px;
-            font-size: 18px;
-            border-radius: 5px;
-            border: none;
-            margin-bottom: 20px;
-            outline: none;
-            transition: all 0.3s ease;
+            background-color: #333;
+            color: #f4f4f4;
         }
 
         input:focus {
-            border: 2px solid #2575fc;
-            background-color: #ffffff;
-            color: #333;
+            background-color: #444;
+            border-color: #2575fc;
+            outline: none;
         }
 
         button {
-            padding: 15px 30px;
-            font-size: 18px;
-            font-weight: bold;
+            background-color: #444;
             color: #2575fc;
-            background-color: #ffffff;
+            font-weight: bold;
             border: none;
-            border-radius: 5px;
             cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.3s ease;
         }
 
         button:hover {
-            background-color: #f0f0f0;
+            background-color: #555;
             transform: scale(1.05);
         }
 
@@ -72,46 +67,50 @@
             outline: none;
         }
 
-        #progress-container {
-            display: none;
+        .container {
+            background: linear-gradient(145deg, #4e5d6a, #2a3743);
+            border-radius: 20px;
+            padding: 40px;
             width: 100%;
             max-width: 500px;
-            text-align: center;
-            background: linear-gradient(145deg, #6a11cb, #2575fc);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        #progress-container {
+            display: none;
+            background: linear-gradient(145deg, #4e5d6a, #2a3743);
             padding: 40px;
             border-radius: 20px;
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 500px;
         }
 
         .progress-title {
-            margin-bottom: 20px;
             font-size: 20px;
             font-weight: bold;
+            margin-bottom: 20px;
         }
 
         .progress-bar {
             width: 100%;
             height: 10px;
-            background-color: #eee;
+            background-color: #555;
             border-radius: 10px;
             overflow: hidden;
-            position: relative;
         }
 
         .progress-bar div {
             height: 100%;
             background: linear-gradient(90deg, #0ff, #00f);
-            width: 0%;
+            width: 0;
             transition: width 0.1s ease-in-out;
         }
 
         #search-container {
             display: none;
-            flex-direction: column;
             width: 100%;
-            max-width: 100%;
-            height: 80%;
-            align-items: center;
+            height: 100%;
         }
 
         iframe {
@@ -120,22 +119,34 @@
             border: none;
             margin-top: 20px;
             border-radius: 10px;
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
-            transition: opacity 0.3s ease;
             opacity: 0;
+            transition: opacity 0.5s ease;
         }
 
         iframe.visible {
             opacity: 1;
         }
+
+        @media (max-width: 600px) {
+            input, button {
+                width: 90%;
+            }
+
+            iframe {
+                height: 50vh;
+            }
+        }
+
     </style>
 </head>
 <body>
+
     <!-- Key Input Container -->
-    <div id="key-container">
+    <div id="key-container" class="container">
         <h1>Enter Your API Key</h1>
-        <input type="text" id="api-key" placeholder="Enter your API key here" aria-label="API Key" />
+        <input type="text" id="api-key" placeholder="Enter your API key here" />
         <button onclick="validateKey()">Submit</button>
+        <div id="error-message" style="color: red; display: none; margin-top: 10px;"></div>
     </div>
 
     <!-- Progress Bar -->
@@ -149,20 +160,19 @@
     <!-- Google Search Container -->
     <div id="search-container" class="container">
         <div class="search-title">Search Google</div>
-        <!-- Google Custom Search Engine Embed Code -->
         <script>
             (function() {
-                const cx = '94f496af50e7446f0'; // Your custom search engine ID
-                const gcse = document.createElement('script');
+                var cx = '94f496af50e7446f0'; // Your custom search engine ID
+                var gcse = document.createElement('script');
                 gcse.type = 'text/javascript';
                 gcse.async = true;
                 gcse.src = 'https://cse.google.com/cse.js?cx=' + cx;
-                const s = document.getElementsByTagName('script')[0];
+                var s = document.getElementsByTagName('script')[0];
                 s.parentNode.insertBefore(gcse, s);
             })();
         </script>
         <div class="gcse-searchbox"></div>
-        <iframe id="result-frame" class="visible"></iframe>
+        <iframe id="result-frame"></iframe>
     </div>
 
     <script>
@@ -174,6 +184,11 @@
             const progressContainer = document.getElementById('progress-container');
             const searchContainer = document.getElementById('search-container');
             const progressBar = document.getElementById('progress');
+            const iframe = document.getElementById('result-frame');
+            const errorMessage = document.getElementById('error-message');
+
+            // Clear previous error messages
+            errorMessage.style.display = 'none';
 
             if (key === VALID_API_KEY) {
                 keyContainer.style.display = 'none';
@@ -181,18 +196,22 @@
 
                 let progress = 0;
                 const duration = 15000; // 15 seconds
-                const intervalTime = duration / 100; // Smooth progress increase
+                const intervalTime = duration / 100;
                 const interval = setInterval(() => {
                     progress += 1;
                     progressBar.style.width = `${progress}%`;
+
                     if (progress >= 100) {
                         clearInterval(interval);
                         progressContainer.style.display = 'none';
                         searchContainer.style.display = 'flex';
+                        iframe.src = 'https://www.google.com'; // Set initial iframe content
+                        iframe.classList.add('visible'); // Make iframe visible
                     }
                 }, intervalTime);
             } else {
-                alert('Invalid API Key. Please try again.');
+                errorMessage.textContent = 'Invalid API Key. Please try again.';
+                errorMessage.style.display = 'block';
             }
         }
 
@@ -207,5 +226,6 @@
             });
         });
     </script>
+
 </body>
 </html>
