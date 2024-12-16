@@ -155,6 +155,7 @@
     <div id="search-container" class="container" style="display: none;">
         <div class="search-title">Loading Website...</div>
         <iframe id="result-frame"></iframe>
+        <div id="loading-error-message" class="error-message" style="display: none;">Sorry, we cannot display this website here. Please try another one.</div>
     </div>
 
     <script>
@@ -194,6 +195,7 @@
             const iframe = document.getElementById('result-frame');
             const websiteContainer = document.getElementById('website-container');
             const searchContainer = document.getElementById('search-container');
+            const loadingErrorMessage = document.getElementById('loading-error-message');
 
             // Hide error message and clear input when button is clicked
             errorMessage.style.display = 'none';
@@ -217,18 +219,18 @@
                 websiteContainer.style.display = 'none';
                 searchContainer.style.display = 'flex';
 
-                // Set the iframe's src to the website URL
                 iframe.src = websiteUrl;
+                iframe.classList.remove('visible');
 
-                // Wait a second before making iframe visible
-                setTimeout(() => {
-                    iframe.classList.add('visible'); // Make iframe visible once it's set
-                }, 1000);
-
-                // In case iframe doesn't load, we can set a fallback message
-                iframe.onerror = () => {
-                    searchContainer.innerHTML = 'Sorry, we couldn\'t load this website.';
-                };
+                // Attempt to load the website
+                setTimeout(function () {
+                    // Check if iframe still doesn't load (could be due to X-Frame-Options)
+                    if (iframe.contentWindow.location.href === "about:blank" || !iframe.src) {
+                        loadingErrorMessage.style.display = 'block'; // Show error message if iframe fails to load
+                    } else {
+                        iframe.classList.add('visible'); // Show the iframe if loaded successfully
+                    }
+                }, 2000); // Wait for 2 seconds before checking
             } else {
                 errorMessage.style.display = 'block'; // Show error message if URL is invalid
             }
