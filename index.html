@@ -6,9 +6,9 @@
     <title>Website Viewer</title>
     <style>
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
             font-family: 'Arial', sans-serif;
         }
 
@@ -25,15 +25,17 @@
         }
 
         h1 {
-            font-size: 24px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #f4f4f4;
             margin-bottom: 20px;
         }
 
         input, button {
             font-size: 18px;
             padding: 15px;
-            border-radius: 5px;
-            border: 1px solid #444;
+            border-radius: 8px;
+            border: none;
             transition: all 0.3s ease;
             width: 80%;
             max-width: 400px;
@@ -43,11 +45,12 @@
         input {
             background-color: #333;
             color: #f4f4f4;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
         input:focus {
             background-color: #444;
-            border-color: #2575fc;
+            border: 1px solid #2575fc;
             outline: none;
         }
 
@@ -55,17 +58,13 @@
             background-color: #444;
             color: #2575fc;
             font-weight: bold;
-            border: none;
             cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
         button:hover {
             background-color: #555;
             transform: scale(1.05);
-        }
-
-        button:focus {
-            outline: none;
         }
 
         .container {
@@ -75,18 +74,14 @@
             width: 100%;
             max-width: 500px;
             box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            transition: all 0.5s ease;
         }
 
         .error-message {
             color: red;
             margin-top: 10px;
+            font-size: 16px;
             display: none;
-        }
-
-        .progress-title {
-            margin-bottom: 20px;
-            font-size: 20px;
-            font-weight: bold;
         }
 
         .progress-bar {
@@ -153,7 +148,7 @@
         <h1>Enter a Website URL</h1>
         <input type="text" id="website-url" placeholder="Enter a website and we will open it -yug" onfocus="clearPlaceholder()" onblur="restorePlaceholder()" />
         <button onclick="loadWebsite()">Go</button>
-        <div id="error-message" class="error-message">Invalid URL. Please try again.</div>
+        <div id="error-message" class="error-message">Please enter a valid website URL.</div>
     </div>
 
     <!-- Website Iframe -->
@@ -202,9 +197,14 @@
 
             // Hide error message and clear input when button is clicked
             errorMessage.style.display = 'none';
-            const websiteUrl = urlInput.value.trim();
+            let websiteUrl = urlInput.value.trim();
 
-            // Validate URL format
+            // Ensure the URL starts with http:// or https://
+            if (!websiteUrl.match(/^https?:\/\//)) {
+                websiteUrl = 'http://' + websiteUrl; // Add "http://" if it's missing
+            }
+
+            // Validate URL format using regex
             const urlPattern = /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,6}(\/[^\s]*)?$/;
 
             if (websiteUrl === "") {
