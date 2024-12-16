@@ -3,18 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Startpage Search</title>
+    <title>DuckDuckGo Search</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
-            margin: 0;
-            padding: 0;
+            background-color: #111;
+            color: white;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #1e1e1e;
-            color: white;
+            margin: 0;
         }
 
         .search-container {
@@ -63,14 +62,14 @@
 </head>
 <body>
     <div class="search-container">
-        <h2>Startpage Search</h2>
-        <!-- Search form that submits to Startpage search -->
-        <form action="https://www.startpage.com/do/search" method="get" target="search-results">
-            <input type="text" name="query" placeholder="Enter your search here" required />
+        <h2>DuckDuckGo Search</h2>
+        <!-- DuckDuckGo Search form embedded -->
+        <form action="https://duckduckgo.com/" method="get" target="search-results">
+            <input type="text" name="q" placeholder="Search the web..." required />
             <button type="submit">Search</button>
         </form>
 
-        <!-- Iframe to display search results directly on the website -->
+        <!-- Iframe to display search results -->
         <iframe id="search-results" name="search-results"></iframe>
     </div>
 </body>
