@@ -3,253 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Website Viewer</title>
+    <title>Website Viewer with Proxy</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Arial', sans-serif;
-        }
-
         body {
-            background-color: #121212;
-            color: #f4f4f4;
+            margin: 0;
+            font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            padding: 20px;
+            background-color: #121212;
+            color: white;
             flex-direction: column;
-            text-align: center;
         }
 
         h1 {
-            font-size: 28px;
-            font-weight: bold;
-            color: #f4f4f4;
+            font-size: 24px;
             margin-bottom: 20px;
         }
 
         input, button {
-            font-size: 18px;
             padding: 15px;
-            border-radius: 8px;
+            font-size: 16px;
+            border-radius: 5px;
             border: none;
-            transition: all 0.3s ease;
-            width: 80%;
-            max-width: 400px;
-            margin-bottom: 20px;
+            margin: 5px;
         }
 
         input {
+            width: 300px;
             background-color: #333;
-            color: #f4f4f4;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        input:focus {
-            background-color: #444;
-            border: 1px solid #2575fc;
-            outline: none;
+            color: white;
         }
 
         button {
-            background-color: #444;
-            color: #2575fc;
-            font-weight: bold;
+            background-color: #2575fc;
+            color: white;
             cursor: pointer;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s;
         }
 
         button:hover {
-            background-color: #555;
-            transform: scale(1.05);
-        }
-
-        .container {
-            background: linear-gradient(145deg, #4e5d6a, #2a3743);
-            border-radius: 20px;
-            padding: 40px;
-            width: 100%;
-            max-width: 500px;
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
-            transition: all 0.5s ease;
-        }
-
-        .error-message {
-            color: red;
-            margin-top: 10px;
-            font-size: 16px;
-            display: none;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 20px;
-            background-color: #333;
-            border-radius: 10px;
-            overflow: hidden;
-            position: relative;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        .progress-bar div {
-            height: 100%;
-            background: linear-gradient(90deg, #0ff, #00f);
-            width: 0%;
-            transition: width 0.1s ease-in-out;
+            background-color: #0056d2;
         }
 
         iframe {
-            width: 100%;
-            height: 70vh;
+            width: 80%;
+            height: 70%;
             border: none;
-            margin-top: 20px;
             border-radius: 10px;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-        }
-
-        iframe.visible {
-            opacity: 1;
-        }
-
-        @media (max-width: 600px) {
-            input, button {
-                width: 90%;
-            }
-
-            iframe {
-                height: 50vh;
-            }
+            margin-top: 20px;
+            background-color: #1a1a1a;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
         }
     </style>
 </head>
 <body>
-
-    <!-- Key Input Container -->
-    <div id="key-container" class="container">
-        <h1>Enter Your API Key</h1>
-        <input type="text" id="api-key" placeholder="Enter your API key here" />
-        <button onclick="validateKey()">Submit</button>
-    </div>
-
-    <!-- Progress Bar -->
-    <div id="progress-container" class="container" style="display: none;">
-        <div class="progress-title">Preparing Your Experience...</div>
-        <div class="progress-bar">
-            <div id="progress"></div>
-        </div>
-    </div>
-
-    <!-- URL Input Container -->
-    <div id="website-container" class="container" style="display: none;">
-        <h1>Enter a Website URL</h1>
-        <input type="text" id="website-url" placeholder="Enter a website and we will open it -yug" onfocus="clearPlaceholder()" onblur="restorePlaceholder()" />
-        <button onclick="loadWebsite()">Go</button>
-        <div id="error-message" class="error-message">Please enter a valid website URL.</div>
-    </div>
-
-    <!-- Website Iframe -->
-    <div id="search-container" class="container" style="display: none;">
-        <div class="search-title">Loading Website...</div>
-        <iframe id="result-frame"></iframe>
-        <div id="loading-error-message" class="error-message" style="display: none;">Sorry, we cannot display this website here. Please try another one.</div>
-    </div>
+    <h1>Enter a Website URL</h1>
+    <input type="text" id="url-input" placeholder="Enter a website (e.g., https://www.google.com)" />
+    <button onclick="loadWebsite()">Load Website</button>
+    <iframe id="website-frame"></iframe>
 
     <script>
-        const VALID_API_KEY = "HIHIHI897";
-
-        function validateKey() {
-            const key = document.getElementById('api-key').value;
-            const keyContainer = document.getElementById('key-container');
-            const progressContainer = document.getElementById('progress-container');
-            const websiteContainer = document.getElementById('website-container');
-            const progressBar = document.getElementById('progress');
-
-            if (key === VALID_API_KEY) {
-                keyContainer.style.display = 'none';
-                progressContainer.style.display = 'block';
-
-                let progress = 0;
-                const duration = 15000; // 15 seconds
-                const intervalTime = duration / 100; // Smooth progress increase
-                const interval = setInterval(() => {
-                    progress += 1;
-                    progressBar.style.width = `${progress}%`;
-                    if (progress >= 100) {
-                        clearInterval(interval);
-                        progressContainer.style.display = 'none';
-                        websiteContainer.style.display = 'block';
-                    }
-                }, intervalTime);
-            } else {
-                alert('Invalid API Key. Please try again.');
-            }
-        }
+        const PROXY_URL = 'https://your-proxy-service-url/proxy'; // Replace with your deployed backend URL
 
         function loadWebsite() {
-            const urlInput = document.getElementById('website-url');
-            const errorMessage = document.getElementById('error-message');
-            const iframe = document.getElementById('result-frame');
-            const websiteContainer = document.getElementById('website-container');
-            const searchContainer = document.getElementById('search-container');
-            const loadingErrorMessage = document.getElementById('loading-error-message');
+            const input = document.getElementById('url-input');
+            const iframe = document.getElementById('website-frame');
+            const websiteUrl = input.value.trim();
 
-            // Hide error message and clear input when button is clicked
-            errorMessage.style.display = 'none';
-            let websiteUrl = urlInput.value.trim();
-
-            // If no protocol (http:// or https://) is found, add it
-            if (!websiteUrl.match(/^https?:\/\//)) {
-                websiteUrl = 'http://' + websiteUrl; // Add "http://" if it's missing
-            }
-
-            // Validate URL format using regex
-            const urlPattern = /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,6}(\/[^\s]*)?$/;
-
-            if (websiteUrl === "") {
-                errorMessage.style.display = 'block'; // Show error message if no URL is entered
+            if (!websiteUrl) {
+                alert('Please enter a website URL.');
                 return;
             }
 
-            if (urlPattern.test(websiteUrl)) {
-                // Hide the website input section and show the iframe
-                websiteContainer.style.display = 'none';
-                searchContainer.style.display = 'flex';
-
-                iframe.src = websiteUrl;
-                iframe.classList.remove('visible');
-
-                // Attempt to load the website
-                setTimeout(function () {
-                    // Check if iframe still doesn't load (could be due to X-Frame-Options)
-                    if (iframe.contentWindow.location.href === "about:blank" || !iframe.src) {
-                        loadingErrorMessage.style.display = 'block'; // Show error message if iframe fails to load
-                    } else {
-                        iframe.classList.add('visible'); // Show the iframe if loaded successfully
-                    }
-                }, 2000); // Wait for 2 seconds before checking
-            } else {
-                errorMessage.style.display = 'block'; // Show error message if URL is invalid
-            }
-        }
-
-        function clearPlaceholder() {
-            const urlInput = document.getElementById('website-url');
-            if (urlInput.value === "") {
-                urlInput.placeholder = ""; // Clear the placeholder when focused
-            }
-        }
-
-        function restorePlaceholder() {
-            const urlInput = document.getElementById('website-url');
-            if (urlInput.value === "") {
-                urlInput.placeholder = "Enter a website and we will open it -yug"; // Restore placeholder if input is empty
-            }
+            // Use the proxy to load the website
+            iframe.src = `${PROXY_URL}?url=${encodeURIComponent(websiteUrl)}`;
         }
     </script>
-
 </body>
 </html>
