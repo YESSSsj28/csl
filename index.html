@@ -3,28 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modern Search Engine</title>
+    <title>Custom Search Engine</title>
     <style>
         /* General Styling */
         body {
             margin: 0;
             font-family: 'Arial', sans-serif;
-            background: linear-gradient(145deg, #1a1a2e, #16213e);
-            color: white;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start;
+            background: linear-gradient(145deg, #1a1a2e, #16213e);
+            color: white;
             height: 100vh;
-            transition: background 0.5s ease;
+            overflow: hidden;
         }
 
         .header {
+            padding: 20px;
             width: 100%;
-            padding: 15px;
-            text-align: center;
             background: rgba(0, 0, 0, 0.9);
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            text-align: center;
         }
 
         .header h1 {
@@ -32,40 +31,14 @@
             margin: 0;
         }
 
-        .theme-selector {
-            display: flex;
-            justify-content: center;
-            margin-top: 10px;
-            gap: 10px;
-        }
-
-        .theme-button {
-            padding: 10px;
-            border: none;
-            font-size: 14px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-
         .search-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            flex-grow: 1;
-            width: 100%;
-            padding: 20px;
-        }
-
-        .input-container {
-            display: flex;
-            flex-direction: column;
             width: 80%;
             max-width: 600px;
+            margin: 20px 0;
+            text-align: center;
         }
 
-        .input-container input {
+        .input-box {
             width: 100%;
             padding: 15px;
             font-size: 18px;
@@ -73,33 +46,12 @@
             border: none;
             outline: none;
             text-align: center;
-            transition: background 0.3s ease, color 0.3s ease;
-        }
-
-        .buttons-container {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .iframe-container {
-            display: none;
-            width: 100%;
-            height: 80%;
-        }
-
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            border-radius: 10px;
-            background: rgba(0, 0, 0, 0.8);
         }
 
         .button {
-            padding: 10px;
+            padding: 10px 15px;
             border: none;
+            margin-top: 10px;
             background-color: #6a11cb;
             color: white;
             font-size: 16px;
@@ -111,40 +63,36 @@
         .button:hover {
             background-color: #2575fc;
         }
+
+        .iframe-container {
+            display: none;
+            width: 100%;
+            height: calc(100vh - 160px);
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>Modern Search Engine</h1>
-        <div class="theme-selector">
-            <button class="theme-button" onclick="setTheme('dark')">Dark Theme</button>
-            <button class="theme-button" onclick="setTheme('light')">Light Theme</button>
-            <button class="theme-button" onclick="setTheme('bluePurple')">Blue & Purple</button>
-            <button class="theme-button" onclick="setTheme('redOrange')">Red & Orange</button>
-        </div>
+        <h1>Custom Search Engine</h1>
     </div>
 
     <div class="search-container">
-        <div class="input-container">
-            <input
-                type="text"
-                id="website-input"
-                placeholder="Enter a valid website (e.g., crazygames.com)"
-                onfocus="clearPlaceholder()"
-                onblur="restorePlaceholder()"
-            />
-            <div class="buttons-container">
-                <button class="button" onclick="loadWebsite()">Go</button>
-                <button class="button" onclick="clearInput()">Clear</button>
-            </div>
-        </div>
+        <input
+            id="website-input"
+            class="input-box"
+            type="text"
+            placeholder="Enter a valid website (e.g., example.com)"
+        />
+        <button class="button" onclick="loadWebsite()">Go</button>
     </div>
 
     <div class="iframe-container" id="iframe-container">
-        <div class="buttons-container">
-            <button class="button" onclick="reloadIframe()">Reload</button>
-            <button class="button" onclick="goBack()">Back</button>
-        </div>
         <iframe id="website-frame" src=""></iframe>
     </div>
 
@@ -153,70 +101,20 @@
             const input = document.getElementById("website-input");
             const iframeContainer = document.getElementById("iframe-container");
             const iframe = document.getElementById("website-frame");
-            const url = input.value.trim();
 
-            // Check if the URL is valid
+            let url = input.value.trim();
+
             if (url) {
-                const prefixedUrl = url.startsWith("http://") || url.startsWith("https://") ? url : `https://${url}`;
-                iframe.src = prefixedUrl;
+                // Add "https://" if not already included
+                if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                    url = `https://${url}`;
+                }
+
+                // Set iframe source
+                iframe.src = url;
                 iframeContainer.style.display = "block";
             } else {
-                alert("Please enter a valid website.");
-            }
-        }
-
-        function reloadIframe() {
-            const iframe = document.getElementById("website-frame");
-            iframe.src = iframe.src; // Reload the current iframe src
-        }
-
-        function goBack() {
-            const iframeContainer = document.getElementById("iframe-container");
-            const input = document.getElementById("website-input");
-            input.value = ""; // Clear input
-            iframeContainer.style.display = "none";
-        }
-
-        function clearInput() {
-            const input = document.getElementById("website-input");
-            input.value = ""; // Clear the input field
-        }
-
-        function clearPlaceholder() {
-            const input = document.getElementById("website-input");
-            if (input.value === "") {
-                input.placeholder = "";
-            }
-        }
-
-        function restorePlaceholder() {
-            const input = document.getElementById("website-input");
-            if (input.value === "") {
-                input.placeholder = "Enter a valid website (e.g., crazygames.com)";
-            }
-        }
-
-        function setTheme(theme) {
-            const body = document.body;
-
-            switch (theme) {
-                case "dark":
-                    body.style.background = "linear-gradient(145deg, #1a1a2e, #16213e)";
-                    body.style.color = "white";
-                    break;
-                case "light":
-                    body.style.background = "linear-gradient(145deg, #f5f5f5, #eeeeee)";
-                    body.style.color = "black";
-                    break;
-                case "bluePurple":
-                    body.style.background = "linear-gradient(145deg, #6a11cb, #2575fc)";
-                    break;
-                case "redOrange":
-                    body.style.background = "linear-gradient(145deg, #ff512f, #dd2476)";
-                    break;
-                default:
-                    body.style.background = "linear-gradient(145deg, #1a1a2e, #16213e)";
-                    body.style.color = "white";
+                alert("Please enter a valid website!");
             }
         }
     </script>
