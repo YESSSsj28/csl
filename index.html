@@ -3,244 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Custom Search Engine</title>
+    <title>Startpage Search</title>
     <style>
-        * {
+        body {
+            font-family: 'Arial', sans-serif;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Roboto', sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #121212;
+            background-color: #1e1e1e;
             color: white;
-            overflow: hidden;
-            flex-direction: column;
-            text-align: center;
-            transition: background-color 1s ease, color 1s ease;
-            animation: fadeIn 1s ease;
-        }
-
-        h1 {
-            font-size: 42px;
-            margin-bottom: 20px;
-            font-weight: 500;
-            color: #fff;
-            letter-spacing: 1px;
-            transition: color 1s ease;
-        }
-
-        .theme-selector {
-            margin-bottom: 20px;
-        }
-
-        select {
-            padding: 10px;
-            font-size: 16px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            background-color: #3a3a3a;
-            color: white;
-            transition: background-color 0.3s ease;
-        }
-
-        select:hover {
-            background-color: #4a4a4a;
         }
 
         .search-container {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            max-width: 550px;
-            background: rgba(40, 40, 40, 0.8);
-            border-radius: 12px;
-            padding: 40px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-            transition: transform 0.3s ease-in-out;
-            opacity: 0.9;
+            background-color: #444;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            width: 400px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
         }
 
-        .search-container:hover {
-            transform: scale(1.05);
-        }
-
-        input {
-            padding: 15px 20px;
+        input[type="text"] {
+            width: 80%;
+            padding: 15px;
             font-size: 18px;
+            margin-bottom: 20px;
+            border-radius: 5px;
             border: none;
-            border-radius: 8px;
             outline: none;
-            background-color: #3a3a3a;
+            background-color: #333;
             color: white;
-            width: 100%;
-            margin-bottom: 25px;
-            transition: background-color 0.3s ease;
-        }
-
-        input::placeholder {
-            color: #aaa;
-        }
-
-        input:focus {
-            background-color: #4a4a4a;
         }
 
         button {
-            padding: 12px 30px;
+            padding: 15px 30px;
             font-size: 18px;
-            font-weight: 600;
+            background-color: #5AAB47;
             border: none;
-            border-radius: 25px;
-            background-color: #1f5bb2;
             color: white;
+            border-radius: 5px;
             cursor: pointer;
-            transition: background-color 0.3s, transform 0.2s ease-in-out;
         }
 
         button:hover {
-            background-color: #2c7be5;
-            transform: scale(1.05);
+            background-color: #4D973F;
         }
 
-        .error-message {
-            color: red;
-            margin-top: 20px;
-            font-size: 16px;
-            text-align: center;
-        }
-
-        .info-message {
-            font-size: 20px;
-            color: #d9d9d9;
-            text-align: center;
-            margin-bottom: 15px;
-        }
-
-        #website-frame {
-            margin-top: 30px;
+        iframe {
             width: 100%;
             height: 80vh;
             border: none;
-            border-radius: 12px;
+            margin-top: 20px;
+            border-radius: 10px;
         }
-
-        /* Fade-in effect for initial page load */
-        @keyframes fadeIn {
-            0% {
-                opacity: 0;
-            }
-            100% {
-                opacity: 1;
-            }
-        }
-
-        /* Transition for themes */
-        .transition-background {
-            transition: background-color 2s ease, color 2s ease;
-        }
-
     </style>
 </head>
-<body class="transition-background">
-    <!-- Theme Selector -->
-    <div class="theme-selector">
-        <h3>Choose Theme:</h3>
-        <select id="theme-select" onchange="changeTheme()">
-            <option value="default">Default</option>
-            <option value="blue-purple">Blue & Purple</option>
-            <option value="cyan-purple">Cyan & Purple</option>
-            <option value="red-orange">Red & Orange</option>
-            <option value="black-white">Black & White</option>
-        </select>
-    </div>
-
-    <!-- Title -->
-    <h1>Custom Search Engine</h1>
-
-    <!-- Search Form -->
+<body>
     <div class="search-container">
-        <input type="text" id="search-input" placeholder="Enter a valid website (e.g., crazygames.com)" onfocus="clearPlaceholder()" onblur="restorePlaceholder()" />
-        <button onclick="loadWebsite()">Go</button>
-        <div class="info-message">Enter a website and we will load it here.</div>
-        <div id="error-message" class="error-message"></div>
+        <h2>Startpage Search</h2>
+        <!-- Search form that submits to Startpage search -->
+        <form action="https://www.startpage.com/do/search" method="get" target="search-results">
+            <input type="text" name="query" placeholder="Enter your search here" required />
+            <button type="submit">Search</button>
+        </form>
+
+        <!-- Iframe to display search results directly on the website -->
+        <iframe id="search-results" name="search-results"></iframe>
     </div>
-
-    <!-- Website Display Area -->
-    <iframe id="website-frame"></iframe>
-
-    <script>
-        // Change Theme with Smooth Transition
-        function changeTheme() {
-            const theme = document.getElementById("theme-select").value;
-            const body = document.body;
-
-            if (theme === "blue-purple") {
-                body.style.backgroundColor = "#1a1a8c";
-                body.style.color = "#ffffff";
-            } else if (theme === "cyan-purple") {
-                body.style.backgroundColor = "#1e4ca2";
-                body.style.color = "#ffffff";
-            } else if (theme === "red-orange") {
-                body.style.backgroundColor = "#d95f02";
-                body.style.color = "#ffffff";
-            } else if (theme === "black-white") {
-                body.style.backgroundColor = "#000000";
-                body.style.color = "#ffffff";
-            } else {
-                body.style.backgroundColor = "#121212";
-                body.style.color = "#ffffff";
-            }
-        }
-
-        // Clear Placeholder Text
-        function clearPlaceholder() {
-            const inputField = document.getElementById("search-input");
-            if (inputField.value === '') {
-                inputField.placeholder = '';
-            }
-        }
-
-        // Restore Placeholder Text
-        function restorePlaceholder() {
-            const inputField = document.getElementById("search-input");
-            if (inputField.value === '') {
-                inputField.placeholder = 'Enter a valid website (e.g., crazygames.com)';
-            }
-        }
-
-        // Load Website Function (without redirecting)
-        function loadWebsite() {
-            const url = document.getElementById("search-input").value.trim();
-            const errorMessage = document.getElementById("error-message");
-            const websiteFrame = document.getElementById("website-frame");
-
-            // Validate if URL is empty or not
-            if (url === '') {
-                errorMessage.innerText = "Please enter a valid website!";
-                return;
-            }
-
-            errorMessage.innerText = '';
-
-            const isValidURL = /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,6}(:[0-9]{1,5})?(\/[a-zA-Z0-9#]+\/?)*$/i;
-            if (!isValidURL.test(url)) {
-                errorMessage.innerText = "Invalid website URL!";
-                return;
-            }
-
-            // Set the iframe src to the website URL without redirecting
-            websiteFrame.src = `https://${url}`;
-        }
-
-    </script>
 </body>
 </html>
