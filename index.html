@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Custom Search</title>
+    <title>Website Viewer</title>
     <style>
         * {
             box-sizing: border-box;
@@ -37,6 +37,7 @@
             transition: all 0.3s ease;
             width: 80%;
             max-width: 400px;
+            margin-bottom: 20px;
         }
 
         input {
@@ -76,41 +77,33 @@
             box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
         }
 
-        #progress-container {
+        .error-message {
+            color: red;
+            margin-top: 10px;
             display: none;
-            background: linear-gradient(145deg, #4e5d6a, #2a3743);
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
-            width: 100%;
-            max-width: 500px;
         }
 
         .progress-title {
+            margin-bottom: 20px;
             font-size: 20px;
             font-weight: bold;
-            margin-bottom: 20px;
         }
 
         .progress-bar {
             width: 100%;
-            height: 10px;
-            background-color: #555;
+            height: 20px;
+            background-color: #333;
             border-radius: 10px;
             overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .progress-bar div {
             height: 100%;
             background: linear-gradient(90deg, #0ff, #00f);
-            width: 0;
+            width: 0%;
             transition: width 0.1s ease-in-out;
-        }
-
-        #search-container {
-            display: none;
-            width: 100%;
-            height: 100%;
         }
 
         iframe {
@@ -136,7 +129,6 @@
                 height: 50vh;
             }
         }
-
     </style>
 </head>
 <body>
@@ -146,32 +138,27 @@
         <h1>Enter Your API Key</h1>
         <input type="text" id="api-key" placeholder="Enter your API key here" />
         <button onclick="validateKey()">Submit</button>
-        <div id="error-message" style="color: red; display: none; margin-top: 10px;"></div>
     </div>
 
     <!-- Progress Bar -->
-    <div id="progress-container">
+    <div id="progress-container" class="container" style="display: none;">
         <div class="progress-title">Preparing Your Experience...</div>
         <div class="progress-bar">
             <div id="progress"></div>
         </div>
     </div>
 
-    <!-- Google Search Container -->
-    <div id="search-container" class="container">
-        <div class="search-title">Search Google</div>
-        <script>
-            (function() {
-                var cx = '94f496af50e7446f0'; // Your custom search engine ID
-                var gcse = document.createElement('script');
-                gcse.type = 'text/javascript';
-                gcse.async = true;
-                gcse.src = 'https://cse.google.com/cse.js?cx=' + cx;
-                var s = document.getElementsByTagName('script')[0];
-                s.parentNode.insertBefore(gcse, s);
-            })();
-        </script>
-        <div class="gcse-searchbox"></div>
+    <!-- URL Input Container -->
+    <div id="website-container" class="container" style="display: none;">
+        <h1>Enter a Website URL</h1>
+        <input type="text" id="website-url" placeholder="Enter a website and we will open it -yug" onfocus="clearPlaceholder()" onblur="restorePlaceholder()" />
+        <button onclick="loadWebsite()">Go</button>
+        <div id="error-message" class="error-message">Invalid URL. Please try again.</div>
+    </div>
+
+    <!-- Website Iframe -->
+    <div id="search-container" class="container" style="display: none;">
+        <div class="search-title">Loading Website...</div>
         <iframe id="result-frame"></iframe>
     </div>
 
@@ -182,13 +169,8 @@
             const key = document.getElementById('api-key').value;
             const keyContainer = document.getElementById('key-container');
             const progressContainer = document.getElementById('progress-container');
-            const searchContainer = document.getElementById('search-container');
+            const websiteContainer = document.getElementById('website-container');
             const progressBar = document.getElementById('progress');
-            const iframe = document.getElementById('result-frame');
-            const errorMessage = document.getElementById('error-message');
-
-            // Clear previous error messages
-            errorMessage.style.display = 'none';
 
             if (key === VALID_API_KEY) {
                 keyContainer.style.display = 'none';
@@ -196,35 +178,66 @@
 
                 let progress = 0;
                 const duration = 15000; // 15 seconds
-                const intervalTime = duration / 100;
+                const intervalTime = duration / 100; // Smooth progress increase
                 const interval = setInterval(() => {
                     progress += 1;
                     progressBar.style.width = `${progress}%`;
-
                     if (progress >= 100) {
                         clearInterval(interval);
                         progressContainer.style.display = 'none';
-                        searchContainer.style.display = 'flex';
-                        iframe.src = 'https://www.google.com'; // Set initial iframe content
-                        iframe.classList.add('visible'); // Make iframe visible
+                        websiteContainer.style.display = 'block';
                     }
                 }, intervalTime);
             } else {
-                errorMessage.textContent = 'Invalid API Key. Please try again.';
-                errorMessage.style.display = 'block';
+                alert('Invalid API Key. Please try again.');
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            document.addEventListener('click', (e) => {
-                if (e.target && e.target.tagName === 'A' && e.target.href) {
-                    e.preventDefault(); // Prevent redirection
-                    const iframe = document.getElementById('result-frame');
-                    iframe.classList.add('visible'); // Make iframe visible
-                    iframe.src = e.target.href; // Load content in iframe
-                }
-            });
-        });
+        function loadWebsite() {
+            const urlInput = document.getElementById('website-url');
+            const errorMessage = document.getElementById('error-message');
+            const iframe = document.getElementById('result-frame');
+            const websiteContainer = document.getElementById('website-container');
+            const searchContainer = document.getElementById('search-container');
+
+            // Hide error message and clear input when button is clicked
+            errorMessage.style.display = 'none';
+            const websiteUrl = urlInput.value.trim();
+
+            // Validate URL format
+            const urlPattern = /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,6}(\/[^\s]*)?$/;
+
+            if (websiteUrl === "") {
+                errorMessage.style.display = 'block'; // Show error message if no URL is entered
+                return;
+            }
+
+            if (urlPattern.test(websiteUrl)) {
+                // Hide the website input section and show the iframe
+                websiteContainer.style.display = 'none';
+                searchContainer.style.display = 'flex';
+
+                // Prepare the iframe to load the website
+                iframe.src = websiteUrl;
+                iframe.classList.add('visible'); // Make iframe visible once it's set
+            } else {
+                errorMessage.style.display = 'block'; // Show error message if URL is invalid
+            }
+        }
+
+        function clearPlaceholder() {
+            const urlInput = document.getElementById('website-url');
+            if (urlInput.value === "") {
+                urlInput.placeholder = ""; // Clear the placeholder when focused
+            }
+        }
+
+        function restorePlaceholder() {
+            const urlInput = document.getElementById('website-url');
+            if (urlInput.value === "") {
+                urlInput.placeholder = "Enter a website and we will open it -yug"; // Restore placeholder if input is empty
+            }
+        }
     </script>
 
 </body>
