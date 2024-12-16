@@ -3,74 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DuckDuckGo Search</title>
+    <title>Custom Search Engine</title>
     <style>
+        /* General Reset and Styling */
         body {
             font-family: 'Arial', sans-serif;
-            background-color: #111;
-            color: white;
+            margin: 0;
+            padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            margin: 0;
+            background: linear-gradient(145deg, #1d1b31, #312f45);
+            color: #fff;
+            transition: background 0.5s;
         }
 
-        .search-container {
-            background-color: #444;
-            padding: 30px;
-            border-radius: 10px;
+        .container {
             text-align: center;
-            width: 400px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            width: 80%;
+            max-width: 500px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 26px;
         }
 
         input[type="text"] {
-            width: 80%;
+            width: 100%;
             padding: 15px;
-            font-size: 18px;
-            margin-bottom: 20px;
-            border-radius: 5px;
+            font-size: 16px;
             border: none;
+            border-radius: 5px;
             outline: none;
-            background-color: #333;
-            color: white;
+            margin-bottom: 20px;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        input[type="text"]::placeholder {
+            color: #aaa;
+        }
+
+        input[type="text"]:focus::placeholder {
+            color: transparent;
         }
 
         button {
             padding: 15px 30px;
-            font-size: 18px;
-            background-color: #5AAB47;
             border: none;
-            color: white;
             border-radius: 5px;
+            font-size: 18px;
             cursor: pointer;
+            background: linear-gradient(145deg, #ff5c57, #ff774c);
+            color: #fff;
+            transition: all 0.3s;
         }
 
         button:hover {
-            background-color: #4D973F;
+            background: linear-gradient(145deg, #ff774c, #ff5c57);
         }
 
-        iframe {
-            width: 100%;
-            height: 80vh;
-            border: none;
+        /* Theme Selector */
+        .themes {
             margin-top: 20px;
-            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .theme-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .theme-btn:hover {
+            transform: scale(1.2);
+        }
+
+        .theme-blue-purple {
+            background: linear-gradient(145deg, #6a11cb, #2575fc);
+        }
+
+        .theme-cyan-purple {
+            background: linear-gradient(145deg, #3a1c71, #d76d77, #ffaf7b);
+        }
+
+        .theme-red-orange {
+            background: linear-gradient(145deg, #ff5f6d, #ffc371);
+        }
+
+        .theme-black-white {
+            background: linear-gradient(145deg, #000, #fff);
         }
     </style>
 </head>
 <body>
-    <div class="search-container">
-        <h2>DuckDuckGo Search</h2>
-        <!-- DuckDuckGo Search form embedded -->
-        <form action="https://duckduckgo.com/" method="get" target="search-results">
-            <input type="text" name="q" placeholder="Search the web..." required />
-            <button type="submit">Search</button>
-        </form>
-
-        <!-- Iframe to display search results -->
-        <iframe id="search-results" name="search-results"></iframe>
+    <div class="container">
+        <h1>Welcome to Yug's Search Engine</h1>
+        <input type="text" id="website-input" placeholder="Enter a valid website (e.g., crazygames.com)" />
+        <button onclick="loadWebsite()">Visit Website</button>
+        <div class="themes">
+            <button class="theme-btn theme-blue-purple" onclick="changeTheme('blue-purple')"></button>
+            <button class="theme-btn theme-cyan-purple" onclick="changeTheme('cyan-purple')"></button>
+            <button class="theme-btn theme-red-orange" onclick="changeTheme('red-orange')"></button>
+            <button class="theme-btn theme-black-white" onclick="changeTheme('black-white')"></button>
+        </div>
     </div>
+
+    <script>
+        // Function to validate and load the website
+        function loadWebsite() {
+            const input = document.getElementById('website-input');
+            const url = input.value.trim();
+
+            if (url) {
+                // Check if URL includes protocol; if not, add it
+                const validUrl = url.startsWith('http://') || url.startsWith('https://') ? url : `https://${url}`;
+                window.location.href = validUrl; // Navigate to the URL on the same page
+            } else {
+                input.placeholder = "Please enter a valid website!";
+            }
+        }
+
+        // Function to change theme dynamically
+        function changeTheme(theme) {
+            const body = document.body;
+            switch (theme) {
+                case 'blue-purple':
+                    body.style.background = 'linear-gradient(145deg, #6a11cb, #2575fc)';
+                    break;
+                case 'cyan-purple':
+                    body.style.background = 'linear-gradient(145deg, #3a1c71, #d76d77, #ffaf7b)';
+                    break;
+                case 'red-orange':
+                    body.style.background = 'linear-gradient(145deg, #ff5f6d, #ffc371)';
+                    break;
+                case 'black-white':
+                    body.style.background = 'linear-gradient(145deg, #000, #fff)';
+                    break;
+                default:
+                    body.style.background = 'linear-gradient(145deg, #1d1b31, #312f45)';
+            }
+        }
+    </script>
 </body>
 </html>
