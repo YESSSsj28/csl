@@ -16,7 +16,7 @@
             height: 100vh;
             background: linear-gradient(145deg, #1d1b31, #312f45);
             color: #fff;
-            transition: background 0.5s;
+            transition: background 0.5s ease;
         }
 
         .container {
@@ -28,6 +28,7 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
             width: 80%;
             max-width: 500px;
+            animation: fadeIn 1s ease;
         }
 
         h1 {
@@ -74,63 +75,67 @@
         .themes {
             margin-top: 20px;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
             gap: 10px;
         }
 
-        .theme-btn {
-            width: 40px;
-            height: 40px;
+        .gradient-btn {
+            width: 120px;
+            padding: 10px;
+            font-size: 14px;
+            color: #fff;
+            background: linear-gradient(145deg, #6a11cb, #2575fc);
             border: none;
-            border-radius: 50%;
+            border-radius: 5px;
             cursor: pointer;
+            text-align: center;
             transition: transform 0.3s;
         }
 
-        .theme-btn:hover {
-            transform: scale(1.2);
+        .gradient-btn:hover {
+            transform: scale(1.1);
         }
 
-        .theme-blue-purple {
-            background: linear-gradient(145deg, #6a11cb, #2575fc);
-        }
-
-        .theme-cyan-purple {
-            background: linear-gradient(145deg, #3a1c71, #d76d77, #ffaf7b);
-        }
-
-        .theme-red-orange {
-            background: linear-gradient(145deg, #ff5f6d, #ffc371);
-        }
-
-        .theme-black-white {
-            background: linear-gradient(145deg, #000, #fff);
+        /* Animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Welcome to Yug's Search Engine</h1>
+        <h1>Welcome to Yug's Custom Search Engine</h1>
         <input type="text" id="website-input" placeholder="Enter a valid website (e.g., crazygames.com)" />
         <button onclick="loadWebsite()">Visit Website</button>
         <div class="themes">
-            <button class="theme-btn theme-blue-purple" onclick="changeTheme('blue-purple')"></button>
-            <button class="theme-btn theme-cyan-purple" onclick="changeTheme('cyan-purple')"></button>
-            <button class="theme-btn theme-red-orange" onclick="changeTheme('red-orange')"></button>
-            <button class="theme-btn theme-black-white" onclick="changeTheme('black-white')"></button>
+            <button class="gradient-btn" onclick="changeTheme('blue-purple')">Blue-Purple</button>
+            <button class="gradient-btn" onclick="changeTheme('cyan-purple')">Cyan-Purple</button>
+            <button class="gradient-btn" onclick="changeTheme('red-orange')">Red-Orange</button>
+            <button class="gradient-btn" onclick="changeTheme('black-white')">Black-White</button>
         </div>
+        <iframe id="website-frame" style="width: 100%; height: 500px; margin-top: 20px; display: none; border: none;"></iframe>
     </div>
 
     <script>
-        // Function to validate and load the website
+        // Function to validate and load the website in the iframe
         function loadWebsite() {
             const input = document.getElementById('website-input');
             const url = input.value.trim();
+            const iframe = document.getElementById('website-frame');
 
             if (url) {
                 // Check if URL includes protocol; if not, add it
                 const validUrl = url.startsWith('http://') || url.startsWith('https://') ? url : `https://${url}`;
-                window.location.href = validUrl; // Navigate to the URL on the same page
+                iframe.src = validUrl; // Set the iframe source
+                iframe.style.display = "block"; // Show the iframe
             } else {
                 input.placeholder = "Please enter a valid website!";
             }
