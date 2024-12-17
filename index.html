@@ -3,121 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Custom Search Engine</title>
+    <title>Battle Royale Game</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.0/phaser.min.js"></script>
     <style>
         body {
-            font-family: 'Arial', sans-serif;
-            background-color: #2d2d2d;
-            color: white;
             margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            overflow: hidden;
         }
-
-        .container {
-            text-align: center;
-            width: 100%;
-            max-width: 800px;
+        canvas {
+            display: block;
         }
-
-        input[type="text"] {
-            width: 80%;
-            padding: 12px;
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-family: Arial, sans-serif;
             font-size: 18px;
-            border-radius: 8px;
-            border: 1px solid #555;
-            margin: 20px 0;
-            background-color: #444;
-            color: white;
-        }
-
-        button {
-            padding: 12px 20px;
-            font-size: 16px;
-            color: #fff;
-            background-color: #0066cc;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        button:hover {
-            background-color: #004d99;
-        }
-
-        select {
-            background-color: #444;
-            border: none;
-            padding: 10px;
-            border-radius: 5px;
-            color: white;
-        }
-
-        .iframe-container {
-            display: none;
-            margin-top: 20px;
-            border-radius: 10px;
-        }
-
-        iframe {
-            width: 100%;
-            height: 80vh;
-            border-radius: 10px;
-            border: none;
+            z-index: 10;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Custom Search Engine</h1>
-        <p>Enter a website URL to search:</p>
-        <input type="text" id="website-input" placeholder="Example: crazygames.com" />
-        <button onclick="loadWebsite()">Search Website</button>
-        <div id="iframe-container" class="iframe-container">
-            <iframe id="website-frame" src="https://searx.me/?q="></iframe>
-        </div>
-        <select id="theme-select" onchange="changeTheme()">
-            <option value="default">Select Theme</option>
-            <option value="blue">Blue</option>
-            <option value="green">Green</option>
-            <option value="red">Red</option>
-        </select>
+    <div id="hud">
+        <div>Health: <span id="health">100</span></div>
+        <div>Weapon: <span id="weapon">None</span></div>
+        <div>Bots Remaining: <span id="bots-remaining">0</span></div>
     </div>
-
     <script>
-        function loadWebsite() {
-            const input = document.getElementById('website-input').value;
-            const iframe = document.getElementById('website-frame');
-            const iframeContainer = document.getElementById('iframe-container');
+        // Phaser game configuration
+        const config = {
+            type: Phaser.AUTO,
+            width: 800,
+            height: 600,
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    gravity: { y: 0 },
+                    debug: false
+                }
+            },
+            scene: {
+                preload: preload,
+                create: create,
+                update: update
+            }
+        };
 
-            if (input) {
-                iframeContainer.style.display = 'block';
-                iframe.src = 'https://searx.me/?q=' + encodeURIComponent(input);  // Search query on Searx
+        const game = new Phaser.Game(config);
+
+        // Game variables
+        let player, cursors, health = 100, weapon = null;
+        let bots = [];
+        let chests = [];
+        const botCount = 10;
+        let difficulty = "medium"; // Options: easy, medium, hard
+
+        function preload() {
+            this.load.image('player', 'https://examples.phaser.io/assets/sprites/dude.png');
+            this.load.image('bot', 'https://examples.phaser.io/assets/sprites/alien.png');
+            this.load.image('chest', 'https://examples.phaser.io/assets/sprites/chest.png');
+            this.load.image('commonWeapon', 'https://examples.phaser.io/assets/sprites/bullet.png');
+            this.load.image('rareWeapon', 'https://examples.phaser.io/assets/sprites/diamond.png');
+            this.load.image('legendaryWeapon', 'https://examples.phaser.io/assets/sprites/star.png');
+        }
+
+        function create() {
+            // Add player
+            player = this.physics.add.sprite(400, 300, 'player').setCollideWorldBounds(true);
+
+            // Spawn chests
+            for (let i = 0; i < 5; i++) {
+                let chest = this.physics.add.sprite(
+                    Phaser.Math.Between(50, 750),
+                    Phaser.Math.Between(50, 550),
+                    'chest'
+                );
+                chest.type = Phaser.Math.RND.pick(['common', 'rare', 'legendary']);
+                chests.push(chest);
+            }
+
+            // Spawn bots
+            for (let i = 0; i < botCount; i++) {
+                let bot = this.physics.add.sprite(
+                    Phaser.Math.Between(50, 750),
+                    Phaser.Math.Between(50, 550),
+                    'bot'
+                );
+                bot.health = 50; // Each bot has 50 health
+                bots.push(bot);
+            }
+
+            // Enable keyboard input
+            cursors = this.input.keyboard.createCursorKeys();
+
+            // Update HUD
+            updateHUD();
+        }
+
+        function update() {
+            // Player movement
+            if (cursors.left.isDown) {
+                player.setVelocityX(-200);
+            } else if (cursors.right.isDown) {
+                player.setVelocityX(200);
             } else {
-                alert("Please enter a valid website URL.");
+                player.setVelocityX(0);
+            }
+
+            if (cursors.up.isDown) {
+                player.setVelocityY(-200);
+            } else if (cursors.down.isDown) {
+                player.setVelocityY(200);
+            } else {
+                player.setVelocityY(0);
+            }
+
+            // Check for chest interaction
+            chests.forEach((chest, index) => {
+                if (Phaser.Geom.Intersects.RectangleToRectangle(player.getBounds(), chest.getBounds())) {
+                    // Assign a weapon based on chest type
+                    if (chest.type === 'common') {
+                        weapon = { name: 'Common Weapon', damage: 10 };
+                    } else if (chest.type === 'rare') {
+                        weapon = { name: 'Rare Weapon', damage: 20 };
+                    } else if (chest.type === 'legendary') {
+                        weapon = { name: 'Legendary Weapon', damage: 50 };
+                    }
+                    chest.destroy();
+                    chests.splice(index, 1); // Remove chest from array
+                    updateHUD();
+                }
+            });
+
+            // Update bot movement
+            bots.forEach(bot => {
+                if (bot.active) {
+                    this.physics.moveToObject(bot, player, getBotSpeed(difficulty));
+
+                    // Check for collision with player (bots attack)
+                    if (Phaser.Geom.Intersects.RectangleToRectangle(player.getBounds(), bot.getBounds())) {
+                        health -= 1; // Reduce player health on contact
+                        updateHUD();
+
+                        if (health <= 0) {
+                            alert('Game Over!');
+                            location.reload(); // Restart the game
+                        }
+                    }
+                }
+            });
+
+            // Shooting bots (spacebar to shoot)
+            if (this.input.keyboard.checkDown(cursors.space, 500)) {
+                if (weapon) {
+                    bots.forEach((bot, index) => {
+                        if (Phaser.Geom.Intersects.RectangleToRectangle(player.getBounds(), bot.getBounds())) {
+                            bot.health -= weapon.damage;
+                            if (bot.health <= 0) {
+                                bot.destroy();
+                                bots.splice(index, 1);
+                                updateHUD();
+                            }
+                        }
+                    });
+                }
             }
         }
 
-        function changeTheme() {
-            const theme = document.getElementById('theme-select').value;
-            switch (theme) {
-                case 'blue':
-                    document.body.style.backgroundColor = '#1E3A8A';
-                    break;
-                case 'green':
-                    document.body.style.backgroundColor = '#2D6A4F';
-                    break;
-                case 'red':
-                    document.body.style.backgroundColor = '#9B2226';
-                    break;
-                default:
-                    document.body.style.backgroundColor = '#2d2d2d';
-                    break;
+        function getBotSpeed(difficulty) {
+            switch (difficulty) {
+                case 'easy': return 50;
+                case 'medium': return 100;
+                case 'hard': return 150;
+                default: return 100;
             }
+        }
+
+        function updateHUD() {
+            document.getElementById('health').textContent = health;
+            document.getElementById('weapon').textContent = weapon ? weapon.name : 'None';
+            document.getElementById('bots-remaining').textContent = bots.length;
         }
     </script>
 </body>
