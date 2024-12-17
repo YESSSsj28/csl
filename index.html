@@ -3,188 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Battle Royale Game</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.0/phaser.min.js"></script>
+    <title>Party System</title>
+    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.2/phaser.min.js"></script>
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-        }
-        canvas {
-            display: block;
-        }
-        #hud {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            color: white;
-            font-family: Arial, sans-serif;
-            font-size: 18px;
-            z-index: 10;
-        }
+        body { margin: 0; text-align: center; background-color: #111; color: white; font-family: Arial, sans-serif; }
+        button, input { margin: 10px; padding: 10px; font-size: 16px; }
+        #menu { margin-top: 20%; }
     </style>
 </head>
 <body>
-    <div id="hud">
-        <div>Health: <span id="health">100</span></div>
-        <div>Weapon: <span id="weapon">None</span></div>
-        <div>Bots Remaining: <span id="bots-remaining">0</span></div>
+    <div id="menu">
+        <h1>Party System</h1>
+        <button onclick="makeParty()">Make a Party</button>
+        <br>
+        <input type="text" id="partyCode" placeholder="Enter Party Code" maxlength="6">
+        <button onclick="joinParty()">Join a Party</button>
+        <p id="status"></p>
     </div>
+
     <script>
-        // Phaser game configuration
-        const config = {
+        const socket = io('http://localhost:3000'); // Connect to the backend server
+
+        function makeParty() {
+            socket.emit('createParty'); // Request to create a new party
+        }
+
+        socket.on('partyCreated', (code) => {
+            document.getElementById('status').innerText = `Party Created! Code: ${code}`;
+        });
+
+        function joinParty() {
+            const code = document.getElementById('partyCode').value.trim().toUpperCase();
+            if (code) {
+                socket.emit('joinParty', code); // Request to join a party
+            } else {
+                document.getElementById('status').innerText = "Please enter a valid party code.";
+            }
+        }
+
+        socket.on('joinedParty', (code) => {
+            document.getElementById('status').innerText = `Successfully joined party: ${code}`;
+        });
+
+        socket.on('error', (message) => {
+            document.getElementById('status').innerText = message; // Display error message
+        });
+
+        socket.on('playerJoined', (message) => {
+            console.log(message); // Log when a player joins the party
+        });
+
+        // Game logic (Phaser setup)
+        let config = {
             type: Phaser.AUTO,
             width: 800,
             height: 600,
-            physics: {
-                default: 'arcade',
-                arcade: {
-                    gravity: { y: 0 },
-                    debug: false
-                }
-            },
-            scene: {
-                preload: preload,
-                create: create,
-                update: update
-            }
+            physics: { default: 'arcade', arcade: { gravity: { y: 0 }, debug: false } },
+            scene: { preload, create, update }
         };
 
-        const game = new Phaser.Game(config);
-
-        // Game variables
-        let player, cursors, health = 100, weapon = null;
-        let bots = [];
-        let chests = [];
-        const botCount = 10;
-        let difficulty = "medium"; // Options: easy, medium, hard
+        let player, cursors;
 
         function preload() {
-            this.load.image('player', 'https://examples.phaser.io/assets/sprites/dude.png');
-            this.load.image('bot', 'https://examples.phaser.io/assets/sprites/alien.png');
-            this.load.image('chest', 'https://examples.phaser.io/assets/sprites/chest.png');
-            this.load.image('commonWeapon', 'https://examples.phaser.io/assets/sprites/bullet.png');
-            this.load.image('rareWeapon', 'https://examples.phaser.io/assets/sprites/diamond.png');
-            this.load.image('legendaryWeapon', 'https://examples.phaser.io/assets/sprites/star.png');
+            this.load.image('player', 'assets/sophie.png'); // Load Sophie Rain character sprite
         }
 
         function create() {
-            // Add player
-            player = this.physics.add.sprite(400, 300, 'player').setCollideWorldBounds(true);
+            // Add player sprite (Sophie Rain)
+            player = this.physics.add.sprite(400, 300, 'player').setScale(1.5);
+            player.setCollideWorldBounds(true);
 
-            // Spawn chests
-            for (let i = 0; i < 5; i++) {
-                let chest = this.physics.add.sprite(
-                    Phaser.Math.Between(50, 750),
-                    Phaser.Math.Between(50, 550),
-                    'chest'
-                );
-                chest.type = Phaser.Math.RND.pick(['common', 'rare', 'legendary']);
-                chests.push(chest);
-            }
-
-            // Spawn bots
-            for (let i = 0; i < botCount; i++) {
-                let bot = this.physics.add.sprite(
-                    Phaser.Math.Between(50, 750),
-                    Phaser.Math.Between(50, 550),
-                    'bot'
-                );
-                bot.health = 50; // Each bot has 50 health
-                bots.push(bot);
-            }
-
-            // Enable keyboard input
             cursors = this.input.keyboard.createCursorKeys();
-
-            // Update HUD
-            updateHUD();
         }
 
         function update() {
-            // Player movement
+            player.setVelocity(0);
+
+            // Player movement controls
             if (cursors.left.isDown) {
                 player.setVelocityX(-200);
             } else if (cursors.right.isDown) {
                 player.setVelocityX(200);
-            } else {
-                player.setVelocityX(0);
             }
 
             if (cursors.up.isDown) {
                 player.setVelocityY(-200);
             } else if (cursors.down.isDown) {
                 player.setVelocityY(200);
-            } else {
-                player.setVelocityY(0);
-            }
-
-            // Check for chest interaction
-            chests.forEach((chest, index) => {
-                if (Phaser.Geom.Intersects.RectangleToRectangle(player.getBounds(), chest.getBounds())) {
-                    // Assign a weapon based on chest type
-                    if (chest.type === 'common') {
-                        weapon = { name: 'Common Weapon', damage: 10 };
-                    } else if (chest.type === 'rare') {
-                        weapon = { name: 'Rare Weapon', damage: 20 };
-                    } else if (chest.type === 'legendary') {
-                        weapon = { name: 'Legendary Weapon', damage: 50 };
-                    }
-                    chest.destroy();
-                    chests.splice(index, 1); // Remove chest from array
-                    updateHUD();
-                }
-            });
-
-            // Update bot movement
-            bots.forEach(bot => {
-                if (bot.active) {
-                    this.physics.moveToObject(bot, player, getBotSpeed(difficulty));
-
-                    // Check for collision with player (bots attack)
-                    if (Phaser.Geom.Intersects.RectangleToRectangle(player.getBounds(), bot.getBounds())) {
-                        health -= 1; // Reduce player health on contact
-                        updateHUD();
-
-                        if (health <= 0) {
-                            alert('Game Over!');
-                            location.reload(); // Restart the game
-                        }
-                    }
-                }
-            });
-
-            // Shooting bots (spacebar to shoot)
-            if (this.input.keyboard.checkDown(cursors.space, 500)) {
-                if (weapon) {
-                    bots.forEach((bot, index) => {
-                        if (Phaser.Geom.Intersects.RectangleToRectangle(player.getBounds(), bot.getBounds())) {
-                            bot.health -= weapon.damage;
-                            if (bot.health <= 0) {
-                                bot.destroy();
-                                bots.splice(index, 1);
-                                updateHUD();
-                            }
-                        }
-                    });
-                }
             }
         }
 
-        function getBotSpeed(difficulty) {
-            switch (difficulty) {
-                case 'easy': return 50;
-                case 'medium': return 100;
-                case 'hard': return 150;
-                default: return 100;
-            }
-        }
-
-        function updateHUD() {
-            document.getElementById('health').textContent = health;
-            document.getElementById('weapon').textContent = weapon ? weapon.name : 'None';
-            document.getElementById('bots-remaining').textContent = bots.length;
-        }
+        new Phaser.Game(config);
     </script>
 </body>
 </html>
