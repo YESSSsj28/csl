@@ -3,192 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Website Proxy Viewer</title>
+    <title>Custom Search Engine</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
+            background-color: #2d2d2d;
+            color: white;
             margin: 0;
             padding: 0;
-            transition: background-color 0.5s, color 0.5s;
-            background-color: #121212;
-            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
             text-align: center;
-            padding: 20px;
+            width: 100%;
+            max-width: 800px;
         }
 
-        h1 {
-            color: #2575fc;
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-
-        input {
-            padding: 12px 20px;
-            font-size: 16px;
+        input[type="text"] {
+            width: 80%;
+            padding: 12px;
+            font-size: 18px;
             border-radius: 8px;
-            border: 1px solid #444;
-            width: 70%;
-            margin-bottom: 20px;
-            background-color: #333;
-            color: white;
-            outline: none;
-            transition: background-color 0.3s;
-        }
-
-        input:focus {
+            border: 1px solid #555;
+            margin: 20px 0;
             background-color: #444;
+            color: white;
         }
 
         button {
-            padding: 12px 24px;
-            background-color: #2575fc;
-            color: white;
+            padding: 12px 20px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #0066cc;
             border: none;
             border-radius: 8px;
-            font-size: 16px;
             cursor: pointer;
             transition: background-color 0.3s;
         }
 
         button:hover {
-            background-color: #6a11cb;
+            background-color: #004d99;
         }
 
-        #website-content {
-            margin-top: 30px;
-            border: 1px solid #444;
-            padding: 20px;
-            max-height: 600px;
-            overflow-y: scroll;
-            background-color: #222;
-            display: block;
-            text-align: left;
-        }
-
-        .theme-button {
+        select {
             background-color: #444;
-            padding: 10px 20px;
-            margin: 10px;
-            cursor: pointer;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: background-color 0.3s;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            color: white;
         }
 
-        .theme-button:hover {
-            background-color: #666;
-        }
-
-        .theme-button.selected {
-            background-color: #2575fc;
-        }
-
-        .theme-container {
-            margin-top: 30px;
-        }
-
-        .button-container {
-            margin-top: 30px;
-        }
-
-        .input-wrapper {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .input-wrapper input {
-            margin-right: 10px;
-        }
-
-        .info {
-            font-size: 16px;
-            color: #aaa;
+        .iframe-container {
+            display: none;
             margin-top: 20px;
+            border-radius: 10px;
+        }
+
+        iframe {
+            width: 100%;
+            height: 80vh;
+            border-radius: 10px;
+            border: none;
         }
     </style>
 </head>
 <body>
-    <h1>Proxy Website Viewer</h1>
-    <div class="input-wrapper">
-        <input type="text" id="website-url" placeholder="Enter website URL (e.g., https://example.com)">
-        <button onclick="loadWebsite()">Load Website</button>
-    </div>
-
-    <div id="website-content">Website content will appear here...</div>
-
-    <div class="theme-container">
-        <h3>Choose a Theme:</h3>
-        <button class="theme-button" onclick="changeTheme('blue')">Blue</button>
-        <button class="theme-button" onclick="changeTheme('purple')">Purple</button>
-        <button class="theme-button" onclick="changeTheme('green')">Green</button>
-        <button class="theme-button" onclick="changeTheme('red')">Red</button>
-    </div>
-
-    <div class="button-container">
-        <button onclick="clearContent()">Clear Content</button>
-        <button onclick="resetTheme()">Reset Theme</button>
-    </div>
-
-    <div class="info">
-        <p><strong>Note:</strong> This proxy allows you to view website content directly on the page. However, some sites may have restrictions or dynamic content that does not display properly here.</p>
+    <div class="container">
+        <h1>Custom Search Engine</h1>
+        <p>Enter a website URL to search:</p>
+        <input type="text" id="website-input" placeholder="Example: crazygames.com" />
+        <button onclick="loadWebsite()">Search Website</button>
+        <div id="iframe-container" class="iframe-container">
+            <iframe id="website-frame" src="https://searx.me/?q="></iframe>
+        </div>
+        <select id="theme-select" onchange="changeTheme()">
+            <option value="default">Select Theme</option>
+            <option value="blue">Blue</option>
+            <option value="green">Green</option>
+            <option value="red">Red</option>
+        </select>
     </div>
 
     <script>
-        // Load the website via proxy
         function loadWebsite() {
-            const url = document.getElementById('website-url').value.trim();
-            if (url) {
-                fetch(`/proxy?url=${encodeURIComponent(url)}`)
-                    .then(response => response.text())
-                    .then(data => {
-                        document.getElementById('website-content').innerHTML = data;
-                    })
-                    .catch(error => {
-                        document.getElementById('website-content').innerText = 'Failed to load the website content. Please check the URL or try again later.';
-                    });
+            const input = document.getElementById('website-input').value;
+            const iframe = document.getElementById('website-frame');
+            const iframeContainer = document.getElementById('iframe-container');
+
+            if (input) {
+                iframeContainer.style.display = 'block';
+                iframe.src = 'https://searx.me/?q=' + encodeURIComponent(input);  // Search query on Searx
             } else {
-                alert('Please enter a website URL.');
+                alert("Please enter a valid website URL.");
             }
         }
 
-        // Change the theme of the page
-        function changeTheme(theme) {
-            const body = document.body;
-            const buttons = document.querySelectorAll('.theme-button');
-            buttons.forEach(button => button.classList.remove('selected'));
-
-            // Change background and text color based on the selected theme
-            if (theme === 'blue') {
-                body.style.backgroundColor = '#1e2a47';
-                body.style.color = '#ddd';
-            } else if (theme === 'purple') {
-                body.style.backgroundColor = '#2a1e47';
-                body.style.color = '#c0c0ff';
-            } else if (theme === 'green') {
-                body.style.backgroundColor = '#2a472e';
-                body.style.color = '#a0e8a0';
-            } else if (theme === 'red') {
-                body.style.backgroundColor = '#471e2a';
-                body.style.color = '#e8a0a0';
+        function changeTheme() {
+            const theme = document.getElementById('theme-select').value;
+            switch (theme) {
+                case 'blue':
+                    document.body.style.backgroundColor = '#1E3A8A';
+                    break;
+                case 'green':
+                    document.body.style.backgroundColor = '#2D6A4F';
+                    break;
+                case 'red':
+                    document.body.style.backgroundColor = '#9B2226';
+                    break;
+                default:
+                    document.body.style.backgroundColor = '#2d2d2d';
+                    break;
             }
-
-            // Highlight selected theme button
-            const selectedButton = document.querySelector(`button[onclick="changeTheme('${theme}')"]`);
-            selectedButton.classList.add('selected');
-        }
-
-        // Clear the website content
-        function clearContent() {
-            document.getElementById('website-content').innerHTML = 'Website content has been cleared.';
-        }
-
-        // Reset to the default theme
-        function resetTheme() {
-            document.body.style.backgroundColor = '#121212';
-            document.body.style.color = 'white';
-            const buttons = document.querySelectorAll('.theme-button');
-            buttons.forEach(button => button.classList.remove('selected'));
         }
     </script>
 </body>
