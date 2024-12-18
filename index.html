@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Futuristic Lobby with Multiple Game Modes</title>
+    <title>Game Lobby with Multiple Game Modes</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.2/phaser.min.js"></script>
     <style>
         body {
@@ -26,26 +26,18 @@
             z-index: 10;
             flex-direction: column;
         }
-        #loading {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-        #progressBar {
-            width: 80%;
-            height: 20px;
-            background: #333;
-            border-radius: 10px;
-            overflow: hidden;
-            margin-top: 10px;
-        }
-        #progress {
+        #ui::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
             height: 100%;
-            width: 0;
-            background: #0f9;
+            background: url('assets/map.png') center center / cover no-repeat;
+            z-index: -1;
+            opacity: 0.5;
         }
-        #lobby, #auth, #signup, #login, #gameOptions {
+        #lobby {
             display: none;
         }
         .button {
@@ -70,28 +62,20 @@
 </head>
 <body>
     <div id="ui">
-        <div id="loading">
-            <h1>Loading BR.exe...</h1>
-            <div id="progressBar">
-                <div id="progress"></div>
-            </div>
-            <p id="eta">ETA: Calculating...</p>
-        </div>
-
         <div id="auth">
             <h1>Welcome</h1>
             <button id="loginButton" class="button">Login</button>
             <button id="signupButton" class="button">Sign Up</button>
         </div>
 
-        <div id="signup">
+        <div id="signup" style="display: none;">
             <h2>Sign Up</h2>
             <input id="newUsername" type="text" placeholder="Username">
             <input id="newPassword" type="password" placeholder="Password">
             <button id="createAccountButton" class="button">Create Account</button>
         </div>
 
-        <div id="login">
+        <div id="login" style="display: none;">
             <h2>Login</h2>
             <input id="loginUsername" type="text" placeholder="Username">
             <input id="loginPassword" type="password" placeholder="Password">
@@ -99,7 +83,6 @@
         </div>
 
         <div id="lobby">
-            <h1>Futuristic Lobby</h1>
             <button id="queueButton" class="button">Queue in Battle Royale</button>
             <button id="infectedButton" class="button">Play Infected</button>
             <button id="ctfButton" class="button">Play Capture the Flag</button>
@@ -108,7 +91,7 @@
             <div id="party" style="margin-top: 20px;"></div>
         </div>
 
-        <div id="gameOptions">
+        <div id="gameOptions" style="display: none;">
             <h2>Choose Game Mode Options</h2>
             <select id="teamMode">
                 <option value="solo">Solo</option>
@@ -135,9 +118,6 @@
         const loginDiv = document.getElementById('login');
         const lobbyDiv = document.getElementById('lobby');
         const gameOptionsDiv = document.getElementById('gameOptions');
-        const loadingDiv = document.getElementById('loading');
-        const progressBar = document.getElementById('progress');
-        const etaText = document.getElementById('eta');
 
         const loginButton = document.getElementById('loginButton');
         const signupButton = document.getElementById('signupButton');
@@ -151,29 +131,6 @@
         const addFriendButton = document.getElementById('addFriendButton');
         const friendUsernameInput = document.getElementById('friendUsername');
         const partyDiv = document.getElementById('party');
-
-        function simulateLoading() {
-            let progress = 0;
-            const loadTime = Math.floor(Math.random() * 15000) + 5000; // 5-19 seconds
-            const interval = loadTime / 100;
-
-            const loadingInterval = setInterval(() => {
-                progress++;
-                progressBar.style.width = `${progress}%`;
-                const eta = Math.max(0, Math.ceil((100 - progress) * (interval / 1000)));
-                etaText.textContent = `ETA: ${eta} seconds`;
-
-                if (progress >= 100) {
-                    clearInterval(loadingInterval);
-                    setTimeout(() => {
-                        loadingDiv.style.display = 'none';
-                        authDiv.style.display = 'flex';
-                    }, 3000); // Wait 3 seconds after full progress
-                }
-            }, interval);
-        }
-
-        simulateLoading();
 
         // Authentication Handlers
         signupButton.addEventListener('click', () => {
@@ -245,6 +202,10 @@
             alert(`Starting ${mode} in ${teamMode} mode on ${difficulty} difficulty.`);
             gameOptionsDiv.style.display = 'none';
             lobbyDiv.style.display = 'block';
+            // Simulating game start after selection
+            setTimeout(() => {
+                alert(`${mode} game has started!`);
+            }, 1000); // Replace with actual game start logic
         }
 
         addFriendButton.addEventListener('click', () => {
