@@ -3,98 +3,266 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Party System</title>
-    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
+    <title>Futuristic Lobby with Multiple Game Modes</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.2/phaser.min.js"></script>
     <style>
-        body { margin: 0; text-align: center; background-color: #111; color: white; font-family: Arial, sans-serif; }
-        button, input { margin: 10px; padding: 10px; font-size: 16px; }
-        #menu { margin-top: 20%; }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: Arial, sans-serif;
+            color: #fff;
+        }
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10;
+            flex-direction: column;
+        }
+        #loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        #progressBar {
+            width: 80%;
+            height: 20px;
+            background: #333;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        #progress {
+            height: 100%;
+            width: 0;
+            background: #0f9;
+        }
+        #lobby, #auth, #signup, #login, #gameOptions {
+            display: none;
+        }
+        .button {
+            margin: 10px;
+            padding: 10px 20px;
+            background: #0f9;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .button:hover {
+            background: #0c6;
+        }
+        input {
+            margin: 5px;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
-    <div id="menu">
-        <h1>Party System</h1>
-        <button onclick="makeParty()">Make a Party</button>
-        <br>
-        <input type="text" id="partyCode" placeholder="Enter Party Code" maxlength="6">
-        <button onclick="joinParty()">Join a Party</button>
-        <p id="status"></p>
+    <div id="ui">
+        <div id="loading">
+            <h1>Loading BR.exe...</h1>
+            <div id="progressBar">
+                <div id="progress"></div>
+            </div>
+            <p id="eta">ETA: Calculating...</p>
+        </div>
+
+        <div id="auth">
+            <h1>Welcome</h1>
+            <button id="loginButton" class="button">Login</button>
+            <button id="signupButton" class="button">Sign Up</button>
+        </div>
+
+        <div id="signup">
+            <h2>Sign Up</h2>
+            <input id="newUsername" type="text" placeholder="Username">
+            <input id="newPassword" type="password" placeholder="Password">
+            <button id="createAccountButton" class="button">Create Account</button>
+        </div>
+
+        <div id="login">
+            <h2>Login</h2>
+            <input id="loginUsername" type="text" placeholder="Username">
+            <input id="loginPassword" type="password" placeholder="Password">
+            <button id="loginSubmitButton" class="button">Login</button>
+        </div>
+
+        <div id="lobby">
+            <h1>Futuristic Lobby</h1>
+            <button id="queueButton" class="button">Queue in Battle Royale</button>
+            <button id="infectedButton" class="button">Play Infected</button>
+            <button id="ctfButton" class="button">Play Capture the Flag</button>
+            <button id="addFriendButton" class="button">Add Friend</button>
+            <input id="friendUsername" type="text" placeholder="Friend's Username">
+            <div id="party" style="margin-top: 20px;"></div>
+        </div>
+
+        <div id="gameOptions">
+            <h2>Choose Game Mode Options</h2>
+            <select id="teamMode">
+                <option value="solo">Solo</option>
+                <option value="duo">Duo</option>
+                <option value="trio">Trio</option>
+                <option value="squad">Squads</option>
+            </select>
+            <select id="difficulty">
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+            </select>
+            <button id="startGameButton" class="button">Start Game</button>
+        </div>
     </div>
 
     <script>
-        const socket = io('http://localhost:3000'); // Connect to the backend server
+        const users = {}; // Store users in memory
+        let currentUser = null;
 
-        function makeParty() {
-            socket.emit('createParty'); // Request to create a new party
+        // UI Elements
+        const authDiv = document.getElementById('auth');
+        const signupDiv = document.getElementById('signup');
+        const loginDiv = document.getElementById('login');
+        const lobbyDiv = document.getElementById('lobby');
+        const gameOptionsDiv = document.getElementById('gameOptions');
+        const loadingDiv = document.getElementById('loading');
+        const progressBar = document.getElementById('progress');
+        const etaText = document.getElementById('eta');
+
+        const loginButton = document.getElementById('loginButton');
+        const signupButton = document.getElementById('signupButton');
+        const createAccountButton = document.getElementById('createAccountButton');
+        const loginSubmitButton = document.getElementById('loginSubmitButton');
+        const queueButton = document.getElementById('queueButton');
+        const infectedButton = document.getElementById('infectedButton');
+        const ctfButton = document.getElementById('ctfButton');
+        const startGameButton = document.getElementById('startGameButton');
+
+        const addFriendButton = document.getElementById('addFriendButton');
+        const friendUsernameInput = document.getElementById('friendUsername');
+        const partyDiv = document.getElementById('party');
+
+        function simulateLoading() {
+            let progress = 0;
+            const loadTime = Math.floor(Math.random() * 15000) + 5000; // 5-19 seconds
+            const interval = loadTime / 100;
+
+            const loadingInterval = setInterval(() => {
+                progress++;
+                progressBar.style.width = `${progress}%`;
+                const eta = Math.max(0, Math.ceil((100 - progress) * (interval / 1000)));
+                etaText.textContent = `ETA: ${eta} seconds`;
+
+                if (progress >= 100) {
+                    clearInterval(loadingInterval);
+                    setTimeout(() => {
+                        loadingDiv.style.display = 'none';
+                        authDiv.style.display = 'flex';
+                    }, 3000); // Wait 3 seconds after full progress
+                }
+            }, interval);
         }
 
-        socket.on('partyCreated', (code) => {
-            document.getElementById('status').innerText = `Party Created! Code: ${code}`;
+        simulateLoading();
+
+        // Authentication Handlers
+        signupButton.addEventListener('click', () => {
+            authDiv.style.display = 'none';
+            signupDiv.style.display = 'block';
         });
 
-        function joinParty() {
-            const code = document.getElementById('partyCode').value.trim().toUpperCase();
-            if (code) {
-                socket.emit('joinParty', code); // Request to join a party
+        loginButton.addEventListener('click', () => {
+            authDiv.style.display = 'none';
+            loginDiv.style.display = 'block';
+        });
+
+        createAccountButton.addEventListener('click', () => {
+            const username = document.getElementById('newUsername').value;
+            const password = document.getElementById('newPassword').value;
+
+            if (username && password) {
+                if (!users[username]) {
+                    users[username] = password;
+                    alert('Account created successfully!');
+                    signupDiv.style.display = 'none';
+                    authDiv.style.display = 'block';
+                } else {
+                    alert('Username already exists!');
+                }
             } else {
-                document.getElementById('status').innerText = "Please enter a valid party code.";
+                alert('Please fill in all fields!');
             }
-        }
-
-        socket.on('joinedParty', (code) => {
-            document.getElementById('status').innerText = `Successfully joined party: ${code}`;
         });
 
-        socket.on('error', (message) => {
-            document.getElementById('status').innerText = message; // Display error message
+        loginSubmitButton.addEventListener('click', () => {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            if (users[username] && users[username] === password) {
+                currentUser = username;
+                alert(`Welcome, ${username}!`);
+                loginDiv.style.display = 'none';
+                lobbyDiv.style.display = 'block';
+            } else {
+                alert('Invalid username or password!');
+            }
         });
 
-        socket.on('playerJoined', (message) => {
-            console.log(message); // Log when a player joins the party
+        // Lobby Handlers
+        queueButton.addEventListener('click', () => {
+            showGameOptions('Battle Royale');
         });
 
-        // Game logic (Phaser setup)
-        let config = {
-            type: Phaser.AUTO,
-            width: 800,
-            height: 600,
-            physics: { default: 'arcade', arcade: { gravity: { y: 0 }, debug: false } },
-            scene: { preload, create, update }
-        };
+        infectedButton.addEventListener('click', () => {
+            showGameOptions('Infected');
+        });
 
-        let player, cursors;
+        ctfButton.addEventListener('click', () => {
+            showGameOptions('Capture the Flag');
+        });
 
-        function preload() {
-            this.load.image('player', 'assets/sophie.png'); // Load Sophie Rain character sprite
+        function showGameOptions(mode) {
+            lobbyDiv.style.display = 'none';
+            gameOptionsDiv.style.display = 'block';
+            startGameButton.onclick = () => {
+                const teamMode = document.getElementById('teamMode').value;
+                const difficulty = document.getElementById('difficulty').value;
+                startGame(mode, teamMode, difficulty);
+            };
         }
 
-        function create() {
-            // Add player sprite (Sophie Rain)
-            player = this.physics.add.sprite(400, 300, 'player').setScale(1.5);
-            player.setCollideWorldBounds(true);
-
-            cursors = this.input.keyboard.createCursorKeys();
+        function startGame(mode, teamMode, difficulty) {
+            alert(`Starting ${mode} in ${teamMode} mode on ${difficulty} difficulty.`);
+            gameOptionsDiv.style.display = 'none';
+            lobbyDiv.style.display = 'block';
         }
 
-        function update() {
-            player.setVelocity(0);
+        addFriendButton.addEventListener('click', () => {
+            const friendUsername = friendUsernameInput.value;
 
-            // Player movement controls
-            if (cursors.left.isDown) {
-                player.setVelocityX(-200);
-            } else if (cursors.right.isDown) {
-                player.setVelocityX(200);
+            if (friendUsername && users[friendUsername]) {
+                const friendDiv = document.createElement('div');
+                friendDiv.textContent = `${friendUsername} (Click to Join Party)`;
+                friendDiv.classList.add('button');
+                friendDiv.addEventListener('click', () => {
+                    alert(`You joined ${friendUsername}'s party!`);
+                });
+                partyDiv.appendChild(friendDiv);
+                alert(`${friendUsername} added as a friend!`);
+            } else {
+                alert('User not found!');
             }
-
-            if (cursors.up.isDown) {
-                player.setVelocityY(-200);
-            } else if (cursors.down.isDown) {
-                player.setVelocityY(200);
-            }
-        }
-
-        new Phaser.Game(config);
+        });
     </script>
 </body>
 </html>
