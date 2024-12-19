@@ -26,6 +26,17 @@
             z-index: 10;
             flex-direction: column;
         }
+        #ui::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('assets/map.png') center center / cover no-repeat;
+            z-index: -1;
+            opacity: 0.5;
+        }
         #lobby {
             display: none;
         }
@@ -79,22 +90,6 @@
             <input id="friendUsername" type="text" placeholder="Friend's Username">
             <div id="party" style="margin-top: 20px;"></div>
         </div>
-
-        <div id="gameOptions" style="display: none;">
-            <h2>Choose Game Mode Options</h2>
-            <select id="teamMode">
-                <option value="solo">Solo</option>
-                <option value="duo">Duo</option>
-                <option value="trio">Trio</option>
-                <option value="squad">Squads</option>
-            </select>
-            <select id="difficulty">
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
-            </select>
-            <button id="startGameButton" class="button">Start Game</button>
-        </div>
     </div>
 
     <script>
@@ -106,50 +101,19 @@
         const signupDiv = document.getElementById('signup');
         const loginDiv = document.getElementById('login');
         const lobbyDiv = document.getElementById('lobby');
-        const gameOptionsDiv = document.getElementById('gameOptions');
 
         const loginButton = document.getElementById('loginButton');
         const signupButton = document.getElementById('signupButton');
         const createAccountButton = document.getElementById('createAccountButton');
         const loginSubmitButton = document.getElementById('loginSubmitButton');
         const queueButton = document.getElementById('queueButton');
-        const infectedButton = document.getElementById('infectedButton');
-        const ctfButton = document.getElementById('ctfButton');
-        const startGameButton = document.getElementById('startGameButton');
 
         const addFriendButton = document.getElementById('addFriendButton');
         const friendUsernameInput = document.getElementById('friendUsername');
         const partyDiv = document.getElementById('party');
 
-        // Phaser Game Config
-        const config = {
-            type: Phaser.AUTO,
-            width: 800,
-            height: 600,
-            scene: {
-                preload: preload,
-                create: create,
-                update: update
-            }
-        };
-
-        const game = new Phaser.Game(config);
-
-        function preload() {
-            this.load.image('battleBus', 'assets/battleBus.png'); // Load Battle Bus image
-        }
-
-        function create() {
-            this.add.image(400, 300, 'battleBus').setOrigin(0.5, 0.5); // Add Battle Bus at center
-            this.text = this.add.text(400, 550, 'Battle Bus is Loading...', {
-                font: '24px Arial',
-                fill: '#fff'
-            }).setOrigin(0.5);
-        }
-
-        function update() {
-            // Add any animations or actions during the game update
-        }
+        let gameStarted = false;
+        let bots = [];
 
         // Authentication Handlers
         signupButton.addEventListener('click', () => {
@@ -196,49 +160,65 @@
 
         // Lobby Handlers
         queueButton.addEventListener('click', () => {
-            showGameOptions('Battle Royale');
-        });
-
-        infectedButton.addEventListener('click', () => {
-            showGameOptions('Infected');
-        });
-
-        ctfButton.addEventListener('click', () => {
-            showGameOptions('Capture the Flag');
-        });
-
-        function showGameOptions(mode) {
             lobbyDiv.style.display = 'none';
-            gameOptionsDiv.style.display = 'block';
-            startGameButton.onclick = () => {
-                const teamMode = document.getElementById('teamMode').value;
-                const difficulty = document.getElementById('difficulty').value;
-                startGame(mode, teamMode, difficulty);
-            };
-        }
-
-        function startGame(mode, teamMode, difficulty) {
-            alert(`Starting ${mode} in ${teamMode} mode on ${difficulty} difficulty.`);
-            gameOptionsDiv.style.display = 'none';
-            game.scene.start('BattleBus'); // Start Battle Bus scene
-        }
-
-        addFriendButton.addEventListener('click', () => {
-            const friendUsername = friendUsernameInput.value;
-
-            if (friendUsername && users[friendUsername]) {
-                const friendDiv = document.createElement('div');
-                friendDiv.textContent = `${friendUsername} (Click to Join Party)`;
-                friendDiv.classList.add('button');
-                friendDiv.addEventListener('click', () => {
-                    alert(`You joined ${friendUsername}'s party!`);
-                });
-                partyDiv.appendChild(friendDiv);
-                alert(`${friendUsername} added as a friend!`);
-            } else {
-                alert('User not found!');
-            }
+            startBattleRoyale();
         });
+
+        function startBattleRoyale() {
+            if (gameStarted) return;
+            gameStarted = true;
+
+            const config = {
+                type: Phaser.AUTO,
+                width: 1200,
+                height: 700,
+                physics: {
+                    default: 'arcade',
+                    arcade: { gravity: { y: 500 }, debug: false }
+                },
+                scene: { preload, create, update }
+            };
+
+            let player, hotdog, canJump = false;
+
+            const game = new Phaser.Game(config);
+
+            function preload() {
+                this.load.image('map', 'assets/map.png');
+                this.load.image('hotdog', 'assets/hotdog.png');
+                this.load.image('chest', 'assets/chest.png');
+                this.load.image('house', 'assets/house.png');
+                this.load.spritesheet('player', 'assets/character.png', { frameWidth: 32, frameHeight: 48 });
+            }
+
+            function create() {
+                this.add.image(600, 350, 'map').setScale(1.5);
+
+                hotdog = this.physics.add.sprite(600, 100, 'hotdog').setScale(0.5).setImmovable(true);
+                hotdog.body.allowGravity = false;
+
+                player = this.physics.add.sprite(600, 200, 'player').setScale(1.5);
+                player.setCollideWorldBounds(true);
+
+                for (let i = 0; i < 10; i++) {
+                    const bot = this.physics.add.sprite(600 + i * 50, 200, 'player').setScale(1.5);
+                    bot.setCollideWorldBounds(true);
+                    bots.push(bot);
+                }
+
+                this.time.delayedCall(3000, () => {
+                    canJump = true;
+                });
+            }
+
+            function update() {
+                if (canJump) {
+                    player.setVelocityY(-300);
+                    hotdog.setAlpha(0);
+                    canJump = false;
+                }
+            }
+        }
     </script>
 </body>
 </html>
