@@ -37,6 +37,7 @@
         let player;
         let cursors;
         let ground;
+        let isJumping = false;  // Flag to track if the player is jumping or not
 
         function preload() {
             // Load assets
@@ -55,10 +56,15 @@
             player.setBounce(0.2); // Add bounce effect to player when it lands
 
             // Enable the player to collide with the ground
-            this.physics.add.collider(player, ground);
+            this.physics.add.collider(player, ground, onLand);
 
             // Set up keyboard controls
             cursors = this.input.keyboard.createCursorKeys();
+        }
+
+        function onLand() {
+            // When the player collides with the ground, reset the jump flag
+            isJumping = false;
         }
 
         function update() {
@@ -72,14 +78,15 @@
                 player.setVelocityX(160);
             }
 
-            // Jumping: Allow jump if touching ground or a platform
-            if (cursors.up.isDown && player.body.touching.down) {
+            // Jumping: Allow jump if not already jumping
+            if (cursors.up.isDown && !isJumping) {
+                isJumping = true;
                 player.setVelocityY(-330);
             }
 
-            // If falling and not touching the ground, allow jumping when the player falls on another surface
+            // Prevent jumping when falling (if falling too fast or not grounded)
             if (player.body.velocity.y > 0 && !player.body.touching.down) {
-                player.setVelocityY(player.body.velocity.y); // Continue falling, but allow jump if next to platforms
+                isJumping = true;  // Keep the jumping state while falling, but allow landing
             }
         }
     </script>
