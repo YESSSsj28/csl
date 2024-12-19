@@ -9,7 +9,7 @@
             margin: 0;
             overflow: hidden;
             font-family: Arial, sans-serif;
-            background-color: #111; /* Dark background to check visibility */
+            background-color: #111; /* Dark background */
             color: #fff;
             height: 100vh;
             display: flex;
@@ -64,7 +64,9 @@
 
         function onLand() {
             // When the player collides with the ground, reset the jump flag
-            isJumping = false;
+            if (player.body.touching.down) {
+                isJumping = false;  // Reset jump flag when player is on the ground
+            }
         }
 
         function update() {
@@ -78,13 +80,13 @@
                 player.setVelocityX(160);
             }
 
-            // Jumping: Allow jump if not already jumping
+            // Jumping: Allow jump if not already jumping and player is on the ground
             if (cursors.up.isDown && !isJumping && player.body.touching.down) {
                 isJumping = true;
-                player.setVelocityY(-330);
+                player.setVelocityY(-330); // Jump force
             }
 
-            // Fix for players that fall and land, ensuring they can jump again
+            // Ensuring the player can jump again when touching the ground
             if (player.body.touching.down && !isJumping) {
                 isJumping = false; // Reset jump state once the player is grounded
             }
