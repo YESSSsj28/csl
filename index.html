@@ -56,10 +56,17 @@
             player.setBounce(0.2); // Add bounce effect to player when it lands
 
             // Enable the player to collide with the ground
-            this.physics.add.collider(player, ground);
+            this.physics.add.collider(player, ground, onLand);
 
             // Set up keyboard controls
             cursors = this.input.keyboard.createCursorKeys();
+        }
+
+        // This function will reset the jump flag when the player lands
+        function onLand() {
+            if (player.body.touching.down) {
+                isJumping = false;  // Reset jump flag when player lands
+            }
         }
 
         function update() {
@@ -77,11 +84,6 @@
             if (cursors.up.isDown && !isJumping && player.body.touching.down) {
                 isJumping = true;
                 player.setVelocityY(-330); // Jump force
-            }
-
-            // Ensure the player can jump again after landing
-            if (player.body.touching.down) {
-                isJumping = false; // Reset jump state once the player is grounded
             }
         }
     </script>
