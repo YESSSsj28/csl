@@ -3,203 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Lobby with Multiple Game Modes</title>
+    <title>Test Game with Phaser</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #000;
             font-family: Arial, sans-serif;
+            background-color: #000;
             color: #fff;
-            background: url('/mnt/data/64c2f18a-4588-446f-9d25-cd689fa65f60.webp') center center / cover no-repeat;
-            background-size: cover;
             height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
         }
-        #ui {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-            flex-direction: column;
-        }
-        .button {
-            margin: 10px;
-            padding: 10px 20px;
-            background: #0f9;
-            color: #000;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .button:hover {
-            background: #0c6;
-        }
     </style>
 </head>
 <body>
-    <div id="ui">
-        <div id="auth">
-            <h1>Welcome</h1>
-            <button id="loginButton" class="button">Login</button>
-            <button id="signupButton" class="button">Sign Up</button>
-        </div>
-
-        <div id="signup" style="display: none;">
-            <h2>Sign Up</h2>
-            <input id="newUsername" type="text" placeholder="Username">
-            <input id="newPassword" type="password" placeholder="Password">
-            <button id="createAccountButton" class="button">Create Account</button>
-        </div>
-
-        <div id="login" style="display: none;">
-            <h2>Login</h2>
-            <input id="loginUsername" type="text" placeholder="Username">
-            <input id="loginPassword" type="password" placeholder="Password">
-            <button id="loginSubmitButton" class="button">Login</button>
-        </div>
-
-        <div id="lobby" style="display: none;">
-            <button id="queueButton" class="button">Queue in Battle Royale</button>
-            <button id="infectedButton" class="button">Play Infected</button>
-            <button id="ctfButton" class="button">Play Capture the Flag</button>
-            <button id="addFriendButton" class="button">Add Friend</button>
-            <input id="friendUsername" type="text" placeholder="Friend's Username">
-            <div id="party" style="margin-top: 20px;"></div>
-        </div>
-    </div>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.2/phaser.min.js"></script>
     <script>
-        const users = {}; // Store users in memory
-        let currentUser = null;
+        // Test Phaser Game Config
+        const config = {
+            type: Phaser.AUTO,
+            width: 1200,
+            height: 700,
+            physics: {
+                default: 'arcade',
+                arcade: { gravity: { y: 500 }, debug: false }
+            },
+            scene: { preload, create, update }
+        };
 
-        // UI Elements
-        const authDiv = document.getElementById('auth');
-        const signupDiv = document.getElementById('signup');
-        const loginDiv = document.getElementById('login');
-        const lobbyDiv = document.getElementById('lobby');
+        // Initialize Phaser Game
+        const game = new Phaser.Game(config);
 
-        const loginButton = document.getElementById('loginButton');
-        const signupButton = document.getElementById('signupButton');
-        const createAccountButton = document.getElementById('createAccountButton');
-        const loginSubmitButton = document.getElementById('loginSubmitButton');
-        const queueButton = document.getElementById('queueButton');
+        let player;
 
-        const addFriendButton = document.getElementById('addFriendButton');
-        const friendUsernameInput = document.getElementById('friendUsername');
-        const partyDiv = document.getElementById('party');
+        // Preload assets
+        function preload() {
+            this.load.image('player', 'https://phaser.io/images/skills/phaser-logo.png'); // Placeholder asset
+        }
 
-        let gameStarted = false;
+        // Create game objects
+        function create() {
+            player = this.physics.add.image(600, 350, 'player');
+            player.setCollideWorldBounds(true);
+        }
 
-        // Authentication Handlers
-        signupButton.addEventListener('click', () => {
-            authDiv.style.display = 'none';
-            signupDiv.style.display = 'block';
-        });
-
-        loginButton.addEventListener('click', () => {
-            authDiv.style.display = 'none';
-            loginDiv.style.display = 'block';
-        });
-
-        createAccountButton.addEventListener('click', () => {
-            const username = document.getElementById('newUsername').value;
-            const password = document.getElementById('newPassword').value;
-
-            if (username && password) {
-                if (!users[username]) {
-                    users[username] = password;
-                    alert('Account created successfully!');
-                    signupDiv.style.display = 'none';
-                    authDiv.style.display = 'block';
-                } else {
-                    alert('Username already exists!');
-                }
-            } else {
-                alert('Please fill in all fields!');
-            }
-        });
-
-        loginSubmitButton.addEventListener('click', () => {
-            const username = document.getElementById('loginUsername').value;
-            const password = document.getElementById('loginPassword').value;
-
-            if (users[username] && users[username] === password) {
-                currentUser = username;
-                alert(`Welcome, ${username}!`);
-                loginDiv.style.display = 'none';
-                lobbyDiv.style.display = 'block';
-            } else {
-                alert('Invalid username or password!');
-            }
-        });
-
-        // Lobby Handlers
-        queueButton.addEventListener('click', () => {
-            lobbyDiv.style.display = 'none';
-            startBattleRoyale();
-        });
-
-        function startBattleRoyale() {
-            if (gameStarted) return;
-            gameStarted = true;
-
-            const config = {
-                type: Phaser.AUTO,
-                width: 1200,
-                height: 700,
-                physics: {
-                    default: 'arcade',
-                    arcade: { gravity: { y: 500 }, debug: false }
-                },
-                scene: { preload, create, update }
-            };
-
-            let player, hotdog, map;
-            let canJump = false;
-
-            // Creating Phaser game instance
-            const game = new Phaser.Game(config);
-
-            function preload() {
-                // Load image and sprites
-                this.load.image('map', '/mnt/data/64c2f18a-4588-446f-9d25-cd689fa65f60.webp');
-                this.load.image('hotdog', 'assets/hotdog.png');
-                this.load.spritesheet('player', 'assets/character.png', { frameWidth: 32, frameHeight: 48 });
-            }
-
-            function create() {
-                // Ensure the map is correctly added to the scene
-                map = this.add.image(600, 350, 'map').setScale(1.5);
-                
-                hotdog = this.physics.add.sprite(600, 100, 'hotdog').setScale(0.5).setImmovable(true);
-                hotdog.body.allowGravity = false;
-
-                player = this.physics.add.sprite(600, 200, 'player').setScale(1.5);
-                player.setCollideWorldBounds(true);
-
-                // After 3 seconds, allow jumping
-                this.time.delayedCall(3000, () => {
-                    canJump = true;
-                });
-            }
-
-            function update() {
-                if (canJump) {
-                    player.setVelocityY(-300); // Make player jump
-                    hotdog.setAlpha(0); // Fade out hotdog sprite
-                    canJump = false;
-                }
-            }
+        // Update function to control movement
+        function update() {
+            // Just make the player move across the screen for testing
+            player.setVelocityX(100);
         }
     </script>
 </body>
 </html>
+
