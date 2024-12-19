@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Lobby with Map and Battle Bus</title>
+    <title>Game Lobby with Multiple Game Modes</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.2/phaser.min.js"></script>
     <style>
         body {
             margin: 0;
             overflow: hidden;
+            background-color: #000;
             font-family: Arial, sans-serif;
             color: #fff;
         }
@@ -21,8 +22,9 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            flex-direction: column;
+            background: rgba(0, 0, 0, 0.8);
             z-index: 10;
+            flex-direction: column;
         }
         #ui::before {
             content: "";
@@ -33,7 +35,6 @@
             height: 100%;
             background: url('/mnt/data/64c2f18a-4588-446f-9d25-cd689fa65f60.webp') center center / cover no-repeat;
             z-index: -1;
-            opacity: 0.7;
         }
         #lobby {
             display: none;
@@ -171,25 +172,23 @@
                 height: 700,
                 physics: {
                     default: 'arcade',
-                    arcade: { gravity: { y: 0 }, debug: false }
+                    arcade: { gravity: { y: 500 }, debug: false }
                 },
                 scene: { preload, create, update }
             };
 
-            let player, hotdog, canJump = false;
-
+            let player, hotdog, map;
+            let canJump = false;
             const game = new Phaser.Game(config);
 
             function preload() {
                 this.load.image('map', '/mnt/data/64c2f18a-4588-446f-9d25-cd689fa65f60.webp');
                 this.load.image('hotdog', 'assets/hotdog.png');
-                this.load.image('chest', 'assets/chest.png');
-                this.load.image('house', 'assets/house.png');
                 this.load.spritesheet('player', 'assets/character.png', { frameWidth: 32, frameHeight: 48 });
             }
 
             function create() {
-                this.add.image(600, 350, 'map').setScale(1.5);
+                map = this.add.image(600, 350, 'map').setScale(1.5);
 
                 hotdog = this.physics.add.sprite(600, 100, 'hotdog').setScale(0.5).setImmovable(true);
                 hotdog.body.allowGravity = false;
