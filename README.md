@@ -1,24 +1,4 @@
-from flask import Flask, request, jsonify, render_template_string
-import time
 
-app = Flask(__name__)
-
-# HTML, CSS, and JavaScript combined in one script
-html_template = '''
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Proxy</title>
-    <style>
-        body {
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: black;
             color: white;
             font-family: Arial, sans-serif;
         }
