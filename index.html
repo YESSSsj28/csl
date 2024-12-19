@@ -3,18 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Map with Player</title>
+    <title>Times Square Game</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            font-family: Arial, sans-serif;
-            background-color: #111; /* Dark background */
-            color: #fff;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            background-color: #000;
         }
     </style>
 </head>
@@ -38,18 +32,25 @@
         let cursors;
 
         function preload() {
-            // Load assets
-            this.load.image('map', 'https://via.placeholder.com/1200x700/87CEEB/000000?text=Map'); // Background map
-            this.load.image('player', 'https://phaser.io/images/skills/phaser-logo.png'); // Placeholder player image
+            // Load Times Square background and character sprite
+            this.load.image('timesSquare', 'https://via.placeholder.com/1200x700/333333/FFFFFF?text=Times+Square'); // Placeholder
+            this.load.image('player', 'https://phaser.io/images/skills/phaser-logo.png'); // Placeholder player sprite
         }
 
         function create() {
-            // Create the map as a background
-            this.add.image(600, 350, 'map').setScale(1);
+            // Add the Times Square background
+            this.add.image(600, 350, 'timesSquare').setScale(1);
 
-            // Create player sprite
-            player = this.physics.add.image(600, 500, 'player');
-            player.setCollideWorldBounds(true); // Prevent player from leaving the screen
+            // Add player sprite
+            player = this.physics.add.sprite(600, 500, 'player');
+            player.setCollideWorldBounds(true); // Prevent player from leaving the game area
+
+            // Add ground as a platform for the player to land on
+            const ground = this.physics.add.staticGroup();
+            ground.create(600, 680, 'timesSquare').setScale(1).refreshBody(); // Placeholder for ground using background
+
+            // Enable collision between the player and ground
+            this.physics.add.collider(player, ground);
 
             // Set up keyboard controls
             cursors = this.input.keyboard.createCursorKeys();
@@ -66,7 +67,7 @@
                 player.setVelocityX(160);
             }
 
-            // Jumping: Allow jump if player is on the ground
+            // Jumping: Allow jump only if the player is touching the ground
             if (cursors.up.isDown && player.body.touching.down) {
                 player.setVelocityY(-330); // Jump force
             }
