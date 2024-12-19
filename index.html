@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Lobby with Multiple Game Modes</title>
+    <title>Game Lobby with Map and Battle Bus</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.2/phaser.min.js"></script>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #000;
             font-family: Arial, sans-serif;
             color: #fff;
         }
@@ -22,9 +21,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 10;
             flex-direction: column;
+            z-index: 10;
         }
         #ui::before {
             content: "";
@@ -35,7 +33,7 @@
             height: 100%;
             background: url('/mnt/data/64c2f18a-4588-446f-9d25-cd689fa65f60.webp') center center / cover no-repeat;
             z-index: -1;
-            opacity: 0.5;
+            opacity: 0.7;
         }
         #lobby {
             display: none;
@@ -113,7 +111,6 @@
         const partyDiv = document.getElementById('party');
 
         let gameStarted = false;
-        let bots = [];
 
         // Authentication Handlers
         signupButton.addEventListener('click', () => {
@@ -174,7 +171,7 @@
                 height: 700,
                 physics: {
                     default: 'arcade',
-                    arcade: { gravity: { y: 500 }, debug: false }
+                    arcade: { gravity: { y: 0 }, debug: false }
                 },
                 scene: { preload, create, update }
             };
@@ -199,12 +196,6 @@
 
                 player = this.physics.add.sprite(600, 200, 'player').setScale(1.5);
                 player.setCollideWorldBounds(true);
-
-                for (let i = 0; i < 15; i++) {
-                    const bot = this.physics.add.sprite(600 + i * 50, 200, 'player').setScale(1.5);
-                    bot.setCollideWorldBounds(true);
-                    bots.push(bot);
-                }
 
                 this.time.delayedCall(3000, () => {
                     canJump = true;
