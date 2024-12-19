@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Game with Phaser</title>
+    <title>Phaser Jump Test</title>
     <style>
         body {
             margin: 0;
@@ -37,7 +37,7 @@
         let player;
         let cursors;
         let ground;
-        let isJumping = false;  // Flag to track if the player is jumping or not
+        let isJumping = false;  // Flag to track if the player is jumping
 
         function preload() {
             // Load assets
@@ -56,17 +56,10 @@
             player.setBounce(0.2); // Add bounce effect to player when it lands
 
             // Enable the player to collide with the ground
-            this.physics.add.collider(player, ground, onLand);
+            this.physics.add.collider(player, ground);
 
             // Set up keyboard controls
             cursors = this.input.keyboard.createCursorKeys();
-        }
-
-        function onLand() {
-            // When the player collides with the ground, reset the jump flag
-            if (player.body.touching.down) {
-                isJumping = false;  // Reset jump flag when player is on the ground
-            }
         }
 
         function update() {
@@ -86,8 +79,8 @@
                 player.setVelocityY(-330); // Jump force
             }
 
-            // Ensuring the player can jump again when touching the ground
-            if (player.body.touching.down && !isJumping) {
+            // Ensure the player can jump again after landing
+            if (player.body.touching.down) {
                 isJumping = false; // Reset jump state once the player is grounded
             }
         }
