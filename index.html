@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phaser Jump Test</title>
+    <title>Game Map with Player</title>
     <style>
         body {
             margin: 0;
@@ -36,37 +36,23 @@
 
         let player;
         let cursors;
-        let ground;
-        let isJumping = false;  // Flag to track if the player is jumping
 
         function preload() {
             // Load assets
+            this.load.image('map', 'https://via.placeholder.com/1200x700/87CEEB/000000?text=Map'); // Background map
             this.load.image('player', 'https://phaser.io/images/skills/phaser-logo.png'); // Placeholder player image
-            this.load.image('ground', 'https://via.placeholder.com/1200x100/555555/000000?text=Ground'); // Simple ground image
         }
 
         function create() {
-            // Create ground (simple placeholder)
-            ground = this.physics.add.staticImage(600, 600, 'ground');
-            ground.setScale(1).refreshBody();
+            // Create the map as a background
+            this.add.image(600, 350, 'map').setScale(1);
 
             // Create player sprite
             player = this.physics.add.image(600, 500, 'player');
             player.setCollideWorldBounds(true); // Prevent player from leaving the screen
-            player.setBounce(0.2); // Add bounce effect to player when it lands
-
-            // Enable the player to collide with the ground
-            this.physics.add.collider(player, ground, onLand);
 
             // Set up keyboard controls
             cursors = this.input.keyboard.createCursorKeys();
-        }
-
-        // This function will reset the jump flag when the player lands
-        function onLand() {
-            if (player.body.touching.down) {
-                isJumping = false;  // Reset jump flag when player lands
-            }
         }
 
         function update() {
@@ -80,9 +66,8 @@
                 player.setVelocityX(160);
             }
 
-            // Jumping: Allow jump if not already jumping and player is on the ground
-            if (cursors.up.isDown && !isJumping && player.body.touching.down) {
-                isJumping = true;
+            // Jumping: Allow jump if player is on the ground
+            if (cursors.up.isDown && player.body.touching.down) {
                 player.setVelocityY(-330); // Jump force
             }
         }
