@@ -21,7 +21,6 @@
 <body>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.2/phaser.min.js"></script>
     <script>
-        // Test Phaser Game Config
         const config = {
             type: Phaser.AUTO,
             width: 1200,
@@ -33,30 +32,50 @@
             scene: { preload, create, update }
         };
 
-        // Initialize Phaser Game
         const game = new Phaser.Game(config);
 
         let player;
+        let cursors;
+        let ground;
 
-        // Preload assets
         function preload() {
-            // Test image (phaser logo)
-            this.load.image('player', 'https://phaser.io/images/skills/phaser-logo.png'); // Placeholder asset
-
-            // Background color test (this sets the background color of the entire scene)
-            this.cameras.main.setBackgroundColor(0x333333); // Dark gray background
+            // Load assets
+            this.load.image('player', 'https://phaser.io/images/skills/phaser-logo.png'); // Placeholder player image
+            this.load.image('ground', 'https://via.placeholder.com/1200x100/555555/000000?text=Ground'); // Simple ground image
         }
 
-        // Create game objects
         function create() {
-            // Add a static player sprite at the center
-            player = this.physics.add.image(600, 350, 'player');
-            player.setCollideWorldBounds(true);
+            // Create ground (simple placeholder)
+            ground = this.physics.add.staticImage(600, 600, 'ground');
+            ground.setScale(1).refreshBody();
+
+            // Create player sprite
+            player = this.physics.add.image(600, 500, 'player');
+            player.setCollideWorldBounds(true); // Prevent player from leaving the screen
+            player.setBounce(0.2); // Add bounce effect to player when it lands
+
+            // Enable the player to collide with the ground
+            this.physics.add.collider(player, ground);
+
+            // Set up keyboard controls
+            cursors = this.input.keyboard.createCursorKeys();
         }
 
-        // Update function (no movement for now)
         function update() {
-            // No movement, just checking if the player is being rendered
+            // Reset horizontal velocity
+            player.setVelocityX(0);
+
+            // Move left or right
+            if (cursors.left.isDown) {
+                player.setVelocityX(-160);
+            } else if (cursors.right.isDown) {
+                player.setVelocityX(160);
+            }
+
+            // Jump (only if player is on the ground)
+            if (cursors.up.isDown && player.body.touching.down) {
+                player.setVelocityY(-330);
+            }
         }
     </script>
 </body>
