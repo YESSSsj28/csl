@@ -11,7 +11,6 @@
             background-color: #000;
             font-family: Arial, sans-serif;
             color: #fff;
-            /* Directly apply the background image to the body */
             background: url('/mnt/data/64c2f18a-4588-446f-9d25-cd689fa65f60.webp') center center / cover no-repeat;
             background-size: cover;
             height: 100vh;
@@ -77,6 +76,7 @@
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.2/phaser.min.js"></script>
     <script>
         const users = {}; // Store users in memory
         let currentUser = null;
@@ -148,7 +148,6 @@
             startBattleRoyale();
         });
 
-        // Test Phaser setup
         function startBattleRoyale() {
             if (gameStarted) return;
             gameStarted = true;
@@ -166,24 +165,28 @@
 
             let player, hotdog, map;
             let canJump = false;
+
+            // Creating Phaser game instance
             const game = new Phaser.Game(config);
 
             function preload() {
-                // Ensure correct paths to assets, change '/mnt/data/' if needed
+                // Load image and sprites
                 this.load.image('map', '/mnt/data/64c2f18a-4588-446f-9d25-cd689fa65f60.webp');
                 this.load.image('hotdog', 'assets/hotdog.png');
                 this.load.spritesheet('player', 'assets/character.png', { frameWidth: 32, frameHeight: 48 });
             }
 
             function create() {
+                // Ensure the map is correctly added to the scene
                 map = this.add.image(600, 350, 'map').setScale(1.5);
-
+                
                 hotdog = this.physics.add.sprite(600, 100, 'hotdog').setScale(0.5).setImmovable(true);
                 hotdog.body.allowGravity = false;
 
                 player = this.physics.add.sprite(600, 200, 'player').setScale(1.5);
                 player.setCollideWorldBounds(true);
 
+                // After 3 seconds, allow jumping
                 this.time.delayedCall(3000, () => {
                     canJump = true;
                 });
@@ -191,8 +194,8 @@
 
             function update() {
                 if (canJump) {
-                    player.setVelocityY(-300);
-                    hotdog.setAlpha(0);
+                    player.setVelocityY(-300); // Make player jump
+                    hotdog.setAlpha(0); // Fade out hotdog sprite
                     canJump = false;
                 }
             }
