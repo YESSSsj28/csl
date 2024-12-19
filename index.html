@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Battle Royale Game</title>
+    <title>Game Lobby with Multiple Game Modes</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.2/phaser.min.js"></script>
     <style>
         body {
@@ -84,6 +84,11 @@
 
         <div id="lobby">
             <button id="queueButton" class="button">Queue in Battle Royale</button>
+            <button id="infectedButton" class="button">Play Infected</button>
+            <button id="ctfButton" class="button">Play Capture the Flag</button>
+            <button id="addFriendButton" class="button">Add Friend</button>
+            <input id="friendUsername" type="text" placeholder="Friend's Username">
+            <div id="party" style="margin-top: 20px;"></div>
         </div>
     </div>
 
@@ -102,6 +107,10 @@
         const createAccountButton = document.getElementById('createAccountButton');
         const loginSubmitButton = document.getElementById('loginSubmitButton');
         const queueButton = document.getElementById('queueButton');
+
+        const addFriendButton = document.getElementById('addFriendButton');
+        const friendUsernameInput = document.getElementById('friendUsername');
+        const partyDiv = document.getElementById('party');
 
         let gameStarted = false;
         let bots = [];
@@ -165,7 +174,7 @@
                 height: 700,
                 physics: {
                     default: 'arcade',
-                    arcade: { gravity: { y: 0 }, debug: false }
+                    arcade: { gravity: { y: 500 }, debug: false }
                 },
                 scene: { preload, create, update }
             };
