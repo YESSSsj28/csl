@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Game Lobby with Multiple Game Modes</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.2/phaser.min.js"></script>
     <style>
         body {
             margin: 0;
@@ -32,9 +31,6 @@
             z-index: 10;
             flex-direction: column;
         }
-        #lobby {
-            display: none;
-        }
         .button {
             margin: 10px;
             padding: 10px 20px;
@@ -46,12 +42,6 @@
         }
         .button:hover {
             background: #0c6;
-        }
-        input {
-            margin: 5px;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
         }
     </style>
 </head>
@@ -77,7 +67,7 @@
             <button id="loginSubmitButton" class="button">Login</button>
         </div>
 
-        <div id="lobby">
+        <div id="lobby" style="display: none;">
             <button id="queueButton" class="button">Queue in Battle Royale</button>
             <button id="infectedButton" class="button">Play Infected</button>
             <button id="ctfButton" class="button">Play Capture the Flag</button>
@@ -158,6 +148,7 @@
             startBattleRoyale();
         });
 
+        // Test Phaser setup
         function startBattleRoyale() {
             if (gameStarted) return;
             gameStarted = true;
@@ -178,6 +169,7 @@
             const game = new Phaser.Game(config);
 
             function preload() {
+                // Ensure correct paths to assets, change '/mnt/data/' if needed
                 this.load.image('map', '/mnt/data/64c2f18a-4588-446f-9d25-cd689fa65f60.webp');
                 this.load.image('hotdog', 'assets/hotdog.png');
                 this.load.spritesheet('player', 'assets/character.png', { frameWidth: 32, frameHeight: 48 });
