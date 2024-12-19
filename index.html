@@ -9,7 +9,7 @@
             margin: 0;
             overflow: hidden;
             font-family: Arial, sans-serif;
-            background-color: #000;
+            background-color: #111; /* Dark background to check visibility */
             color: #fff;
             height: 100vh;
             display: flex;
@@ -40,21 +40,24 @@
 
         // Preload assets
         function preload() {
+            // Test image (phaser logo)
             this.load.image('player', 'https://phaser.io/images/skills/phaser-logo.png'); // Placeholder asset
+
+            // Background color test (this sets the background color of the entire scene)
+            this.cameras.main.setBackgroundColor(0x333333); // Dark gray background
         }
 
         // Create game objects
         function create() {
+            // Add a static player sprite at the center
             player = this.physics.add.image(600, 350, 'player');
             player.setCollideWorldBounds(true);
         }
 
-        // Update function to control movement
+        // Update function (no movement for now)
         function update() {
-            // Just make the player move across the screen for testing
-            player.setVelocityX(100);
+            // No movement, just checking if the player is being rendered
         }
     </script>
 </body>
 </html>
-
