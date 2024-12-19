@@ -72,9 +72,14 @@
                 player.setVelocityX(160);
             }
 
-            // Jumping (only if player is on the ground)
+            // Jumping: Allow jump if touching ground or a platform
             if (cursors.up.isDown && player.body.touching.down) {
                 player.setVelocityY(-330);
+            }
+
+            // If falling and not touching the ground, allow jumping when the player falls on another surface
+            if (player.body.velocity.y > 0 && !player.body.touching.down) {
+                player.setVelocityY(player.body.velocity.y); // Continue falling, but allow jump if next to platforms
             }
         }
     </script>
