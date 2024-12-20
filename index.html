@@ -3,104 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D Game Engine</title>
+    <title>3D Map with POIs</title>
     <style>
-        body { margin: 0; overflow: hidden; }
-        canvas { display: block; background: #87CEEB; /* Sky Blue Background */ }
+        body { margin: 0; }
+        canvas { display: block; }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas"></canvas>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        // Initialize canvas and context
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
 
-        // Resize canvas to full window size
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        // Create the ground (terrain)
+        const groundGeometry = new THREE.PlaneGeometry(1000, 1000, 32, 32);
+        const groundMaterial = new THREE.MeshBasicMaterial({ color: 0x228B22, side: THREE.DoubleSide });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = - Math.PI / 2; // Rotate the ground to lie flat
+        scene.add(ground);
 
-        // Player object
-        const player = {
-            x: 100,  // Starting X position
-            y: 100,  // Starting Y position
-            width: 50,
-            height: 50,
-            speed: 5,
-            color: "green",
-            dx: 0, // Change in x (player movement)
-            dy: 0  // Change in y (player movement)
-        };
-
-        // Map object (for visualizing a large world area)
-        const map = {
-            width: 2000,  // Map width
-            height: 2000, // Map height
-            color: "#228B22", // Ground color (forest green for the ground)
-            x: 0,
-            y: 0
-        };
-
-        // Keyboard input tracking
-        const keys = {};
-
-        // Game loop function
-        function gameLoop() {
-            clearCanvas();
-            update();
-            draw();
-            requestAnimationFrame(gameLoop);
+        // Create some POIs (Points of Interest)
+        function createPOI(x, z, color) {
+            const poiGeometry = new THREE.CylinderGeometry(10, 10, 20, 32);
+            const poiMaterial = new THREE.MeshBasicMaterial({ color: color });
+            const poi = new THREE.Mesh(poiGeometry, poiMaterial);
+            poi.position.set(x, 10, z);
+            scene.add(poi);
         }
 
-        // Update the game state
-        function update() {
-            // Handle player movement with arrow keys or WASD
-            if (keys["ArrowUp"] || keys["w"]) player.dy = -player.speed;
-            else if (keys["ArrowDown"] || keys["s"]) player.dy = player.speed;
-            else player.dy = 0;
+        // Add multiple POIs
+        createPOI(100, 100, 0xFF0000); // Red POI
+        createPOI(-200, 300, 0x0000FF); // Blue POI
+        createPOI(500, -500, 0xFFFF00); // Yellow POI
 
-            if (keys["ArrowLeft"] || keys["a"]) player.dx = -player.speed;
-            else if (keys["ArrowRight"] || keys["d"]) player.dx = player.speed;
-            else player.dx = 0;
+        // Camera position
+        camera.position.z = 500;
 
-            // Move the player
-            player.x += player.dx;
-            player.y += player.dy;
-
-            // Prevent the player from moving out of bounds
-            if (player.x < 0) player.x = 0;
-            if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
-            if (player.y < 0) player.y = 0;
-            if (player.y + player.height > canvas.height) player.y = canvas.height - player.height;
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
         }
 
-        // Draw the game world
-        function draw() {
-            // Draw map (ground area)
-            ctx.fillStyle = map.color;
-            ctx.fillRect(map.x, map.y, map.width, map.height);
-
-            // Draw player
-            ctx.fillStyle = player.color;
-            ctx.fillRect(player.x, player.y, player.width, player.height);
-        }
-
-        // Clear the canvas before each new frame
-        function clearCanvas() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }
-
-        // Keydown and keyup event listeners
-        window.addEventListener("keydown", (e) => {
-            keys[e.key] = true;
-        });
-
-        window.addEventListener("keyup", (e) => {
-            keys[e.key] = false;
-        });
-
-        // Start the game loop
-        gameLoop();
+        animate();
     </script>
 </body>
 </html>
