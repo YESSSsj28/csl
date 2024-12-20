@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D Map with Player Controls</title>
+    <title>2D Game Map</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.2/phaser.min.js"></script>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #87ceeb; /* Sky-blue background */
         }
     </style>
 </head>
@@ -22,7 +21,7 @@
             physics: {
                 default: 'arcade',
                 arcade: {
-                    gravity: { y: 500 }, // Gravity for jumping
+                    gravity: { y: 300 }, // Gravity for player movement
                     debug: false
                 }
             },
@@ -34,14 +33,15 @@
         };
 
         let player;
-        let cursors;
         let platforms;
+        let cursors;
 
         const game = new Phaser.Game(config);
 
         function preload() {
-            this.load.image('ground', 'https://i.imgur.com/8lmCm1K.png'); // Ground texture
-            this.load.image('sky', 'https://i.imgur.com/fS5E2jS.png'); // Background image
+            // Load background, platform, and player assets
+            this.load.image('background', 'https://i.imgur.com/JbKwM.jpg'); // Background image
+            this.load.image('ground', 'https://i.imgur.com/Tn90PvU.png'); // Platform image
             this.load.spritesheet('player', 'https://i.imgur.com/5NUlPvT.png', {
                 frameWidth: 32,
                 frameHeight: 48
@@ -49,19 +49,24 @@
         }
 
         function create() {
-            // Add background
-            this.add.image(400, 300, 'sky').setScale(2);
+            // Add a background
+            this.add.image(400, 300, 'background').setScale(2);
 
-            // Add platforms
+            // Create platforms
             platforms = this.physics.add.staticGroup();
-            platforms.create(400, 580, 'ground').setScale(2).refreshBody(); // Ground platform
-            platforms.create(600, 400, 'ground'); // Floating platform
-            platforms.create(200, 300, 'ground'); // Floating platform
+
+            // Ground platform
+            platforms.create(400, 568, 'ground').setScale(2).refreshBody();
+
+            // Floating platforms
+            platforms.create(600, 400, 'ground');
+            platforms.create(50, 250, 'ground');
+            platforms.create(750, 220, 'ground');
 
             // Add player
-            player = this.physics.add.sprite(100, 450, 'player').setScale(1.5);
-            player.setBounce(0.2); // Slight bounce
-            player.setCollideWorldBounds(true); // Keep player in bounds
+            player = this.physics.add.sprite(100, 450, 'player');
+            player.setBounce(0.2);
+            player.setCollideWorldBounds(true);
 
             // Player animations
             this.anims.create({
@@ -84,15 +89,15 @@
                 repeat: -1
             });
 
-            // Add collision between player and platforms
+            // Collision between player and platforms
             this.physics.add.collider(player, platforms);
 
-            // Setup cursor keys for movement
+            // Add keyboard controls
             cursors = this.input.keyboard.createCursorKeys();
         }
 
         function update() {
-            // Player movement controls
+            // Movement logic
             if (cursors.left.isDown) {
                 player.setVelocityX(-160);
                 player.anims.play('left', true);
@@ -104,7 +109,7 @@
                 player.anims.play('turn');
             }
 
-            // Player jumping
+            // Jump logic
             if (cursors.up.isDown && player.body.touching.down) {
                 player.setVelocityY(-330);
             }
