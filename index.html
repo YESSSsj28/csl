@@ -22,8 +22,8 @@
 
         // Player object
         const player = {
-            x: canvas.width / 2,
-            y: canvas.height - 100,
+            x: 100,  // Starting X position
+            y: 100,  // Starting Y position
             width: 50,
             height: 50,
             speed: 5,
@@ -32,11 +32,11 @@
             dy: 0  // Change in y (player movement)
         };
 
-        // Map object
+        // Map object (for visualizing a large world area)
         const map = {
-            width: 5000,
-            height: 5000,
-            color: "lightgreen",
+            width: 2000,  // Map width
+            height: 2000, // Map height
+            color: "#8B4513", // Ground color (brown for dirt)
             x: 0,
             y: 0
         };
@@ -76,7 +76,7 @@
 
         // Draw the game world
         function draw() {
-            // Draw map (background)
+            // Draw map (ground area)
             ctx.fillStyle = map.color;
             ctx.fillRect(map.x, map.y, map.width, map.height);
 
