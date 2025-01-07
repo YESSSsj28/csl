@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Map with Trees and Water</title>
+    <title>3D Map with Improved Features</title>
     <style>
         body { margin: 0; overflow: hidden; }
         canvas { display: block; }
@@ -29,70 +29,86 @@
         scene.add(player);
 
         // Terrain
-        const terrainSize = 50; // Size of terrain
-        const terrainGeometry = new THREE.PlaneGeometry(terrainSize, terrainSize, 50, 50);
-        const terrainMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
+        const terrainSize = 100; // Larger terrain size
+        const terrainGeometry = new THREE.PlaneGeometry(terrainSize, terrainSize, 100, 100);
+        const terrainMaterial = new THREE.MeshStandardMaterial({ color: 0x3cb371 });
         const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
         terrain.rotation.x = -Math.PI / 2; // Flatten the terrain
         terrain.receiveShadow = true; // Terrain receives shadows
         scene.add(terrain);
 
-        // Generate hills and valleys
+        // Generate smooth hills and valleys
         const vertices = terrainGeometry.attributes.position.array;
         for (let i = 0; i < vertices.length; i += 3) {
-            vertices[i + 2] = Math.sin(vertices[i] * 0.2) * Math.cos(vertices[i + 1] * 0.2) * 3;
+            vertices[i + 2] = Math.sin(vertices[i] * 0.1) * Math.cos(vertices[i + 1] * 0.1) * 5;
         }
         terrainGeometry.attributes.position.needsUpdate = true;
         terrainGeometry.computeVertexNormals();
 
+        // Add collision detection for hills
+        const terrainHeightAt = (x, z) => {
+            const row = Math.floor((x + terrainSize / 2) / (terrainSize / 100));
+            const col = Math.floor((z + terrainSize / 2) / (terrainSize / 100));
+            const index = (row + col * 101) * 3 + 2;
+            return vertices[index] || 0;
+        };
+
+        // Houses
+        const houseGeometry = new THREE.BoxGeometry(5, 5, 5);
+        const roofGeometry = new THREE.ConeGeometry(3.5, 2, 4);
+        const houseMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+        const roofMaterial = new THREE.MeshStandardMaterial({ color: 0xA52A2A });
+
+        for (let i = -terrainSize / 2; i < terrainSize / 2; i += 15) {
+            for (let j = -terrainSize / 2; j < terrainSize / 2; j += 15) {
+                if (Math.random() > 0.5) {
+                    const house = new THREE.Mesh(houseGeometry, houseMaterial);
+                    house.castShadow = true;
+                    house.receiveShadow = true;
+                    house.position.set(i, terrainHeightAt(i, j) + 2.5, j);
+
+                    const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+                    roof.castShadow = true;
+                    roof.position.set(i, terrainHeightAt(i, j) + 6, j);
+
+                    scene.add(house, roof);
+                }
+            }
+        }
+
         // Trees
-        const treeGeometry = new THREE.CylinderGeometry(0.3, 0.3, 2);
-        const leavesGeometry = new THREE.ConeGeometry(1, 2, 8);
+        const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.5, 3);
+        const leavesGeometry = new THREE.SphereGeometry(2);
         const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
         const leavesMaterial = new THREE.MeshStandardMaterial({ color: 0x006400 });
 
-        for (let i = -terrainSize / 2; i < terrainSize / 2; i += 5) {
-            for (let j = -terrainSize / 2; j < terrainSize / 2; j += 5) {
-                if (Math.random() > 0.7) {
-                    const trunk = new THREE.Mesh(treeGeometry, trunkMaterial);
+        for (let i = -terrainSize / 2; i < terrainSize / 2; i += 10) {
+            for (let j = -terrainSize / 2; j < terrainSize / 2; j += 10) {
+                if (Math.random() > 0.6) {
+                    const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+                    trunk.position.set(i, terrainHeightAt(i, j) + 1.5, j);
                     trunk.castShadow = true;
-                    trunk.receiveShadow = true;
-                    trunk.position.set(i + Math.random() * 2, 1, j + Math.random() * 2);
 
                     const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
+                    leaves.position.set(i, terrainHeightAt(i, j) + 4.5, j);
                     leaves.castShadow = true;
-                    leaves.position.set(trunk.position.x, trunk.position.y + 1.5, trunk.position.z);
 
                     scene.add(trunk, leaves);
                 }
             }
         }
 
-        // Water (Simple Plane with Blue Texture)
-        const waterGeometry = new THREE.PlaneGeometry(20, 20);
-        const waterMaterial = new THREE.MeshStandardMaterial({ color: 0x1E90FF, transparent: true, opacity: 0.8 });
+        // Water
+        const waterGeometry = new THREE.PlaneGeometry(30, 30);
+        const waterMaterial = new THREE.MeshStandardMaterial({ color: 0x1E90FF, transparent: true, opacity: 0.9 });
         const water = new THREE.Mesh(waterGeometry, waterMaterial);
         water.rotation.x = -Math.PI / 2;
-        water.position.set(0, 0.1, 20); // Adjust the position
+        water.position.set(0, 0.2, 20); // Adjust the position
         water.receiveShadow = true;
         scene.add(water);
 
-        // Houses
-        const houseGeometry = new THREE.BoxGeometry(3, 3, 3);
-        const houseMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
-        for (let i = -terrainSize / 2; i < terrainSize / 2; i += 8) {
-            for (let j = -terrainSize / 2; j < terrainSize / 2; j += 8) {
-                if (Math.random() > 0.5) {
-                    const house = new THREE.Mesh(houseGeometry, houseMaterial);
-                    house.castShadow = true;
-                    house.position.set(i + Math.random() * 3, 1.5, j + Math.random() * 3);
-                    scene.add(house);
-                }
-            }
-        }
-
         // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
         scene.add(ambientLight);
 
         const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
@@ -103,7 +119,7 @@
         scene.add(directionalLight);
 
         // Camera Position
-        camera.position.set(0, 5, 10);
+        camera.position.set(0, 10, 30);
 
         // Player Movement and Controls
         const keys = { w: false, a: false, s: false, d: false, space: false };
@@ -113,56 +129,32 @@
         let velocityY = 0;
         let onGround = false;
 
-        // Collision Detection
-        function checkCollision() {
-            if (player.position.y - 1 <= 0) {
-                player.position.y = 1;
-                onGround = true;
-                velocityY = 0;
-            } else {
-                onGround = false;
-            }
-
-            const halfTerrain = terrainSize / 2 - 1;
-            if (player.position.x < -halfTerrain) player.position.x = -halfTerrain;
-            if (player.position.x > halfTerrain) player.position.x = halfTerrain;
-            if (player.position.z < -halfTerrain) player.position.z = -halfTerrain;
-            if (player.position.z > halfTerrain) player.position.z = halfTerrain;
-        }
-
-        // Camera Sensitivity
-        let mouseSensitivity = 0.1;
-        let rotationX = 0;
-        let rotationY = 0;
-
-        window.addEventListener("mousemove", (e) => {
-            rotationX -= e.movementY * mouseSensitivity;
-            rotationY -= e.movementX * mouseSensitivity;
-            rotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, rotationX));
-            camera.rotation.set(rotationX, rotationY, 0);
-        });
-
         // Update Loop
         function animate() {
             requestAnimationFrame(animate);
 
-            if (!onGround) velocityY -= 0.01;
-
-            if (keys.space && onGround) {
-                velocityY = 0.2;
+            // Gravity and Collision Detection
+            const groundHeight = terrainHeightAt(player.position.x, player.position.z) + 1;
+            if (player.position.y <= groundHeight) {
+                player.position.y = groundHeight;
+                velocityY = 0;
+                onGround = true;
+            } else {
+                velocityY -= 0.01;
                 onGround = false;
             }
 
-            player.position.y += velocityY;
-
-            const speed = 0.2;
+            // Player Movement
+            const speed = 0.3;
             if (keys.w) player.position.z -= speed;
             if (keys.s) player.position.z += speed;
             if (keys.a) player.position.x -= speed;
             if (keys.d) player.position.x += speed;
+            if (keys.space && onGround) velocityY = 0.2;
 
-            checkCollision();
+            player.position.y += velocityY;
 
+            // Update Camera
             camera.position.set(player.position.x, player.position.y + 5, player.position.z + 10);
             camera.lookAt(player.position);
 
