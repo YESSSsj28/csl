@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Map with Character</title>
+    <title>3D Map with Trees and Water</title>
     <style>
         body { margin: 0; overflow: hidden; }
         canvas { display: block; }
@@ -15,61 +15,154 @@
         // Scene, Camera, Renderer
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer();
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true; // Enable shadows
         document.body.appendChild(renderer.domElement);
 
         // Player (Character)
         const playerGeometry = new THREE.BoxGeometry(1, 2, 1);
-        const playerMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        const playerMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
         const player = new THREE.Mesh(playerGeometry, playerMaterial);
-        player.position.y = 1; // Lift player above the ground
+        player.castShadow = true; // Player casts shadows
+        player.position.y = 1;
         scene.add(player);
 
-        // Terrain (Map)
-        const terrainGeometry = new THREE.PlaneGeometry(50, 50, 20, 20); // Adjust size and segments
-        const terrainMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22, wireframe: false });
+        // Terrain
+        const terrainSize = 50; // Size of terrain
+        const terrainGeometry = new THREE.PlaneGeometry(terrainSize, terrainSize, 50, 50);
+        const terrainMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
         const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
-        terrain.rotation.x = -Math.PI / 2; // Make it flat
-        terrain.position.y = 0;
+        terrain.rotation.x = -Math.PI / 2; // Flatten the terrain
+        terrain.receiveShadow = true; // Terrain receives shadows
         scene.add(terrain);
 
-        // Add hills and valleys to the terrain
+        // Generate hills and valleys
         const vertices = terrainGeometry.attributes.position.array;
         for (let i = 0; i < vertices.length; i += 3) {
-            vertices[i + 2] = Math.sin(vertices[i] * 0.2) * Math.cos(vertices[i + 1] * 0.2) * 2;
+            vertices[i + 2] = Math.sin(vertices[i] * 0.2) * Math.cos(vertices[i + 1] * 0.2) * 3;
         }
         terrainGeometry.attributes.position.needsUpdate = true;
         terrainGeometry.computeVertexNormals();
 
-        // Lights
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        // Trees
+        const treeGeometry = new THREE.CylinderGeometry(0.3, 0.3, 2);
+        const leavesGeometry = new THREE.ConeGeometry(1, 2, 8);
+        const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+        const leavesMaterial = new THREE.MeshStandardMaterial({ color: 0x006400 });
+
+        for (let i = -terrainSize / 2; i < terrainSize / 2; i += 5) {
+            for (let j = -terrainSize / 2; j < terrainSize / 2; j += 5) {
+                if (Math.random() > 0.7) {
+                    const trunk = new THREE.Mesh(treeGeometry, trunkMaterial);
+                    trunk.castShadow = true;
+                    trunk.receiveShadow = true;
+                    trunk.position.set(i + Math.random() * 2, 1, j + Math.random() * 2);
+
+                    const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
+                    leaves.castShadow = true;
+                    leaves.position.set(trunk.position.x, trunk.position.y + 1.5, trunk.position.z);
+
+                    scene.add(trunk, leaves);
+                }
+            }
+        }
+
+        // Water (Simple Plane with Blue Texture)
+        const waterGeometry = new THREE.PlaneGeometry(20, 20);
+        const waterMaterial = new THREE.MeshStandardMaterial({ color: 0x1E90FF, transparent: true, opacity: 0.8 });
+        const water = new THREE.Mesh(waterGeometry, waterMaterial);
+        water.rotation.x = -Math.PI / 2;
+        water.position.set(0, 0.1, 20); // Adjust the position
+        water.receiveShadow = true;
+        scene.add(water);
+
+        // Houses
+        const houseGeometry = new THREE.BoxGeometry(3, 3, 3);
+        const houseMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+        for (let i = -terrainSize / 2; i < terrainSize / 2; i += 8) {
+            for (let j = -terrainSize / 2; j < terrainSize / 2; j += 8) {
+                if (Math.random() > 0.5) {
+                    const house = new THREE.Mesh(houseGeometry, houseMaterial);
+                    house.castShadow = true;
+                    house.position.set(i + Math.random() * 3, 1.5, j + Math.random() * 3);
+                    scene.add(house);
+                }
+            }
+        }
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
         scene.add(ambientLight);
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
         directionalLight.position.set(10, 20, 15);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 2048;
+        directionalLight.shadow.mapSize.height = 2048;
         scene.add(directionalLight);
 
         // Camera Position
         camera.position.set(0, 5, 10);
-        camera.lookAt(0, 0, 0);
 
-        // Player Movement Controls
-        const keys = { w: false, a: false, s: false, d: false };
+        // Player Movement and Controls
+        const keys = { w: false, a: false, s: false, d: false, space: false };
         window.addEventListener("keydown", (e) => { keys[e.key.toLowerCase()] = true; });
         window.addEventListener("keyup", (e) => { keys[e.key.toLowerCase()] = false; });
+
+        let velocityY = 0;
+        let onGround = false;
+
+        // Collision Detection
+        function checkCollision() {
+            if (player.position.y - 1 <= 0) {
+                player.position.y = 1;
+                onGround = true;
+                velocityY = 0;
+            } else {
+                onGround = false;
+            }
+
+            const halfTerrain = terrainSize / 2 - 1;
+            if (player.position.x < -halfTerrain) player.position.x = -halfTerrain;
+            if (player.position.x > halfTerrain) player.position.x = halfTerrain;
+            if (player.position.z < -halfTerrain) player.position.z = -halfTerrain;
+            if (player.position.z > halfTerrain) player.position.z = halfTerrain;
+        }
+
+        // Camera Sensitivity
+        let mouseSensitivity = 0.1;
+        let rotationX = 0;
+        let rotationY = 0;
+
+        window.addEventListener("mousemove", (e) => {
+            rotationX -= e.movementY * mouseSensitivity;
+            rotationY -= e.movementX * mouseSensitivity;
+            rotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, rotationX));
+            camera.rotation.set(rotationX, rotationY, 0);
+        });
 
         // Update Loop
         function animate() {
             requestAnimationFrame(animate);
 
-            // Player Movement
-            if (keys.w) player.position.z -= 0.1; // Move forward
-            if (keys.s) player.position.z += 0.1; // Move backward
-            if (keys.a) player.position.x -= 0.1; // Move left
-            if (keys.d) player.position.x += 0.1; // Move right
+            if (!onGround) velocityY -= 0.01;
 
-            // Camera follows the player
+            if (keys.space && onGround) {
+                velocityY = 0.2;
+                onGround = false;
+            }
+
+            player.position.y += velocityY;
+
+            const speed = 0.2;
+            if (keys.w) player.position.z -= speed;
+            if (keys.s) player.position.z += speed;
+            if (keys.a) player.position.x -= speed;
+            if (keys.d) player.position.x += speed;
+
+            checkCollision();
+
             camera.position.set(player.position.x, player.position.y + 5, player.position.z + 10);
             camera.lookAt(player.position);
 
