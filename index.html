@@ -3,49 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Map with POIs</title>
+    <title>3D Map with Character</title>
     <style>
-        body { margin: 0; }
+        body { margin: 0; overflow: hidden; }
         canvas { display: block; }
     </style>
 </head>
 <body>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        // Scene setup
+        // Scene, Camera, Renderer
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer();
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Create the ground (terrain)
-        const groundGeometry = new THREE.PlaneGeometry(1000, 1000, 32, 32);
-        const groundMaterial = new THREE.MeshBasicMaterial({ color: 0x228B22, side: THREE.DoubleSide });
-        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-        ground.rotation.x = - Math.PI / 2; // Rotate the ground to lie flat
-        scene.add(ground);
+        // Player (Character)
+        const playerGeometry = new THREE.BoxGeometry(1, 2, 1);
+        const playerMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        const player = new THREE.Mesh(playerGeometry, playerMaterial);
+        player.position.y = 1; // Lift player above the ground
+        scene.add(player);
 
-        // Create some POIs (Points of Interest)
-        function createPOI(x, z, color) {
-            const poiGeometry = new THREE.CylinderGeometry(10, 10, 20, 32);
-            const poiMaterial = new THREE.MeshBasicMaterial({ color: color });
-            const poi = new THREE.Mesh(poiGeometry, poiMaterial);
-            poi.position.set(x, 10, z);
-            scene.add(poi);
+        // Terrain (Map)
+        const terrainGeometry = new THREE.PlaneGeometry(50, 50, 20, 20); // Adjust size and segments
+        const terrainMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22, wireframe: false });
+        const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
+        terrain.rotation.x = -Math.PI / 2; // Make it flat
+        terrain.position.y = 0;
+        scene.add(terrain);
+
+        // Add hills and valleys to the terrain
+        const vertices = terrainGeometry.attributes.position.array;
+        for (let i = 0; i < vertices.length; i += 3) {
+            vertices[i + 2] = Math.sin(vertices[i] * 0.2) * Math.cos(vertices[i + 1] * 0.2) * 2;
         }
+        terrainGeometry.attributes.position.needsUpdate = true;
+        terrainGeometry.computeVertexNormals();
 
-        // Add multiple POIs
-        createPOI(100, 100, 0xFF0000); // Red POI
-        createPOI(-200, 300, 0x0000FF); // Blue POI
-        createPOI(500, -500, 0xFFFF00); // Yellow POI
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
 
-        // Camera position
-        camera.position.z = 500;
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(10, 20, 15);
+        scene.add(directionalLight);
 
-        // Animation loop
+        // Camera Position
+        camera.position.set(0, 5, 10);
+        camera.lookAt(0, 0, 0);
+
+        // Player Movement Controls
+        const keys = { w: false, a: false, s: false, d: false };
+        window.addEventListener("keydown", (e) => { keys[e.key.toLowerCase()] = true; });
+        window.addEventListener("keyup", (e) => { keys[e.key.toLowerCase()] = false; });
+
+        // Update Loop
         function animate() {
             requestAnimationFrame(animate);
+
+            // Player Movement
+            if (keys.w) player.position.z -= 0.1; // Move forward
+            if (keys.s) player.position.z += 0.1; // Move backward
+            if (keys.a) player.position.x -= 0.1; // Move left
+            if (keys.d) player.position.x += 0.1; // Move right
+
+            // Camera follows the player
+            camera.position.set(player.position.x, player.position.y + 5, player.position.z + 10);
+            camera.lookAt(player.position);
+
             renderer.render(scene, camera);
         }
 
