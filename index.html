@@ -3,13 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Map with Sun and Clouds</title>
+    <title>3D Map with Skins and First-Person Mode</title>
     <style>
-        body { margin: 0; overflow: hidden; }
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
         canvas { display: block; }
+        button {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
+    <button id="toggleView">First Person</button>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
         // Scene, Camera, Renderer
@@ -20,148 +37,83 @@
         renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
 
-        // Add Skybox (Dynamic Clouds)
-        const skyGeometry = new THREE.SphereGeometry(500, 32, 32);
-        const skyMaterial = new THREE.MeshBasicMaterial({
-            color: 0x87CEEB,
-            side: THREE.BackSide,
-        });
-        const sky = new THREE.Mesh(skyGeometry, skyMaterial);
-        scene.add(sky);
+        // Toggle Button
+        const toggleViewButton = document.getElementById("toggleView");
+        let isFirstPerson = false;
 
-        // Dynamic clouds
-        const cloudGeometry = new THREE.SphereGeometry(20, 32, 32);
-        const cloudMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
-        const clouds = [];
-        for (let i = 0; i < 10; i++) {
-            const cloud = new THREE.Mesh(cloudGeometry, cloudMaterial);
-            cloud.position.set(Math.random() * 500 - 250, 50 + Math.random() * 50, Math.random() * 500 - 250);
-            clouds.push(cloud);
-            scene.add(cloud);
-        }
-
-        // Sun (Directional Light Source)
-        const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
-        sunLight.position.set(50, 100, 50);
-        sunLight.castShadow = true;
-        scene.add(sunLight);
+        // Character Skins
+        const skins = [
+            { color: 0xffc0cb, name: "Female 1" }, // Light pink
+            { color: 0x8b0000, name: "Female 2" }, // Dark red
+            { color: 0x1e90ff, name: "Male 1" },   // Blue
+            { color: 0x228b22, name: "Male 2" }    // Green
+        ];
+        const selectedSkin = skins[Math.floor(Math.random() * skins.length)];
 
         // Player (Character)
-        const playerGeometry = new THREE.BoxGeometry(1, 2, 1);
-        const playerMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-        const player = new THREE.Mesh(playerGeometry, playerMaterial);
-        player.castShadow = true;
-        player.position.y = 1;
-        scene.add(player);
+        const playerGroup = new THREE.Group(); // Group for player and body parts
+        const torsoGeometry = new THREE.BoxGeometry(1, 2, 1);
+        const torsoMaterial = new THREE.MeshStandardMaterial({ color: selectedSkin.color });
+        const torso = new THREE.Mesh(torsoGeometry, torsoMaterial);
+        torso.castShadow = true;
+        torso.position.y = 1;
+
+        // Add arms and legs
+        const limbGeometry = new THREE.BoxGeometry(0.4, 1.2, 0.4);
+        const limbMaterial = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
+        const leftArm = new THREE.Mesh(limbGeometry, limbMaterial);
+        leftArm.position.set(-0.8, 1.2, 0);
+        const rightArm = new THREE.Mesh(limbGeometry, limbMaterial);
+        rightArm.position.set(0.8, 1.2, 0);
+        const leftLeg = new THREE.Mesh(limbGeometry, limbMaterial);
+        leftLeg.position.set(-0.4, 0, 0);
+        const rightLeg = new THREE.Mesh(limbGeometry, limbMaterial);
+        rightLeg.position.set(0.4, 0, 0);
+
+        playerGroup.add(torso, leftArm, rightArm, leftLeg, rightLeg);
+        scene.add(playerGroup);
 
         // Terrain
         const terrainSize = 400;
         const terrainGeometry = new THREE.PlaneGeometry(terrainSize, terrainSize, 100, 100);
-        const terrainMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
+        const terrainMaterial = new THREE.MeshStandardMaterial({ color: 0x3cb371 });
         const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
         terrain.rotation.x = -Math.PI / 2;
         terrain.receiveShadow = true;
         scene.add(terrain);
 
-        const vertices = terrainGeometry.attributes.position.array;
-        for (let i = 0; i < vertices.length; i += 3) {
-            vertices[i + 2] = Math.sin(vertices[i] * 0.1) * Math.cos(vertices[i + 1] * 0.1) * 10;
-        }
-        terrainGeometry.attributes.position.needsUpdate = true;
-        terrainGeometry.computeVertexNormals();
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambientLight);
 
-        const terrainHeightAt = (x, z) => {
-            const row = Math.floor((x + terrainSize / 2) / (terrainSize / 100));
-            const col = Math.floor((z + terrainSize / 2) / (terrainSize / 100));
-            const index = (row + col * 101) * 3 + 2;
-            return vertices[index] || 0;
-        };
+        const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        sunLight.position.set(50, 100, 50);
+        sunLight.castShadow = true;
+        scene.add(sunLight);
 
-        // Houses
-        const houseGeometry = new THREE.BoxGeometry(10, 10, 10);
-        const roofGeometry = new THREE.ConeGeometry(7, 5, 4);
-        const houseMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
-        const roofMaterial = new THREE.MeshStandardMaterial({ color: 0xFF6347 });
+        // Camera Position
+        camera.position.set(0, 10, 20);
+        let thirdPersonOffset = { x: 0, y: 10, z: 20 };
 
-        for (let i = -terrainSize / 2; i < terrainSize / 2; i += 35) {
-            for (let j = -terrainSize / 2; j < terrainSize / 2; j += 35) {
-                if (Math.random() > 0.6) {
-                    const house = new THREE.Mesh(houseGeometry, houseMaterial);
-                    house.castShadow = true;
-                    house.position.set(i, terrainHeightAt(i, j) + 5, j);
-
-                    const roof = new THREE.Mesh(roofGeometry, roofMaterial);
-                    roof.castShadow = true;
-                    roof.position.set(i, terrainHeightAt(i, j) + 12, j);
-
-                    scene.add(house, roof);
-                }
-            }
-        }
-
-        // Trees
-        const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.5, 3);
-        const leavesGeometry = new THREE.SphereGeometry(3);
-        const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
-        const leavesMaterial = new THREE.MeshStandardMaterial({ color: 0x32CD32 });
-
-        for (let i = -terrainSize / 2; i < terrainSize / 2; i += 20) {
-            for (let j = -terrainSize / 2; j < terrainSize / 2; j += 20) {
-                if (Math.random() > 0.8) {
-                    const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-                    trunk.position.set(i, terrainHeightAt(i, j) + 1.5, j);
-                    trunk.castShadow = true;
-
-                    const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
-                    leaves.position.set(i, terrainHeightAt(i, j) + 5.5, j);
-                    leaves.castShadow = true;
-
-                    scene.add(trunk, leaves);
-                }
-            }
-        }
-
-        // Deadly Water at Edges
-        const waterGeometry = new THREE.PlaneGeometry(terrainSize + 100, terrainSize + 100);
-        const waterMaterial = new THREE.MeshStandardMaterial({ color: 0x4169E1, transparent: true, opacity: 0.7 });
-        const water = new THREE.Mesh(waterGeometry, waterMaterial);
-        water.rotation.x = -Math.PI / 2;
-        water.position.y = 0.2;
-        scene.add(water);
-
-        const checkPlayerInWater = () => {
-            const halfSize = terrainSize / 2;
-            if (
-                player.position.x < -halfSize ||
-                player.position.x > halfSize ||
-                player.position.z < -halfSize ||
-                player.position.z > halfSize
-            ) {
-                alert("You lost! You fell into the deadly water.");
-                player.position.set(0, 10, 0);
-            }
-        };
-
-        // Player Movement
+        // Player Movement and Controls
         const keys = { w: false, a: false, s: false, d: false, space: false };
-        window.addEventListener("keydown", (e) => (keys[e.key.toLowerCase()] = true));
-        window.addEventListener("keyup", (e) => (keys[e.key.toLowerCase()] = false));
+        window.addEventListener("keydown", (e) => { keys[e.key.toLowerCase()] = true; });
+        window.addEventListener("keyup", (e) => { keys[e.key.toLowerCase()] = false; });
 
         let velocityY = 0;
         let onGround = false;
-        const sensitivity = 0.5;
 
-        const animate = () => {
+        // Smooth transition variables
+        let transitionProgress = 0;
+
+        // Update Loop
+        function animate() {
             requestAnimationFrame(animate);
 
-            clouds.forEach((cloud) => {
-                cloud.position.x += 0.05;
-                if (cloud.position.x > 250) cloud.position.x = -250;
-            });
-
-            const groundHeight = terrainHeightAt(player.position.x, player.position.z) + 1;
-            if (player.position.y <= groundHeight) {
-                player.position.y = groundHeight;
+            // Gravity and Collision Detection
+            const groundHeight = 0; // Flat ground for simplicity
+            if (playerGroup.position.y <= groundHeight) {
+                playerGroup.position.y = groundHeight;
                 velocityY = 0;
                 onGround = true;
             } else {
@@ -169,21 +121,37 @@
                 onGround = false;
             }
 
-            const speed = 0.3 * sensitivity;
-            if (keys.w) player.position.z -= speed;
-            if (keys.s) player.position.z += speed;
-            if (keys.a) player.position.x -= speed;
-            if (keys.d) player.position.x += speed;
+            // Player Movement
+            const speed = 0.3;
+            if (keys.w) playerGroup.position.z -= speed;
+            if (keys.s) playerGroup.position.z += speed;
+            if (keys.a) playerGroup.position.x -= speed;
+            if (keys.d) playerGroup.position.x += speed;
             if (keys.space && onGround) velocityY = 0.2;
 
-            player.position.y += velocityY;
-            checkPlayerInWater();
+            playerGroup.position.y += velocityY;
 
-            camera.position.set(player.position.x, player.position.y + 10, player.position.z + 20);
-            camera.lookAt(player.position);
+            // Smooth Camera Transition
+            if (isFirstPerson) {
+                transitionProgress = Math.min(1, transitionProgress + 0.05);
+            } else {
+                transitionProgress = Math.max(0, transitionProgress - 0.05);
+            }
+
+            const targetOffset = isFirstPerson ? { x: 0, y: 2, z: 0 } : thirdPersonOffset;
+            camera.position.x = THREE.MathUtils.lerp(camera.position.x, playerGroup.position.x + targetOffset.x, transitionProgress);
+            camera.position.y = THREE.MathUtils.lerp(camera.position.y, playerGroup.position.y + targetOffset.y, transitionProgress);
+            camera.position.z = THREE.MathUtils.lerp(camera.position.z, playerGroup.position.z + targetOffset.z, transitionProgress);
+            camera.lookAt(playerGroup.position);
 
             renderer.render(scene, camera);
-        };
+        }
+
+        // Toggle View Button
+        toggleViewButton.addEventListener("click", () => {
+            isFirstPerson = !isFirstPerson;
+            toggleViewButton.innerText = isFirstPerson ? "Third Person" : "First Person";
+        });
 
         animate();
     </script>
