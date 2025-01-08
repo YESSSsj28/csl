@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>First and Third Person Baseplate with Sensitivity</title>
+    <title>First and Third Person with Camera Sensitivity</title>
     <style>
         body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
         canvas { display: block; }
@@ -52,7 +52,7 @@
     <div class="cursor"></div>
     <button id="toggleView">First Person</button>
     <input type="range" id="sensitivitySlider" min="0.1" max="2" step="0.1" value="1" />
-    <label for="sensitivitySlider">Sensitivity</label>
+    <label for="sensitivitySlider">Camera Sensitivity</label>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
@@ -143,11 +143,11 @@
             const dy = e.movementY * sensitivity;
 
             if (isFirstPerson) {
-                camera.rotation.y -= dx * 0.002;
-                camera.rotation.x -= dy * 0.002;
+                camera.rotation.y -= dx * 0.002;  // Horizontal movement
+                camera.rotation.x -= dy * 0.002;  // Vertical movement
                 camera.rotation.x = Math.max(Math.min(camera.rotation.x, Math.PI / 2), -Math.PI / 2); // Lock vertical view
             } else {
-                playerGroup.rotation.y -= dx * 0.002;
+                playerGroup.rotation.y -= dx * 0.002;  // Rotate the player in third-person mode
             }
         });
 
