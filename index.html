@@ -8,7 +8,7 @@
         body {
             margin: 0;
             font-family: Arial, sans-serif;
-            background: linear-gradient(to bottom, #1e3c72, #2a5298); /* Dark blue for futuristic vibe */
+            background: linear-gradient(to bottom, #1e3c72, #2a5298);
             color: #fff;
             height: 100vh;
             display: flex;
@@ -61,12 +61,29 @@
 <body>
     <div class="container">
         <h1>Battle Royale Lobby</h1>
-        <button class="button" onclick="alert('Sign Up Form Here!')">Sign Up</button>
-        <button class="button" onclick="alert('Log In Form Here!')">Log In</button>
+        <button class="button" onclick="showSignUp()">Sign Up</button>
+        <button class="button" onclick="showLogin()">Log In</button>
         <br>
-        <button class="button" onclick="alert('Entering Game...')">Queue in a Game</button>
+        <button class="button" onclick="queueGame()">Queue in a Game</button>
         <div class="footer">Join your squad or play solo and survive to win!</div>
     </div>
     <div class="grass"></div>
+
+    <script>
+        function showSignUp() {
+            alert("Redirecting to Sign Up form...");
+            // Add actual redirection or form handling code here
+        }
+
+        function showLogin() {
+            alert("Redirecting to Log In form...");
+            // Add actual redirection or form handling code here
+        }
+
+        function queueGame() {
+            alert("Queueing into the game...");
+            // Add actual game queue logic here
+        }
+    </script>
 </body>
 </html>
