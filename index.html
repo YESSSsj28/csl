@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>First and Third Person Baseplate</title>
+    <title>3D Grass Battle Royale Map</title>
     <style>
         body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
         canvas { display: block; }
@@ -52,14 +52,6 @@
         const toggleViewButton = document.getElementById("toggleView");
         let isFirstPerson = false;
 
-        // Oval Map
-        const mapGeometry = new THREE.EllipseGeometry(100, 50, 64); // Oval shape
-        const mapMaterial = new THREE.MeshStandardMaterial({ color: 0x3cb371 });
-        const map = new THREE.Mesh(mapGeometry, mapMaterial);
-        map.rotation.x = -Math.PI / 2; // Flatten the map
-        map.receiveShadow = true;
-        scene.add(map);
-
         // Lighting
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
         scene.add(ambientLight);
@@ -68,6 +60,31 @@
         directionalLight.position.set(50, 100, 50);
         directionalLight.castShadow = true;
         scene.add(directionalLight);
+
+        // Generate 3D Grass
+        function createGrass(x, z) {
+            const grassGeometry = new THREE.CylinderGeometry(0.05, 0.05, Math.random() * 2 + 1, 4);
+            const grassMaterial = new THREE.MeshBasicMaterial({ color: 0x228B22 });
+            const grass = new THREE.Mesh(grassGeometry, grassMaterial);
+
+            // Positioning each grass blade randomly within a small range
+            grass.position.set(x, grass.geometry.parameters.height / 2, z);
+            grass.rotation.x = Math.random() * Math.PI;
+            grass.rotation.y = Math.random() * Math.PI;
+            grass.rotation.z = Math.random() * Math.PI;
+
+            return grass;
+        }
+
+        // Create a field of grass (random distribution across the map)
+        const grassField = [];
+        for (let x = -50; x < 50; x += 1) {
+            for (let z = -50; z < 50; z += 1) {
+                const grassBlade = createGrass(x, z);
+                grassField.push(grassBlade);
+                scene.add(grassBlade);
+            }
+        }
 
         // Player (Body and Hands)
         const playerGroup = new THREE.Group();
@@ -93,9 +110,6 @@
         let firstPersonOffset = { x: 0, y: 1.5, z: 0.5 }; // First-person view
 
         camera.position.set(0, 5, 10);
-
-        // Cursor
-        const cursor = document.querySelector(".cursor");
 
         // Player Movement and Controls
         const keys = { w: false, a: false, s: false, d: false };
@@ -129,7 +143,7 @@
             renderer.render(scene, camera);
         }
 
-        // Toggle Button
+        // Toggle View Button
         toggleViewButton.addEventListener("click", () => {
             isFirstPerson = !isFirstPerson;
             toggleViewButton.innerText = isFirstPerson ? "Third Person" : "First Person";
