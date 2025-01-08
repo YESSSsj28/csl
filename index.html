@@ -135,19 +135,23 @@
         window.addEventListener("keyup", (e) => { keys[e.key.toLowerCase()] = false; });
 
         const speed = 0.2;
+
+        // Mouse Handling for Camera Rotation (Now only affects camera rotation)
         let mouseX = 0, mouseY = 0;
 
-        // Handle mouse movement for looking around
         window.addEventListener("mousemove", (e) => {
-            const dx = e.movementX * sensitivity;
-            const dy = e.movementY * sensitivity;
+            const dx = e.movementX * sensitivity; // Horizontal camera rotation
+            const dy = e.movementY * sensitivity; // Vertical camera rotation
 
             if (isFirstPerson) {
-                camera.rotation.y -= dx * 0.002;  // Horizontal movement
-                camera.rotation.x -= dy * 0.002;  // Vertical movement
-                camera.rotation.x = Math.max(Math.min(camera.rotation.x, Math.PI / 2), -Math.PI / 2); // Lock vertical view
+                // In first-person mode, adjust the camera's rotation based on mouse movement
+                camera.rotation.y -= dx * 0.002;
+                camera.rotation.x -= dy * 0.002;
+                // Lock vertical movement to avoid flipping the camera upside down
+                camera.rotation.x = Math.max(Math.min(camera.rotation.x, Math.PI / 2), -Math.PI / 2);
             } else {
-                playerGroup.rotation.y -= dx * 0.002;  // Rotate the player in third-person mode
+                // In third-person mode, adjust the player's rotation (not the camera directly)
+                playerGroup.rotation.y -= dx * 0.002;
             }
         });
 
