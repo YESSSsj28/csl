@@ -3,10 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Grass Battle Royale Map</title>
+    <title>Battle Royale with Grass and Sensitivity</title>
     <style>
         body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
         canvas { display: block; }
+
+        /* Custom Cursor + Symbol in Center */
+        .cursor {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 30px;
+            color: white;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Button Styling */
         button {
             position: absolute;
             top: 10px;
@@ -20,24 +35,14 @@
             border-radius: 5px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
+
         button:hover {
             background-color: #0056b3;
-        }
-        .cursor {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 10px;
-            height: 10px;
-            background-color: white;
-            border-radius: 50%;
-            pointer-events: none;
         }
     </style>
 </head>
 <body>
-    <div class="cursor"></div>
+    <div class="cursor">+</div>
     <button id="toggleView">First Person</button>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
@@ -48,9 +53,11 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Toggle Button
-        const toggleViewButton = document.getElementById("toggleView");
-        let isFirstPerson = false;
+        // Mouse sensitivity and movement control
+        let mouseX = 0, mouseY = 0;
+        let sensitivity = 0.002; // Camera sensitivity
+        let pitch = 0; // Vertical rotation angle
+        let yaw = -Math.PI / 2; // Horizontal rotation angle
 
         // Lighting
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -61,30 +68,12 @@
         directionalLight.castShadow = true;
         scene.add(directionalLight);
 
-        // Generate 3D Grass
-        function createGrass(x, z) {
-            const grassGeometry = new THREE.CylinderGeometry(0.05, 0.05, Math.random() * 2 + 1, 4);
-            const grassMaterial = new THREE.MeshBasicMaterial({ color: 0x228B22 });
-            const grass = new THREE.Mesh(grassGeometry, grassMaterial);
-
-            // Positioning each grass blade randomly within a small range
-            grass.position.set(x, grass.geometry.parameters.height / 2, z);
-            grass.rotation.x = Math.random() * Math.PI;
-            grass.rotation.y = Math.random() * Math.PI;
-            grass.rotation.z = Math.random() * Math.PI;
-
-            return grass;
-        }
-
-        // Create a field of grass (random distribution across the map)
-        const grassField = [];
-        for (let x = -50; x < 50; x += 1) {
-            for (let z = -50; z < 50; z += 1) {
-                const grassBlade = createGrass(x, z);
-                grassField.push(grassBlade);
-                scene.add(grassBlade);
-            }
-        }
+        // Grass-like Ground Plane (Green color)
+        const groundGeometry = new THREE.PlaneGeometry(100, 100);
+        const groundMaterial = new THREE.MeshBasicMaterial({ color: 0x228B22, side: THREE.DoubleSide });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        scene.add(ground);
 
         // Player (Body and Hands)
         const playerGroup = new THREE.Group();
@@ -105,11 +94,9 @@
         playerGroup.position.y = 1.5; // Elevate slightly above ground
         scene.add(playerGroup);
 
-        // Camera Settings
-        let thirdPersonOffset = { x: 2, y: 5, z: 10 }; // Over-the-shoulder
-        let firstPersonOffset = { x: 0, y: 1.5, z: 0.5 }; // First-person view
-
+        // Camera Position
         camera.position.set(0, 5, 10);
+        camera.rotation.set(0, Math.PI / 2, 0);
 
         // Player Movement and Controls
         const keys = { w: false, a: false, s: false, d: false };
@@ -128,22 +115,26 @@
             if (keys.a) playerGroup.position.x -= speed;
             if (keys.d) playerGroup.position.x += speed;
 
-            // Hand Animation (Swinging while walking)
-            const time = Date.now() * 0.005;
-            leftHand.position.z = -0.8 + Math.sin(time) * 0.2;
-            rightHand.position.z = -0.8 - Math.sin(time) * 0.2;
+            // Mouse Movement for Camera Control (Look Around)
+            document.addEventListener('mousemove', (event) => {
+                mouseX = event.clientX / window.innerWidth - 0.5;
+                mouseY = event.clientY / window.innerHeight - 0.5;
+            });
 
-            // Camera Smooth Transition
-            const targetOffset = isFirstPerson ? firstPersonOffset : thirdPersonOffset;
-            camera.position.x = playerGroup.position.x + targetOffset.x;
-            camera.position.y = playerGroup.position.y + targetOffset.y;
-            camera.position.z = playerGroup.position.z + targetOffset.z;
-            camera.lookAt(playerGroup.position);
+            yaw += mouseX * sensitivity;
+            pitch -= mouseY * sensitivity;
+            pitch = Math.max(Math.min(pitch, Math.PI / 2), -Math.PI / 2); // Limit vertical rotation
 
+            // Update Camera Rotation
+            camera.rotation.set(pitch, yaw, 0);
+
+            // Render the Scene
             renderer.render(scene, camera);
         }
 
-        // Toggle View Button
+        // Toggle View Button (First/Third Person)
+        const toggleViewButton = document.getElementById("toggleView");
+        let isFirstPerson = false;
         toggleViewButton.addEventListener("click", () => {
             isFirstPerson = !isFirstPerson;
             toggleViewButton.innerText = isFirstPerson ? "Third Person" : "First Person";
