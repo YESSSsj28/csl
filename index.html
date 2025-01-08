@@ -3,183 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Battle Royale Lobby</title>
+    <title>Battle Royale - Multi-Area Map</title>
     <style>
         body {
             margin: 0;
             font-family: Arial, sans-serif;
-            background: linear-gradient(to bottom, #1e3c72, #2a5298);
-            color: #fff;
+            overflow: hidden;
+        }
+
+        .map {
+            width: 100vw;
             height: 100vh;
+            position: relative;
             display: flex;
-            justify-content: center;
-            align-items: center;
+            justify-content: space-between;
         }
-        .container {
-            text-align: center;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 50px;
-            border-radius: 20px;
-            width: 80%;
-            max-width: 600px;
-        }
-        h1 {
-            font-size: 3em;
-            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.8);
-        }
-        .button {
-            background-color: #4CAF50;
-            border: none;
-            color: white;
-            padding: 15px 32px;
-            font-size: 1.2em;
-            margin: 20px;
-            cursor: pointer;
-            border-radius: 8px;
-            transition: background-color 0.3s ease;
-        }
-        .button:hover {
-            background-color: #45a049;
-        }
-        .footer {
-            margin-top: 30px;
-            font-size: 0.9em;
-            color: rgba(255, 255, 255, 0.7);
-        }
-        .grass {
-            background: url('https://www.transparenttextures.com/patterns/grass.png');
-            background-repeat: repeat;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
+
+        .area {
+            width: 33.33%;
             height: 100%;
-            z-index: -1;
+            position: relative;
         }
-        /* Hide forms initially */
-        .form-container {
-            display: none;
-            text-align: center;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 40px;
-            border-radius: 15px;
+
+        /* Desert Area */
+        .desert {
+            background: url('https://www.transparenttextures.com/patterns/sand.png') repeat, #f4c542;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .form-container input {
-            padding: 10px;
-            font-size: 1em;
-            margin: 10px;
-            border-radius: 5px;
-            width: 80%;
-        }
-        .form-container button {
-            padding: 15px 32px;
-            background-color: #4CAF50;
-            color: white;
-            font-size: 1.2em;
-            border: none;
+
+        .house-desert {
+            width: 150px;
+            height: 100px;
+            background-color: #a56629;
+            position: absolute;
+            bottom: 20px;
             border-radius: 8px;
-            margin-top: 20px;
         }
-        .form-container button:hover {
-            background-color: #45a049;
+
+        /* Urban Area */
+        .urban {
+            background: #2f4f4f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(to bottom, #2a5298, #1e3c72);
         }
-        #gameQueueOptions {
-            display: none;
+
+        .house-urban {
+            width: 150px;
+            height: 120px;
+            background-color: #d1d1d1;
+            position: absolute;
+            bottom: 20px;
+            border-radius: 8px;
         }
+
+        /* Grassland Area */
+        .grassland {
+            background: url('https://www.transparenttextures.com/patterns/grass.png') repeat, #8fbc8f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .house-grass {
+            width: 150px;
+            height: 100px;
+            background-color: #8b5a2b;
+            position: absolute;
+            bottom: 20px;
+            border-radius: 8px;
+        }
+
+        /* Battle Bus */
+        .battle-bus {
+            width: 150px;
+            height: 100px;
+            background-color: #ff5733;
+            position: absolute;
+            top: -120px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 15px;
+            z-index: 2;
+            animation: moveBus 5s infinite;
+        }
+
+        @keyframes moveBus {
+            0% {
+                top: -120px;
+                transform: translateX(-50%);
+            }
+            50% {
+                top: 50vh;
+                transform: translateX(-50%) rotate(360deg);
+            }
+            100% {
+                top: -120px;
+                transform: translateX(-50%);
+            }
+        }
+
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Battle Royale Lobby</h1>
-        <button class="button" onclick="showSignUp()">Sign Up</button>
-        <button class="button" onclick="showLogin()">Log In</button>
-        <br>
-        <button class="button" onclick="queueGame()">Queue in a Game</button>
-        <div class="footer">Join your squad or play solo and survive to win!</div>
-    </div>
-    
-    <!-- Sign Up Form -->
-    <div class="form-container" id="signUpForm">
-        <h2>Sign Up</h2>
-        <input type="text" placeholder="Username" id="signUpUsername" />
-        <input type="password" placeholder="Password" id="signUpPassword" />
-        <button onclick="submitSignUp()">Sign Up</button>
-        <button onclick="closeForm('signUpForm')">Cancel</button>
-    </div>
 
-    <!-- Log In Form -->
-    <div class="form-container" id="loginForm">
-        <h2>Log In</h2>
-        <input type="text" placeholder="Username" id="loginUsername" />
-        <input type="password" placeholder="Password" id="loginPassword" />
-        <button onclick="submitLogin()">Log In</button>
-        <button onclick="closeForm('loginForm')">Cancel</button>
-    </div>
+    <div class="map">
+        <!-- Desert Area -->
+        <div class="area desert">
+            <div class="house-desert"></div>
+            <div class="house-desert" style="left: 200px;"></div>
+            <div class="house-desert" style="left: 400px;"></div>
+        </div>
 
-    <!-- Game Queue -->
-    <div id="gameQueueOptions">
-        <h2>Select Game Mode</h2>
-        <button class="button" onclick="joinGame('Solo')">Solo</button>
-        <button class="button" onclick="joinGame('Duo')">Duo</button>
-        <button class="button" onclick="joinGame('Squad')">Squad</button>
-        <button class="button" onclick="closeQueue()">Cancel</button>
+        <!-- Urban Area -->
+        <div class="area urban">
+            <div class="house-urban"></div>
+            <div class="house-urban" style="left: 200px;"></div>
+            <div class="house-urban" style="left: 400px;"></div>
+        </div>
+
+        <!-- Grassland Area -->
+        <div class="area grassland">
+            <div class="house-grass"></div>
+            <div class="house-grass" style="left: 200px;"></div>
+            <div class="house-grass" style="left: 400px;"></div>
+        </div>
+
+        <!-- Battle Bus -->
+        <div class="battle-bus"></div>
     </div>
 
-    <div class="grass"></div>
-
-    <script>
-        // Show the respective forms
-        function showSignUp() {
-            document.getElementById("signUpForm").style.display = "block";
-        }
-
-        function showLogin() {
-            document.getElementById("loginForm").style.display = "block";
-        }
-
-        // Show game queue options
-        function queueGame() {
-            document.getElementById("gameQueueOptions").style.display = "block";
-        }
-
-        // Close the forms
-        function closeForm(formId) {
-            document.getElementById(formId).style.display = "none";
-            if (formId === 'signUpForm') {
-                document.getElementById("signUpUsername").value = '';
-                document.getElementById("signUpPassword").value = '';
-            }
-            if (formId === 'loginForm') {
-                document.getElementById("loginUsername").value = '';
-                document.getElementById("loginPassword").value = '';
-            }
-        }
-
-        // Close the game queue options
-        function closeQueue() {
-            document.getElementById("gameQueueOptions").style.display = "none";
-        }
-
-        // Simulate form submission
-        function submitSignUp() {
-            const username = document.getElementById("signUpUsername").value;
-            const password = document.getElementById("signUpPassword").value;
-            alert("Sign Up Successful! Username: " + username);
-            closeForm('signUpForm');
-        }
-
-        function submitLogin() {
-            const username = document.getElementById("loginUsername").value;
-            const password = document.getElementById("loginPassword").value;
-            alert("Login Successful! Username: " + username);
-            closeForm('loginForm');
-        }
-
-        // Simulate joining the game with chosen mode
-        function joinGame(mode) {
-            alert("You have joined a " + mode + " game!");
-            closeQueue();
-        }
-    </script>
 </body>
 </html>
