@@ -18,94 +18,93 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/PointerLockControls.js"></script>
     <script>
-        // Setup Scene, Camera, Renderer
+        // Basic Setup
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer();
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Add Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
         directionalLight.position.set(10, 10, 10);
         scene.add(directionalLight);
 
-        // Player Controls
+        // First-Person Pointer Lock Controls
         const controls = new THREE.PointerLockControls(camera, document.body);
         document.addEventListener('click', () => controls.lock());
 
-        // Ground
-        const groundGeometry = new THREE.PlaneGeometry(400, 400, 50, 50);
+        // Ground (Grass)
+        const groundGeometry = new THREE.PlaneGeometry(200, 200);
         const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
         const ground = new THREE.Mesh(groundGeometry, groundMaterial);
         ground.rotation.x = -Math.PI / 2;
         ground.receiveShadow = true;
         scene.add(ground);
 
-        // Toxic Water (at edges)
-        const toxicGeometry = new THREE.PlaneGeometry(400, 20);
-        const toxicMaterial = new THREE.MeshStandardMaterial({ color: 0x0000ff });
-        const toxicWater = new THREE.Mesh(toxicGeometry, toxicMaterial);
-        toxicWater.rotation.x = -Math.PI / 2;
-        toxicWater.position.z = 200; // Place at the edge of the map
-        scene.add(toxicWater);
+        // Toxic Water at the Edges
+        const waterGeometry = new THREE.PlaneGeometry(220, 20);
+        const waterMaterial = new THREE.MeshStandardMaterial({ color: 0x0000ff });
 
-        // Add Player
-        camera.position.set(0, 2, 10);
+        // Add water to edges
+        const toxicWater = [];
+        for (let i = 0; i < 4; i++) {
+            toxicWater[i] = new THREE.Mesh(waterGeometry, waterMaterial);
+            toxicWater[i].rotation.x = -Math.PI / 2;
+        }
+        toxicWater[0].position.z = 110; // Top edge
+        toxicWater[1].position.z = -110; // Bottom edge
+        toxicWater[2].rotation.z = Math.PI / 2;
+        toxicWater[2].position.x = 110; // Right edge
+        toxicWater[3].rotation.z = Math.PI / 2;
+        toxicWater[3].position.x = -110; // Left edge
+        toxicWater.forEach(water => scene.add(water));
+
+        // Add Player Movement
+        camera.position.set(0, 2, 0);
         let velocity = new THREE.Vector3();
         const moveSpeed = 0.2;
 
-        // Collision Detection Objects
-        const collidableObjects = [];
-
-        // Add Houses (POIs)
+        // Add Houses (Points of Interest)
         function createHouse(x, z) {
-            const houseGeometry = new THREE.BoxGeometry(5, 5, 5);
+            const houseGeometry = new THREE.BoxGeometry(10, 10, 10);
             const houseMaterial = new THREE.MeshStandardMaterial({ color: 0xffd700 });
             const house = new THREE.Mesh(houseGeometry, houseMaterial);
-            house.position.set(x, 2.5, z);
-            collidableObjects.push(house);
+            house.position.set(x, 5, z); // Place slightly above the ground
             scene.add(house);
         }
 
-        createHouse(10, 10);
-        createHouse(-10, -20);
-        createHouse(30, 15);
+        createHouse(20, 20);
+        createHouse(-30, 10);
+        createHouse(40, -20);
 
         // Keyboard Controls
         const keys = {};
-        document.addEventListener('keydown', (e) => keys[e.key] = true);
-        document.addEventListener('keyup', (e) => keys[e.key] = false);
+        document.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
+        document.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
 
         // Game Loop
         function animate() {
             requestAnimationFrame(animate);
 
-            // Player Movement
+            // Movement
             if (keys['w']) velocity.z = -moveSpeed;
             if (keys['s']) velocity.z = moveSpeed;
             if (keys['a']) velocity.x = -moveSpeed;
             if (keys['d']) velocity.x = moveSpeed;
 
-            camera.position.add(velocity);
+            // Apply movement
+            controls.getObject().translateX(velocity.x);
+            controls.getObject().translateZ(velocity.z);
             velocity.set(0, 0, 0);
 
-            // Collision Detection
-            for (const object of collidableObjects) {
-                const distance = camera.position.distanceTo(object.position);
-                if (distance < 3) {
-                    console.log("Collision detected!");
-                    camera.position.sub(velocity); // Prevent movement into the object
-                }
-            }
-
-            // Toxic Water Detection
-            if (camera.position.z > 190 || camera.position.z < -190 || camera.position.x > 190 || camera.position.x < -190) {
-                alert("You died in toxic water!");
-                camera.position.set(0, 2, 10); // Reset position
+            // Toxic Water Collision Detection
+            if (camera.position.z > 100 || camera.position.z < -100 || camera.position.x > 100 || camera.position.x < -100) {
+                alert("You fell into toxic water and died!");
+                camera.position.set(0, 2, 0); // Reset position
             }
 
             renderer.render(scene, camera);
