@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Map with Skins and First-Person Mode</title>
+    <title>3D Map with Fortnite-Like Camera</title>
     <style>
         body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
         canvas { display: block; }
@@ -41,24 +41,24 @@
         const toggleViewButton = document.getElementById("toggleView");
         let isFirstPerson = false;
 
-        // Character Skins
+        // Skins
         const skins = [
-            { color: 0xffc0cb, name: "Female 1" }, // Light pink
-            { color: 0x8b0000, name: "Female 2" }, // Dark red
-            { color: 0x1e90ff, name: "Male 1" },   // Blue
-            { color: 0x228b22, name: "Male 2" }    // Green
+            { color: 0xffc0cb, name: "Female 1" },
+            { color: 0x8b0000, name: "Female 2" },
+            { color: 0x1e90ff, name: "Male 1" },
+            { color: 0x228b22, name: "Male 2" }
         ];
         const selectedSkin = skins[Math.floor(Math.random() * skins.length)];
 
         // Player (Character)
-        const playerGroup = new THREE.Group(); // Group for player and body parts
+        const playerGroup = new THREE.Group();
         const torsoGeometry = new THREE.BoxGeometry(1, 2, 1);
         const torsoMaterial = new THREE.MeshStandardMaterial({ color: selectedSkin.color });
         const torso = new THREE.Mesh(torsoGeometry, torsoMaterial);
         torso.castShadow = true;
         torso.position.y = 1;
 
-        // Add arms and legs
+        // Arms and Legs
         const limbGeometry = new THREE.BoxGeometry(0.4, 1.2, 0.4);
         const limbMaterial = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
         const leftArm = new THREE.Mesh(limbGeometry, limbMaterial);
@@ -80,20 +80,33 @@
         const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
         terrain.rotation.x = -Math.PI / 2;
         terrain.receiveShadow = true;
+
+        // Smooth hills and valleys
+        const vertices = terrainGeometry.attributes.position.array;
+        for (let i = 0; i < vertices.length; i += 3) {
+            vertices[i + 2] = Math.sin(vertices[i] * 0.1) * Math.cos(vertices[i + 1] * 0.1) * 10;
+        }
+        terrainGeometry.attributes.position.needsUpdate = true;
+        terrainGeometry.computeVertexNormals();
+
         scene.add(terrain);
 
         // Lighting
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
         scene.add(ambientLight);
 
-        const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
-        sunLight.position.set(50, 100, 50);
-        sunLight.castShadow = true;
-        scene.add(sunLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        directionalLight.position.set(50, 100, 50);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 2048;
+        directionalLight.shadow.mapSize.height = 2048;
+        scene.add(directionalLight);
 
         // Camera Position
-        camera.position.set(0, 10, 20);
-        let thirdPersonOffset = { x: 0, y: 10, z: 20 };
+        let thirdPersonOffset = { x: 2, y: 5, z: 10 }; // Fortnite-style over-the-shoulder
+        let firstPersonOffset = { x: 0, y: 1.5, z: 0.5 }; // Close to the player's face
+
+        camera.position.set(0, 5, 10);
 
         // Player Movement and Controls
         const keys = { w: false, a: false, s: false, d: false, space: false };
@@ -131,23 +144,23 @@
 
             playerGroup.position.y += velocityY;
 
-            // Smooth Camera Transition
+            // Camera Smooth Transition
             if (isFirstPerson) {
                 transitionProgress = Math.min(1, transitionProgress + 0.05);
             } else {
                 transitionProgress = Math.max(0, transitionProgress - 0.05);
             }
 
-            const targetOffset = isFirstPerson ? { x: 0, y: 2, z: 0 } : thirdPersonOffset;
-            camera.position.x = THREE.MathUtils.lerp(camera.position.x, playerGroup.position.x + targetOffset.x, transitionProgress);
-            camera.position.y = THREE.MathUtils.lerp(camera.position.y, playerGroup.position.y + targetOffset.y, transitionProgress);
-            camera.position.z = THREE.MathUtils.lerp(camera.position.z, playerGroup.position.z + targetOffset.z, transitionProgress);
+            const targetOffset = isFirstPerson ? firstPersonOffset : thirdPersonOffset;
+            camera.position.x = THREE.MathUtils.lerp(camera.position.x, playerGroup.position.x + targetOffset.x, 0.1);
+            camera.position.y = THREE.MathUtils.lerp(camera.position.y, playerGroup.position.y + targetOffset.y, 0.1);
+            camera.position.z = THREE.MathUtils.lerp(camera.position.z, playerGroup.position.z + targetOffset.z, 0.1);
             camera.lookAt(playerGroup.position);
 
             renderer.render(scene, camera);
         }
 
-        // Toggle View Button
+        // Toggle Button
         toggleViewButton.addEventListener("click", () => {
             isFirstPerson = !isFirstPerson;
             toggleViewButton.innerText = isFirstPerson ? "Third Person" : "First Person";
