@@ -29,7 +29,7 @@
         scene.add(player);
 
         // Terrain
-        const terrainSize = 100; // Larger terrain size
+        const terrainSize = 400; // Larger terrain size (4x bigger)
         const terrainGeometry = new THREE.PlaneGeometry(terrainSize, terrainSize, 100, 100);
         const terrainMaterial = new THREE.MeshStandardMaterial({ color: 0x3cb371 });
         const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
@@ -40,7 +40,7 @@
         // Generate smooth hills and valleys
         const vertices = terrainGeometry.attributes.position.array;
         for (let i = 0; i < vertices.length; i += 3) {
-            vertices[i + 2] = Math.sin(vertices[i] * 0.1) * Math.cos(vertices[i + 1] * 0.1) * 5;
+            vertices[i + 2] = Math.sin(vertices[i] * 0.1) * Math.cos(vertices[i + 1] * 0.1) * 10;
         }
         terrainGeometry.attributes.position.needsUpdate = true;
         terrainGeometry.computeVertexNormals();
@@ -54,22 +54,22 @@
         };
 
         // Houses
-        const houseGeometry = new THREE.BoxGeometry(5, 5, 5);
-        const roofGeometry = new THREE.ConeGeometry(3.5, 2, 4);
+        const houseGeometry = new THREE.BoxGeometry(10, 10, 10);
+        const roofGeometry = new THREE.ConeGeometry(7, 5, 4);
         const houseMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
         const roofMaterial = new THREE.MeshStandardMaterial({ color: 0xA52A2A });
 
-        for (let i = -terrainSize / 2; i < terrainSize / 2; i += 15) {
-            for (let j = -terrainSize / 2; j < terrainSize / 2; j += 15) {
+        for (let i = -terrainSize / 2; i < terrainSize / 2; i += 30) {
+            for (let j = -terrainSize / 2; j < terrainSize / 2; j += 30) {
                 if (Math.random() > 0.5) {
                     const house = new THREE.Mesh(houseGeometry, houseMaterial);
                     house.castShadow = true;
                     house.receiveShadow = true;
-                    house.position.set(i, terrainHeightAt(i, j) + 2.5, j);
+                    house.position.set(i, terrainHeightAt(i, j) + 5, j);
 
                     const roof = new THREE.Mesh(roofGeometry, roofMaterial);
                     roof.castShadow = true;
-                    roof.position.set(i, terrainHeightAt(i, j) + 6, j);
+                    roof.position.set(i, terrainHeightAt(i, j) + 12, j);
 
                     scene.add(house, roof);
                 }
@@ -78,19 +78,19 @@
 
         // Trees
         const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.5, 3);
-        const leavesGeometry = new THREE.SphereGeometry(2);
+        const leavesGeometry = new THREE.SphereGeometry(3);
         const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
         const leavesMaterial = new THREE.MeshStandardMaterial({ color: 0x006400 });
 
-        for (let i = -terrainSize / 2; i < terrainSize / 2; i += 10) {
-            for (let j = -terrainSize / 2; j < terrainSize / 2; j += 10) {
-                if (Math.random() > 0.6) {
+        for (let i = -terrainSize / 2; i < terrainSize / 2; i += 15) {
+            for (let j = -terrainSize / 2; j < terrainSize / 2; j += 15) {
+                if (Math.random() > 0.7) {
                     const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
                     trunk.position.set(i, terrainHeightAt(i, j) + 1.5, j);
                     trunk.castShadow = true;
 
                     const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
-                    leaves.position.set(i, terrainHeightAt(i, j) + 4.5, j);
+                    leaves.position.set(i, terrainHeightAt(i, j) + 5.5, j);
                     leaves.castShadow = true;
 
                     scene.add(trunk, leaves);
@@ -98,14 +98,27 @@
             }
         }
 
-        // Water
-        const waterGeometry = new THREE.PlaneGeometry(30, 30);
-        const waterMaterial = new THREE.MeshStandardMaterial({ color: 0x1E90FF, transparent: true, opacity: 0.9 });
+        // Deadly Water at Map Edges
+        const waterGeometry = new THREE.PlaneGeometry(terrainSize + 100, terrainSize + 100);
+        const waterMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22, transparent: true, opacity: 0.8 });
         const water = new THREE.Mesh(waterGeometry, waterMaterial);
         water.rotation.x = -Math.PI / 2;
-        water.position.set(0, 0.2, 20); // Adjust the position
+        water.position.y = 0.2; // Slightly above ground
         water.receiveShadow = true;
         scene.add(water);
+
+        const checkPlayerInWater = () => {
+            const halfSize = terrainSize / 2;
+            if (
+                player.position.x < -halfSize ||
+                player.position.x > halfSize ||
+                player.position.z < -halfSize ||
+                player.position.z > halfSize
+            ) {
+                alert("You lost! You fell into the deadly water.");
+                player.position.set(0, 10, 0); // Reset player position
+            }
+        };
 
         // Lighting
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
@@ -119,7 +132,7 @@
         scene.add(directionalLight);
 
         // Camera Position
-        camera.position.set(0, 10, 30);
+        camera.position.set(0, 15, 50);
 
         // Player Movement and Controls
         const keys = { w: false, a: false, s: false, d: false, space: false };
@@ -128,6 +141,7 @@
 
         let velocityY = 0;
         let onGround = false;
+        let sensitivity = 0.5;
 
         // Update Loop
         function animate() {
@@ -145,7 +159,7 @@
             }
 
             // Player Movement
-            const speed = 0.3;
+            const speed = 0.3 * sensitivity;
             if (keys.w) player.position.z -= speed;
             if (keys.s) player.position.z += speed;
             if (keys.a) player.position.x -= speed;
@@ -154,8 +168,11 @@
 
             player.position.y += velocityY;
 
+            // Check for water boundary
+            checkPlayerInWater();
+
             // Update Camera
-            camera.position.set(player.position.x, player.position.y + 5, player.position.z + 10);
+            camera.position.set(player.position.x, player.position.y + 10, player.position.z + 20);
             camera.lookAt(player.position);
 
             renderer.render(scene, camera);
