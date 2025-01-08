@@ -83,6 +83,9 @@
         .form-container button:hover {
             background-color: #45a049;
         }
+        #gameQueueOptions {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -113,14 +116,13 @@
         <button onclick="closeForm('loginForm')">Cancel</button>
     </div>
 
-    <!-- Queue Game -->
-    <div class="form-container" id="gameQueueForm">
-        <h2>Game Queue</h2>
-        <p>Would you like to join a solo, duo, or squad game?</p>
-        <button onclick="joinGame('Solo')">Solo</button>
-        <button onclick="joinGame('Duo')">Duo</button>
-        <button onclick="joinGame('Squad')">Squad</button>
-        <button onclick="closeForm('gameQueueForm')">Cancel</button>
+    <!-- Game Queue -->
+    <div id="gameQueueOptions">
+        <h2>Select Game Mode</h2>
+        <button class="button" onclick="joinGame('Solo')">Solo</button>
+        <button class="button" onclick="joinGame('Duo')">Duo</button>
+        <button class="button" onclick="joinGame('Squad')">Squad</button>
+        <button class="button" onclick="closeQueue()">Cancel</button>
     </div>
 
     <div class="grass"></div>
@@ -135,11 +137,12 @@
             document.getElementById("loginForm").style.display = "block";
         }
 
+        // Show game queue options
         function queueGame() {
-            document.getElementById("gameQueueForm").style.display = "block";
+            document.getElementById("gameQueueOptions").style.display = "block";
         }
 
-        // Close form and clear inputs
+        // Close the forms
         function closeForm(formId) {
             document.getElementById(formId).style.display = "none";
             if (formId === 'signUpForm') {
@@ -150,6 +153,11 @@
                 document.getElementById("loginUsername").value = '';
                 document.getElementById("loginPassword").value = '';
             }
+        }
+
+        // Close the game queue options
+        function closeQueue() {
+            document.getElementById("gameQueueOptions").style.display = "none";
         }
 
         // Simulate form submission
@@ -167,10 +175,10 @@
             closeForm('loginForm');
         }
 
-        // Simulate joining the game
+        // Simulate joining the game with chosen mode
         function joinGame(mode) {
             alert("You have joined a " + mode + " game!");
-            closeForm('gameQueueForm');
+            closeQueue();
         }
     </script>
 </body>
