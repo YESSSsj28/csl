@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>First and Third Person with 360 Camera Sensitivity</title>
+    <title>First and Third Person with Adjustable Camera Sensitivity</title>
     <style>
         body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
         canvas { display: block; }
@@ -38,14 +38,13 @@
     </style>
 </head>
 <body>
-    <div class="cursor"></div>
-    <button id="toggleView">First Person</button>
+    <button id="toggleView">Switch to First Person</button>
     <input type="range" id="sensitivitySlider" min="0.1" max="2" step="0.1" value="1" />
     <label for="sensitivitySlider">Camera Sensitivity</label>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        // Scene, Camera, Renderer
+        // Basic Scene Setup
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -64,86 +63,40 @@
             sensitivity = parseFloat(e.target.value);
         });
 
-        // Grass Baseplate (Larger)
-        const terrainGeometry = new THREE.PlaneGeometry(200, 200);
-        const terrainMaterial = new THREE.MeshStandardMaterial({ color: 0x3cb371 });
-        const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
-        terrain.rotation.x = -Math.PI / 2; // Flat baseplate
-        terrain.receiveShadow = true;
-        scene.add(terrain);
+        // Player Setup
+        const playerGroup = new THREE.Group();
+        const bodyGeometry = new THREE.CylinderGeometry(0.5, 0.5, 2, 16);
+        const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0xff5733 });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        playerGroup.add(body);
+        scene.add(playerGroup);
 
         // Lighting
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
         scene.add(ambientLight);
-
         const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
         directionalLight.position.set(50, 100, 50);
-        directionalLight.castShadow = true;
         scene.add(directionalLight);
 
-        // Player Model (With Legs and More Details)
-        const playerGroup = new THREE.Group();
-
-        // Body
-        const bodyGeometry = new THREE.CylinderGeometry(0.5, 0.5, 2, 16);
-        const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0xff5733 });
-        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-        body.castShadow = true;
-
-        // Legs
-        const legGeometry = new THREE.CylinderGeometry(0.25, 0.25, 1, 16);
-        const legMaterial = new THREE.MeshStandardMaterial({ color: 0x0000ff });
-        const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
-        const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
-
-        leftLeg.position.set(-0.5, -1.5, 0);
-        rightLeg.position.set(0.5, -1.5, 0);
-
-        // Arms (Simplified as boxes)
-        const armGeometry = new THREE.BoxGeometry(0.3, 1, 0.3);
-        const armMaterial = new THREE.MeshStandardMaterial({ color: 0xffc107 });
-        const leftArm = new THREE.Mesh(armGeometry, armMaterial);
-        const rightArm = new THREE.Mesh(armGeometry, armMaterial);
-
-        leftArm.position.set(-1, 0.5, 0);
-        rightArm.position.set(1, 0.5, 0);
-
-        playerGroup.add(body, leftLeg, rightLeg, leftArm, rightArm);
-        playerGroup.position.y = 1.5;
-        scene.add(playerGroup);
-
         // Camera Settings
-        let thirdPersonOffset = { x: 2, y: 5, z: 10 }; // Over-the-shoulder
-        let firstPersonOffset = { x: 0, y: 1.5, z: 0.5 }; // First-person view
+        let thirdPersonOffset = { x: 2, y: 5, z: 10 }; // Third-person view offset
+        let firstPersonOffset = { x: 0, y: 1.5, z: 0.5 }; // First-person view offset
 
         camera.position.set(0, 5, 10);
 
-        // Player Movement and Controls
+        // Player Movement
         const keys = { w: false, a: false, s: false, d: false };
         window.addEventListener("keydown", (e) => { keys[e.key.toLowerCase()] = true; });
         window.addEventListener("keyup", (e) => { keys[e.key.toLowerCase()] = false; });
 
-        const speed = 0.2;
+        const speed = 0.1;
 
-        // Mouse Handling for Camera Rotation (Now only affects camera rotation)
-        let mouseX = 0, mouseY = 0;
+        // Mouse Movement for Camera Rotation
+        let mouseX = 0, mouseY = 0, targetX = 0, targetY = 0;
 
         window.addEventListener("mousemove", (e) => {
-            const dx = e.movementX * sensitivity; // Horizontal camera rotation
-            const dy = e.movementY * sensitivity; // Vertical camera rotation
-
-            if (isFirstPerson) {
-                // In first-person mode, adjust the camera's rotation based on mouse movement
-                camera.rotation.y -= dx * 0.002; // Horizontal movement
-                camera.rotation.x -= dy * 0.002; // Vertical movement
-                // Lock vertical movement to avoid flipping the camera upside down
-                camera.rotation.x = Math.max(Math.min(camera.rotation.x, Math.PI / 2), -Math.PI / 2);
-            } else {
-                // In third-person mode, adjust the player's rotation (not the camera directly)
-                playerGroup.rotation.y -= dx * 0.002; // Horizontal rotation
-                camera.rotation.x -= dy * 0.002; // Vertical camera rotation
-                camera.lookAt(playerGroup.position); // Always look at the player
-            }
+            mouseX = e.clientX / window.innerWidth * 2 - 1;
+            mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
         });
 
         // Update Loop
@@ -156,31 +109,41 @@
             if (keys.a) playerGroup.position.x -= speed;
             if (keys.d) playerGroup.position.x += speed;
 
+            // Adjust Camera Sensitivity and Mouse Rotation
+            targetX = mouseX * sensitivity; // Horizontal camera rotation
+            targetY = mouseY * sensitivity; // Vertical camera rotation
+
+            if (isFirstPerson) {
+                // In first-person mode, adjust the camera's rotation based on mouse movement
+                camera.rotation.y = targetX; 
+                camera.rotation.x = Math.max(Math.min(targetY, Math.PI / 2), -Math.PI / 2); // Limit vertical rotation
+            } else {
+                // In third-person mode, adjust the player's rotation (not the camera directly)
+                playerGroup.rotation.y = targetX;
+                camera.rotation.x = targetY * 0.5; // Less vertical rotation in third-person
+                camera.lookAt(playerGroup.position);
+            }
+
             // Camera Smooth Transition
             const targetOffset = isFirstPerson ? firstPersonOffset : thirdPersonOffset;
             camera.position.x = playerGroup.position.x + targetOffset.x;
             camera.position.y = playerGroup.position.y + targetOffset.y;
             camera.position.z = playerGroup.position.z + targetOffset.z;
 
-            // Camera Rotation (In Third-Person Mode)
-            if (!isFirstPerson) {
-                camera.lookAt(playerGroup.position);
-            }
-
-            // Hide the cursor in first-person mode
+            // Hide Cursor in First Person Mode
             if (isFirstPerson) {
-                document.body.style.cursor = 'none'; // Hide cursor
+                document.body.style.cursor = 'none';
             } else {
-                document.body.style.cursor = 'auto'; // Show cursor in third-person
+                document.body.style.cursor = 'auto';
             }
 
             renderer.render(scene, camera);
         }
 
-        // Toggle Button
+        // Toggle View Button to Switch Between First Person and Third Person
         toggleViewButton.addEventListener("click", () => {
             isFirstPerson = !isFirstPerson;
-            toggleViewButton.innerText = isFirstPerson ? "Third Person" : "First Person";
+            toggleViewButton.innerText = isFirstPerson ? "Switch to Third Person" : "Switch to First Person";
         });
 
         animate();
