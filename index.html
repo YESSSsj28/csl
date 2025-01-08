@@ -3,112 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Game Environment</title>
+    <title>3D Map with Sun and Clouds</title>
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-        }
-        canvas {
-            display: block;
-        }
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
     </style>
 </head>
 <body>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/PointerLockControls.js"></script>
     <script>
-        // Basic Setup
+        // Scene, Camera, Renderer
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer();
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
 
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
+        // Add Skybox (Dynamic Clouds)
+        const skyGeometry = new THREE.SphereGeometry(500, 32, 32);
+        const skyMaterial = new THREE.MeshBasicMaterial({
+            color: 0x87CEEB,
+            side: THREE.BackSide,
+        });
+        const sky = new THREE.Mesh(skyGeometry, skyMaterial);
+        scene.add(sky);
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
-        directionalLight.position.set(10, 10, 10);
-        scene.add(directionalLight);
-
-        // First-Person Pointer Lock Controls
-        const controls = new THREE.PointerLockControls(camera, document.body);
-        document.addEventListener('click', () => controls.lock());
-
-        // Ground (Grass)
-        const groundGeometry = new THREE.PlaneGeometry(200, 200);
-        const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
-        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-        ground.rotation.x = -Math.PI / 2;
-        ground.receiveShadow = true;
-        scene.add(ground);
-
-        // Toxic Water at the Edges
-        const waterGeometry = new THREE.PlaneGeometry(220, 20);
-        const waterMaterial = new THREE.MeshStandardMaterial({ color: 0x0000ff });
-
-        // Add water to edges
-        const toxicWater = [];
-        for (let i = 0; i < 4; i++) {
-            toxicWater[i] = new THREE.Mesh(waterGeometry, waterMaterial);
-            toxicWater[i].rotation.x = -Math.PI / 2;
-        }
-        toxicWater[0].position.z = 110; // Top edge
-        toxicWater[1].position.z = -110; // Bottom edge
-        toxicWater[2].rotation.z = Math.PI / 2;
-        toxicWater[2].position.x = 110; // Right edge
-        toxicWater[3].rotation.z = Math.PI / 2;
-        toxicWater[3].position.x = -110; // Left edge
-        toxicWater.forEach(water => scene.add(water));
-
-        // Add Player Movement
-        camera.position.set(0, 2, 0);
-        let velocity = new THREE.Vector3();
-        const moveSpeed = 0.2;
-
-        // Add Houses (Points of Interest)
-        function createHouse(x, z) {
-            const houseGeometry = new THREE.BoxGeometry(10, 10, 10);
-            const houseMaterial = new THREE.MeshStandardMaterial({ color: 0xffd700 });
-            const house = new THREE.Mesh(houseGeometry, houseMaterial);
-            house.position.set(x, 5, z); // Place slightly above the ground
-            scene.add(house);
+        // Dynamic clouds
+        const cloudGeometry = new THREE.SphereGeometry(20, 32, 32);
+        const cloudMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
+        const clouds = [];
+        for (let i = 0; i < 10; i++) {
+            const cloud = new THREE.Mesh(cloudGeometry, cloudMaterial);
+            cloud.position.set(Math.random() * 500 - 250, 50 + Math.random() * 50, Math.random() * 500 - 250);
+            clouds.push(cloud);
+            scene.add(cloud);
         }
 
-        createHouse(20, 20);
-        createHouse(-30, 10);
-        createHouse(40, -20);
+        // Sun (Directional Light Source)
+        const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        sunLight.position.set(50, 100, 50);
+        sunLight.castShadow = true;
+        scene.add(sunLight);
 
-        // Keyboard Controls
-        const keys = {};
-        document.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
-        document.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+        // Player (Character)
+        const playerGeometry = new THREE.BoxGeometry(1, 2, 1);
+        const playerMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+        const player = new THREE.Mesh(playerGeometry, playerMaterial);
+        player.castShadow = true;
+        player.position.y = 1;
+        scene.add(player);
 
-        // Game Loop
-        function animate() {
+        // Terrain
+        const terrainSize = 400;
+        const terrainGeometry = new THREE.PlaneGeometry(terrainSize, terrainSize, 100, 100);
+        const terrainMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
+        const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
+        terrain.rotation.x = -Math.PI / 2;
+        terrain.receiveShadow = true;
+        scene.add(terrain);
+
+        const vertices = terrainGeometry.attributes.position.array;
+        for (let i = 0; i < vertices.length; i += 3) {
+            vertices[i + 2] = Math.sin(vertices[i] * 0.1) * Math.cos(vertices[i + 1] * 0.1) * 10;
+        }
+        terrainGeometry.attributes.position.needsUpdate = true;
+        terrainGeometry.computeVertexNormals();
+
+        const terrainHeightAt = (x, z) => {
+            const row = Math.floor((x + terrainSize / 2) / (terrainSize / 100));
+            const col = Math.floor((z + terrainSize / 2) / (terrainSize / 100));
+            const index = (row + col * 101) * 3 + 2;
+            return vertices[index] || 0;
+        };
+
+        // Houses
+        const houseGeometry = new THREE.BoxGeometry(10, 10, 10);
+        const roofGeometry = new THREE.ConeGeometry(7, 5, 4);
+        const houseMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+        const roofMaterial = new THREE.MeshStandardMaterial({ color: 0xFF6347 });
+
+        for (let i = -terrainSize / 2; i < terrainSize / 2; i += 35) {
+            for (let j = -terrainSize / 2; j < terrainSize / 2; j += 35) {
+                if (Math.random() > 0.6) {
+                    const house = new THREE.Mesh(houseGeometry, houseMaterial);
+                    house.castShadow = true;
+                    house.position.set(i, terrainHeightAt(i, j) + 5, j);
+
+                    const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+                    roof.castShadow = true;
+                    roof.position.set(i, terrainHeightAt(i, j) + 12, j);
+
+                    scene.add(house, roof);
+                }
+            }
+        }
+
+        // Trees
+        const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.5, 3);
+        const leavesGeometry = new THREE.SphereGeometry(3);
+        const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+        const leavesMaterial = new THREE.MeshStandardMaterial({ color: 0x32CD32 });
+
+        for (let i = -terrainSize / 2; i < terrainSize / 2; i += 20) {
+            for (let j = -terrainSize / 2; j < terrainSize / 2; j += 20) {
+                if (Math.random() > 0.8) {
+                    const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+                    trunk.position.set(i, terrainHeightAt(i, j) + 1.5, j);
+                    trunk.castShadow = true;
+
+                    const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
+                    leaves.position.set(i, terrainHeightAt(i, j) + 5.5, j);
+                    leaves.castShadow = true;
+
+                    scene.add(trunk, leaves);
+                }
+            }
+        }
+
+        // Deadly Water at Edges
+        const waterGeometry = new THREE.PlaneGeometry(terrainSize + 100, terrainSize + 100);
+        const waterMaterial = new THREE.MeshStandardMaterial({ color: 0x4169E1, transparent: true, opacity: 0.7 });
+        const water = new THREE.Mesh(waterGeometry, waterMaterial);
+        water.rotation.x = -Math.PI / 2;
+        water.position.y = 0.2;
+        scene.add(water);
+
+        const checkPlayerInWater = () => {
+            const halfSize = terrainSize / 2;
+            if (
+                player.position.x < -halfSize ||
+                player.position.x > halfSize ||
+                player.position.z < -halfSize ||
+                player.position.z > halfSize
+            ) {
+                alert("You lost! You fell into the deadly water.");
+                player.position.set(0, 10, 0);
+            }
+        };
+
+        // Player Movement
+        const keys = { w: false, a: false, s: false, d: false, space: false };
+        window.addEventListener("keydown", (e) => (keys[e.key.toLowerCase()] = true));
+        window.addEventListener("keyup", (e) => (keys[e.key.toLowerCase()] = false));
+
+        let velocityY = 0;
+        let onGround = false;
+        const sensitivity = 0.5;
+
+        const animate = () => {
             requestAnimationFrame(animate);
 
-            // Movement
-            if (keys['w']) velocity.z = -moveSpeed;
-            if (keys['s']) velocity.z = moveSpeed;
-            if (keys['a']) velocity.x = -moveSpeed;
-            if (keys['d']) velocity.x = moveSpeed;
+            clouds.forEach((cloud) => {
+                cloud.position.x += 0.05;
+                if (cloud.position.x > 250) cloud.position.x = -250;
+            });
 
-            // Apply movement
-            controls.getObject().translateX(velocity.x);
-            controls.getObject().translateZ(velocity.z);
-            velocity.set(0, 0, 0);
-
-            // Toxic Water Collision Detection
-            if (camera.position.z > 100 || camera.position.z < -100 || camera.position.x > 100 || camera.position.x < -100) {
-                alert("You fell into toxic water and died!");
-                camera.position.set(0, 2, 0); // Reset position
+            const groundHeight = terrainHeightAt(player.position.x, player.position.z) + 1;
+            if (player.position.y <= groundHeight) {
+                player.position.y = groundHeight;
+                velocityY = 0;
+                onGround = true;
+            } else {
+                velocityY -= 0.01;
+                onGround = false;
             }
 
+            const speed = 0.3 * sensitivity;
+            if (keys.w) player.position.z -= speed;
+            if (keys.s) player.position.z += speed;
+            if (keys.a) player.position.x -= speed;
+            if (keys.d) player.position.x += speed;
+            if (keys.space && onGround) velocityY = 0.2;
+
+            player.position.y += velocityY;
+            checkPlayerInWater();
+
+            camera.position.set(player.position.x, player.position.y + 10, player.position.z + 20);
+            camera.lookAt(player.position);
+
             renderer.render(scene, camera);
-        }
+        };
 
         animate();
     </script>
