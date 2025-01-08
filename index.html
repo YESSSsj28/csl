@@ -56,6 +56,33 @@
             height: 100%;
             z-index: -1;
         }
+        /* Hide forms initially */
+        .form-container {
+            display: none;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 40px;
+            border-radius: 15px;
+        }
+        .form-container input {
+            padding: 10px;
+            font-size: 1em;
+            margin: 10px;
+            border-radius: 5px;
+            width: 80%;
+        }
+        .form-container button {
+            padding: 15px 32px;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .form-container button:hover {
+            background-color: #45a049;
+        }
     </style>
 </head>
 <body>
@@ -67,22 +94,83 @@
         <button class="button" onclick="queueGame()">Queue in a Game</button>
         <div class="footer">Join your squad or play solo and survive to win!</div>
     </div>
+    
+    <!-- Sign Up Form -->
+    <div class="form-container" id="signUpForm">
+        <h2>Sign Up</h2>
+        <input type="text" placeholder="Username" id="signUpUsername" />
+        <input type="password" placeholder="Password" id="signUpPassword" />
+        <button onclick="submitSignUp()">Sign Up</button>
+        <button onclick="closeForm('signUpForm')">Cancel</button>
+    </div>
+
+    <!-- Log In Form -->
+    <div class="form-container" id="loginForm">
+        <h2>Log In</h2>
+        <input type="text" placeholder="Username" id="loginUsername" />
+        <input type="password" placeholder="Password" id="loginPassword" />
+        <button onclick="submitLogin()">Log In</button>
+        <button onclick="closeForm('loginForm')">Cancel</button>
+    </div>
+
+    <!-- Queue Game -->
+    <div class="form-container" id="gameQueueForm">
+        <h2>Game Queue</h2>
+        <p>Would you like to join a solo, duo, or squad game?</p>
+        <button onclick="joinGame('Solo')">Solo</button>
+        <button onclick="joinGame('Duo')">Duo</button>
+        <button onclick="joinGame('Squad')">Squad</button>
+        <button onclick="closeForm('gameQueueForm')">Cancel</button>
+    </div>
+
     <div class="grass"></div>
 
     <script>
+        // Show the respective forms
         function showSignUp() {
-            alert("Redirecting to Sign Up form...");
-            // Add actual redirection or form handling code here
+            document.getElementById("signUpForm").style.display = "block";
         }
 
         function showLogin() {
-            alert("Redirecting to Log In form...");
-            // Add actual redirection or form handling code here
+            document.getElementById("loginForm").style.display = "block";
         }
 
         function queueGame() {
-            alert("Queueing into the game...");
-            // Add actual game queue logic here
+            document.getElementById("gameQueueForm").style.display = "block";
+        }
+
+        // Close form and clear inputs
+        function closeForm(formId) {
+            document.getElementById(formId).style.display = "none";
+            if (formId === 'signUpForm') {
+                document.getElementById("signUpUsername").value = '';
+                document.getElementById("signUpPassword").value = '';
+            }
+            if (formId === 'loginForm') {
+                document.getElementById("loginUsername").value = '';
+                document.getElementById("loginPassword").value = '';
+            }
+        }
+
+        // Simulate form submission
+        function submitSignUp() {
+            const username = document.getElementById("signUpUsername").value;
+            const password = document.getElementById("signUpPassword").value;
+            alert("Sign Up Successful! Username: " + username);
+            closeForm('signUpForm');
+        }
+
+        function submitLogin() {
+            const username = document.getElementById("loginUsername").value;
+            const password = document.getElementById("loginPassword").value;
+            alert("Login Successful! Username: " + username);
+            closeForm('loginForm');
+        }
+
+        // Simulate joining the game
+        function joinGame(mode) {
+            alert("You have joined a " + mode + " game!");
+            closeForm('gameQueueForm');
         }
     </script>
 </body>
