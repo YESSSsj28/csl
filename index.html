@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>First and Third Person Baseplate</title>
+    <title>First and Third Person Baseplate with Sensitivity</title>
     <style>
         body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
         canvas { display: block; }
@@ -34,11 +34,20 @@
             border-radius: 50%;
             pointer-events: none;
         }
+        #sensitivitySlider {
+            position: absolute;
+            top: 60px;
+            left: 10px;
+            width: 200px;
+        }
     </style>
 </head>
 <body>
     <div class="cursor"></div>
     <button id="toggleView">First Person</button>
+    <input type="range" id="sensitivitySlider" min="0.1" max="2" step="0.1" value="1" />
+    <label for="sensitivitySlider" style="position: absolute; top: 90px; left: 10px; color: white;">Sensitivity</label>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
         // Scene, Camera, Renderer
@@ -51,6 +60,14 @@
         // Toggle Button
         const toggleViewButton = document.getElementById("toggleView");
         let isFirstPerson = false;
+
+        // Sensitivity Slider
+        const sensitivitySlider = document.getElementById("sensitivitySlider");
+        let sensitivity = parseFloat(sensitivitySlider.value);
+
+        sensitivitySlider.addEventListener("input", (e) => {
+            sensitivity = parseFloat(e.target.value);
+        });
 
         // Grass Baseplate (Larger)
         const terrainGeometry = new THREE.PlaneGeometry(200, 200);
@@ -69,23 +86,35 @@
         directionalLight.castShadow = true;
         scene.add(directionalLight);
 
-        // Player (Body and Hands)
+        // Player Model (With Legs and More Details)
         const playerGroup = new THREE.Group();
-        const bodyGeometry = new THREE.CylinderGeometry(1, 1, 3, 16);
-        const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x0000ff });
+
+        // Body
+        const bodyGeometry = new THREE.CylinderGeometry(0.5, 0.5, 2, 16);
+        const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0xff5733 });
         const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
         body.castShadow = true;
 
-        const handGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-        const handMaterial = new THREE.MeshStandardMaterial({ color: 0xffa500 });
-        const leftHand = new THREE.Mesh(handGeometry, handMaterial);
-        const rightHand = new THREE.Mesh(handGeometry, handMaterial);
+        // Legs
+        const legGeometry = new THREE.CylinderGeometry(0.25, 0.25, 1, 16);
+        const legMaterial = new THREE.MeshStandardMaterial({ color: 0x0000ff });
+        const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
+        const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
 
-        leftHand.position.set(-0.8, 1.2, -0.8);
-        rightHand.position.set(0.8, 1.2, -0.8);
+        leftLeg.position.set(-0.5, -1.5, 0);
+        rightLeg.position.set(0.5, -1.5, 0);
 
-        playerGroup.add(body, leftHand, rightHand);
-        playerGroup.position.y = 1.5; // Elevate slightly above ground
+        // Arms (Simplified as boxes)
+        const armGeometry = new THREE.BoxGeometry(0.3, 1, 0.3);
+        const armMaterial = new THREE.MeshStandardMaterial({ color: 0xffc107 });
+        const leftArm = new THREE.Mesh(armGeometry, armMaterial);
+        const rightArm = new THREE.Mesh(armGeometry, armMaterial);
+
+        leftArm.position.set(-1, 0.5, 0);
+        rightArm.position.set(1, 0.5, 0);
+
+        playerGroup.add(body, leftLeg, rightLeg, leftArm, rightArm);
+        playerGroup.position.y = 1.5;
         scene.add(playerGroup);
 
         // Camera Settings
@@ -94,15 +123,27 @@
 
         camera.position.set(0, 5, 10);
 
-        // Cursor
-        const cursor = document.querySelector(".cursor");
-
         // Player Movement and Controls
         const keys = { w: false, a: false, s: false, d: false };
         window.addEventListener("keydown", (e) => { keys[e.key.toLowerCase()] = true; });
         window.addEventListener("keyup", (e) => { keys[e.key.toLowerCase()] = false; });
 
         const speed = 0.2;
+        let mouseX = 0, mouseY = 0;
+
+        // Handle mouse movement for looking around
+        window.addEventListener("mousemove", (e) => {
+            const dx = e.movementX * sensitivity;
+            const dy = e.movementY * sensitivity;
+
+            if (isFirstPerson) {
+                camera.rotation.y -= dx * 0.002;
+                camera.rotation.x -= dy * 0.002;
+                camera.rotation.x = Math.max(Math.min(camera.rotation.x, Math.PI / 2), -Math.PI / 2); // Lock vertical view
+            } else {
+                playerGroup.rotation.y -= dx * 0.002;
+            }
+        });
 
         // Update Loop
         function animate() {
@@ -113,11 +154,6 @@
             if (keys.s) playerGroup.position.z += speed;
             if (keys.a) playerGroup.position.x -= speed;
             if (keys.d) playerGroup.position.x += speed;
-
-            // Hand Animation (Swinging while walking)
-            const time = Date.now() * 0.005;
-            leftHand.position.z = -0.8 + Math.sin(time) * 0.2;
-            rightHand.position.z = -0.8 - Math.sin(time) * 0.2;
 
             // Camera Smooth Transition
             const targetOffset = isFirstPerson ? firstPersonOffset : thirdPersonOffset;
