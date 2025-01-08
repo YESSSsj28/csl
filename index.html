@@ -3,160 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Game with Toxic Water and POIs</title>
+    <title>3D Game Environment</title>
     <style>
-        body { margin: 0; overflow: hidden; }
-        canvas { display: block; }
-        #gameOver { 
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 36px;
-            font-family: Arial, sans-serif;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 20px;
-            border-radius: 10px;
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
         }
     </style>
 </head>
 <body>
-    <div id="gameOver">You lost! You fell into the toxic water.</div>
-    <script type="module">
-        import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.module.js';
-        import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.0/examples/jsm/controls/OrbitControls.js';
-
-        // Scene setup
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/PointerLockControls.js"></script>
+    <script>
+        // Setup Scene, Camera, Renderer
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87ceeb);
-
-        // Camera setup
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 20, 50);
-
-        // Renderer setup
         const renderer = new THREE.WebGLRenderer();
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Light setup
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        // Add Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
         scene.add(ambientLight);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-        directionalLight.position.set(50, 100, 50);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        directionalLight.position.set(10, 10, 10);
         scene.add(directionalLight);
 
-        // Terrain setup
-        const terrainGeometry = new THREE.PlaneGeometry(400, 400, 50, 50);
-        const terrainMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22, wireframe: false });
-        const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
-        terrain.rotation.x = -Math.PI / 2;
-        terrainGeometry.verticesNeedUpdate = true;
-        terrainGeometry.computeVertexNormals();
-        scene.add(terrain);
+        // Player Controls
+        const controls = new THREE.PointerLockControls(camera, document.body);
+        document.addEventListener('click', () => controls.lock());
 
-        // Generate hills
-        terrain.geometry.attributes.position.array.forEach((val, i, array) => {
-            if (i % 3 === 2) {
-                array[i] = Math.random() * 10 - 5; // Random height
-            }
-        });
-        terrain.geometry.computeVertexNormals();
+        // Ground
+        const groundGeometry = new THREE.PlaneGeometry(400, 400, 50, 50);
+        const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
 
-        // Toxic water setup
-        const waterGeometry = new THREE.PlaneGeometry(400, 400);
-        const waterMaterial = new THREE.MeshStandardMaterial({ color: 0x0000ff });
-        const water = new THREE.Mesh(waterGeometry, waterMaterial);
-        water.rotation.x = -Math.PI / 2;
-        water.position.y = -10;
-        scene.add(water);
+        // Toxic Water (at edges)
+        const toxicGeometry = new THREE.PlaneGeometry(400, 20);
+        const toxicMaterial = new THREE.MeshStandardMaterial({ color: 0x0000ff });
+        const toxicWater = new THREE.Mesh(toxicGeometry, toxicMaterial);
+        toxicWater.rotation.x = -Math.PI / 2;
+        toxicWater.position.z = 200; // Place at the edge of the map
+        scene.add(toxicWater);
 
-        // Player setup
-        const playerGeometry = new THREE.BoxGeometry(2, 5, 2);
-        const playerMaterial = new THREE.MeshStandardMaterial({ color: 0xffd700 });
-        const player = new THREE.Mesh(playerGeometry, playerMaterial);
-        player.position.y = 3;
-        scene.add(player);
+        // Add Player
+        camera.position.set(0, 2, 10);
+        let velocity = new THREE.Vector3();
+        const moveSpeed = 0.2;
 
-        // POIs setup (houses, trees)
-        const houseGeometry = new THREE.BoxGeometry(10, 10, 10);
-        const houseMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
-        const house = new THREE.Mesh(houseGeometry, houseMaterial);
-        house.position.set(20, 5, 20);
-        scene.add(house);
+        // Collision Detection Objects
+        const collidableObjects = [];
 
-        const treeGeometry = new THREE.CylinderGeometry(1, 1, 10, 12);
-        const treeMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
-        const tree = new THREE.Mesh(treeGeometry, treeMaterial);
-        tree.position.set(-20, 5, -20);
-        scene.add(tree);
+        // Add Houses (POIs)
+        function createHouse(x, z) {
+            const houseGeometry = new THREE.BoxGeometry(5, 5, 5);
+            const houseMaterial = new THREE.MeshStandardMaterial({ color: 0xffd700 });
+            const house = new THREE.Mesh(houseGeometry, houseMaterial);
+            house.position.set(x, 2.5, z);
+            collidableObjects.push(house);
+            scene.add(house);
+        }
 
-        const foliageGeometry = new THREE.SphereGeometry(5, 12, 12);
-        const foliageMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
-        const foliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
-        foliage.position.set(-20, 10, -20);
-        scene.add(foliage);
+        createHouse(10, 10);
+        createHouse(-10, -20);
+        createHouse(30, 15);
 
-        // Collision detection variables
-        let moveSpeed = 0.5;
-        let isJumping = false;
-        let velocityY = 0;
-
-        // Controls setup
-        const controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.enablePan = false;
-        controls.enableZoom = false;
-
-        // Keyboard controls
+        // Keyboard Controls
         const keys = {};
-        window.addEventListener('keydown', (e) => (keys[e.key] = true));
-        window.addEventListener('keyup', (e) => (keys[e.key] = false));
+        document.addEventListener('keydown', (e) => keys[e.key] = true);
+        document.addEventListener('keyup', (e) => keys[e.key] = false);
 
-        function updatePlayer() {
-            if (keys['w']) player.position.z -= moveSpeed;
-            if (keys['s']) player.position.z += moveSpeed;
-            if (keys['a']) player.position.x -= moveSpeed;
-            if (keys['d']) player.position.x += moveSpeed;
+        // Game Loop
+        function animate() {
+            requestAnimationFrame(animate);
 
-            // Jumping mechanics
-            if (keys[' '] && !isJumping) {
-                isJumping = true;
-                velocityY = 0.2;
-            }
+            // Player Movement
+            if (keys['w']) velocity.z = -moveSpeed;
+            if (keys['s']) velocity.z = moveSpeed;
+            if (keys['a']) velocity.x = -moveSpeed;
+            if (keys['d']) velocity.x = moveSpeed;
 
-            if (isJumping) {
-                player.position.y += velocityY;
-                velocityY -= 0.01;
-                if (player.position.y <= 3) {
-                    player.position.y = 3;
-                    isJumping = false;
+            camera.position.add(velocity);
+            velocity.set(0, 0, 0);
+
+            // Collision Detection
+            for (const object of collidableObjects) {
+                const distance = camera.position.distanceTo(object.position);
+                if (distance < 3) {
+                    console.log("Collision detected!");
+                    camera.position.sub(velocity); // Prevent movement into the object
                 }
             }
 
-            // Collision with toxic water
-            if (player.position.y < water.position.y) {
-                document.getElementById('gameOver').style.display = 'block';
-                moveSpeed = 0; // Stop movement
+            // Toxic Water Detection
+            if (camera.position.z > 190 || camera.position.z < -190 || camera.position.x > 190 || camera.position.x < -190) {
+                alert("You died in toxic water!");
+                camera.position.set(0, 2, 10); // Reset position
             }
-        }
 
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update();
-            updatePlayer();
             renderer.render(scene, camera);
         }
 
         animate();
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
     </script>
 </body>
 </html>
