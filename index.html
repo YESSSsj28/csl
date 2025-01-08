@@ -23,17 +23,6 @@
         button:hover {
             background-color: #0056b3;
         }
-        .cursor {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 10px;
-            height: 10px;
-            background-color: white;
-            border-radius: 50%;
-            pointer-events: none;
-        }
         #sensitivitySlider {
             position: absolute;
             top: 60px;
@@ -145,14 +134,14 @@
 
             if (isFirstPerson) {
                 // In first-person mode, adjust the camera's rotation based on mouse movement
-                camera.rotation.y -= dx * 0.002;
-                camera.rotation.x -= dy * 0.002;
+                camera.rotation.y -= dx * 0.002; // Horizontal movement
+                camera.rotation.x -= dy * 0.002; // Vertical movement
                 // Lock vertical movement to avoid flipping the camera upside down
                 camera.rotation.x = Math.max(Math.min(camera.rotation.x, Math.PI / 2), -Math.PI / 2);
             } else {
                 // In third-person mode, adjust the player's rotation (not the camera directly)
-                playerGroup.rotation.y -= dx * 0.002;
-                camera.rotation.x -= dy * 0.002; // Vertical rotation for the camera
+                playerGroup.rotation.y -= dx * 0.002; // Horizontal rotation
+                camera.rotation.x -= dy * 0.002; // Vertical camera rotation
                 camera.lookAt(playerGroup.position); // Always look at the player
             }
         });
