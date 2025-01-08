@@ -52,8 +52,8 @@
         const toggleViewButton = document.getElementById("toggleView");
         let isFirstPerson = false;
 
-        // Grass Baseplate
-        const terrainGeometry = new THREE.PlaneGeometry(100, 100);
+        // Grass Baseplate (Larger)
+        const terrainGeometry = new THREE.PlaneGeometry(200, 200);
         const terrainMaterial = new THREE.MeshStandardMaterial({ color: 0x3cb371 });
         const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
         terrain.rotation.x = -Math.PI / 2; // Flat baseplate
@@ -124,7 +124,11 @@
             camera.position.x = playerGroup.position.x + targetOffset.x;
             camera.position.y = playerGroup.position.y + targetOffset.y;
             camera.position.z = playerGroup.position.z + targetOffset.z;
-            camera.lookAt(playerGroup.position);
+
+            // Camera Rotation (In Third-Person Mode)
+            if (!isFirstPerson) {
+                camera.lookAt(playerGroup.position);
+            }
 
             renderer.render(scene, camera);
         }
