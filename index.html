@@ -3,144 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Battle Royale with Grass and Sensitivity</title>
+    <title>Unblocked Web Proxy</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
-        canvas { display: block; }
-
-        /* Custom Cursor + Symbol in Center */
-        .cursor {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 30px;
-            color: white;
-            font-weight: bold;
-            pointer-events: none;
-            z-index: 10;
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
         }
-
-        /* Button Styling */
-        button {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            padding: 10px 20px;
+        header {
+            padding: 20px;
+            background: #0078D7;
+            color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        input[type="text"] {
+            width: 70%;
+            padding: 10px;
             font-size: 16px;
-            cursor: pointer;
-            background-color: #007bff;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: #28a745;
             color: white;
             border: none;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
         }
-
         button:hover {
-            background-color: #0056b3;
+            background-color: #218838;
+        }
+        iframe {
+            width: 100%;
+            height: 90vh;
+            border: none;
         }
     </style>
 </head>
 <body>
-    <div class="cursor">+</div>
-    <button id="toggleView">First Person</button>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <header>
+        <h1>Unblocked Proxy</h1>
+        <p>Enter the URL of the site you want to visit:</p>
+    </header>
+    <form id="proxyForm">
+        <input type="text" id="urlInput" placeholder="Enter URL (e.g., https://example.com)" required>
+        <button type="submit">Go</button>
+    </form>
+    <iframe id="proxyFrame" src=""></iframe>
     <script>
-        // Scene, Camera, Renderer
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+        const form = document.getElementById('proxyForm');
+        const input = document.getElementById('urlInput');
+        const iframe = document.getElementById('proxyFrame');
 
-        // Mouse sensitivity and movement control
-        let mouseX = 0, mouseY = 0;
-        let sensitivity = 0.002; // Camera sensitivity
-        let pitch = 0; // Vertical rotation angle
-        let yaw = -Math.PI / 2; // Horizontal rotation angle
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            let url = input.value.trim();
 
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-        scene.add(ambientLight);
+            // Add "https://" if not provided
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url;
+            }
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-        directionalLight.position.set(50, 100, 50);
-        directionalLight.castShadow = true;
-        scene.add(directionalLight);
-
-        // Grass-like Ground Plane (Green color)
-        const groundGeometry = new THREE.PlaneGeometry(100, 100);
-        const groundMaterial = new THREE.MeshBasicMaterial({ color: 0x228B22, side: THREE.DoubleSide });
-        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-        ground.rotation.x = -Math.PI / 2;
-        scene.add(ground);
-
-        // Player (Body and Hands)
-        const playerGroup = new THREE.Group();
-        const bodyGeometry = new THREE.CylinderGeometry(1, 1, 3, 16);
-        const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x0000ff });
-        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-        body.castShadow = true;
-
-        const handGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-        const handMaterial = new THREE.MeshStandardMaterial({ color: 0xffa500 });
-        const leftHand = new THREE.Mesh(handGeometry, handMaterial);
-        const rightHand = new THREE.Mesh(handGeometry, handMaterial);
-
-        leftHand.position.set(-0.8, 1.2, -0.8);
-        rightHand.position.set(0.8, 1.2, -0.8);
-
-        playerGroup.add(body, leftHand, rightHand);
-        playerGroup.position.y = 1.5; // Elevate slightly above ground
-        scene.add(playerGroup);
-
-        // Camera Position
-        camera.position.set(0, 5, 10);
-        camera.rotation.set(0, Math.PI / 2, 0);
-
-        // Player Movement and Controls
-        const keys = { w: false, a: false, s: false, d: false };
-        window.addEventListener("keydown", (e) => { keys[e.key.toLowerCase()] = true; });
-        window.addEventListener("keyup", (e) => { keys[e.key.toLowerCase()] = false; });
-
-        const speed = 0.2;
-
-        // Update Loop
-        function animate() {
-            requestAnimationFrame(animate);
-
-            // Player Movement
-            if (keys.w) playerGroup.position.z -= speed;
-            if (keys.s) playerGroup.position.z += speed;
-            if (keys.a) playerGroup.position.x -= speed;
-            if (keys.d) playerGroup.position.x += speed;
-
-            // Mouse Movement for Camera Control (Look Around)
-            document.addEventListener('mousemove', (event) => {
-                mouseX = event.clientX / window.innerWidth - 0.5;
-                mouseY = event.clientY / window.innerHeight - 0.5;
-            });
-
-            yaw += mouseX * sensitivity;
-            pitch -= mouseY * sensitivity;
-            pitch = Math.max(Math.min(pitch, Math.PI / 2), -Math.PI / 2); // Limit vertical rotation
-
-            // Update Camera Rotation
-            camera.rotation.set(pitch, yaw, 0);
-
-            // Render the Scene
-            renderer.render(scene, camera);
-        }
-
-        // Toggle View Button (First/Third Person)
-        const toggleViewButton = document.getElementById("toggleView");
-        let isFirstPerson = false;
-        toggleViewButton.addEventListener("click", () => {
-            isFirstPerson = !isFirstPerson;
-            toggleViewButton.innerText = isFirstPerson ? "Third Person" : "First Person";
+            iframe.src = url;
         });
-
-        animate();
     </script>
 </body>
 </html>
