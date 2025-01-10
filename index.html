@@ -1,71 +1,105 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unblocked Web Proxy</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 0;
-            padding: 0;
-        }
-        header {
-            padding: 20px;
-            background: #0078D7;
-            color: white;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        }
-        input[type="text"] {
-            width: 70%;
-            padding: 10px;
-            font-size: 16px;
-        }
-        button {
-            padding: 10px 15px;
-            font-size: 16px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #218838;
-        }
-        iframe {
-            width: 100%;
-            height: 90vh;
-            border: none;
-        }
-    </style>
-</head>
-<body>
-    <header>
-        <h1>Unblocked Proxy</h1>
-        <p>Enter the URL of the site you want to visit:</p>
-    </header>
-    <form id="proxyForm">
-        <input type="text" id="urlInput" placeholder="Enter URL (e.g., https://example.com)" required>
-        <button type="submit">Go</button>
-    </form>
-    <iframe id="proxyFrame" src=""></iframe>
-    <script>
-        const form = document.getElementById('proxyForm');
-        const input = document.getElementById('urlInput');
-        const iframe = document.getElementById('proxyFrame');
+import pygame
+import random
+import sys
 
-        form.addEventListener('submit', (event) => {
-            event.preventDefault();
-            let url = input.value.trim();
+# Initialize Pygame
+pygame.init()
 
-            // Add "https://" if not provided
-            if (!url.startsWith('http://') && !url.startsWith('https://')) {
-                url = 'https://' + url;
-            }
+# Screen dimensions
+WIDTH, HEIGHT = 800, 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Squid Game 3D")
 
-            iframe.src = url;
-        });
-    </script>
-</body>
-</html>
+# Colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+
+# Clock and FPS
+clock = pygame.time.Clock()
+FPS = 60
+
+# Fonts
+font = pygame.font.Font(None, 36)
+
+# Player class
+class Player(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.image = pygame.Surface((40, 60))
+        self.image.fill(GREEN)
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+        self.speed = 5
+        self.is_moving = False
+
+    def update(self, keys):
+        self.is_moving = False
+        if keys[pygame.K_w]:
+            self.rect.y -= self.speed
+            self.is_moving = True
+        if keys[pygame.K_s]:
+            self.rect.y += self.speed
+            self.is_moving = True
+        if keys[pygame.K_a]:
+            self.rect.x -= self.speed
+            self.is_moving = True
+        if keys[pygame.K_d]:
+            self.rect.x += self.speed
+            self.is_moving = True
+
+# Red Light Green Light logic
+class GameState:
+    def __init__(self):
+        self.time = 0
+        self.state = "green"  # Can be "red" or "green"
+
+    def update(self):
+        self.time += 1
+        if self.time > random.randint(100, 200):
+            self.state = "red" if self.state == "green" else "green"
+            self.time = 0
+
+def main():
+    # Initialize game objects
+    player = Player(WIDTH // 2, HEIGHT - 100)
+    players = pygame.sprite.Group()
+    players.add(player)
+
+    game_state = GameState()
+
+    running = True
+    while running:
+        screen.fill(WHITE)
+
+        # Event handling
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+        keys = pygame.key.get_pressed()
+
+        # Update game logic
+        player.update(keys)
+        game_state.update()
+
+        # Check Red Light Green Light rules
+        if game_state.state == "red" and player.is_moving:
+            print("Player eliminated!")
+            running = False
+
+        # Draw elements
+        state_text = font.render(f"State: {game_state.state.upper()}", True, BLACK)
+        screen.blit(state_text, (10, 10))
+        players.draw(screen)
+
+        # Update screen
+        pygame.display.flip()
+        clock.tick(FPS)
+
+    pygame.quit()
+    sys.exit()
+
+if __name__ == "__main__":
+    main()
