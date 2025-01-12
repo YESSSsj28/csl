@@ -15,8 +15,10 @@
             --secondary-color: #000000;
             --text-color: #ffffff;
             --background-color: var(--secondary-color);
+            --navbar-footer-bg: #808080;
             --button-bg-color: var(--primary-color);
-            --button-text-color: var(--secondary-color);
+            --button-text-color: var(--text-color);
+            --container-border-color: var(--primary-color);
         }
 
         body {
@@ -30,8 +32,8 @@
         }
 
         nav, footer {
-            background-color: var(--primary-color);
-            color: var(--button-text-color);
+            background-color: var(--navbar-footer-bg);
+            color: var(--text-color);
             padding: 1rem;
         }
 
@@ -42,7 +44,7 @@
         }
 
         .nav-container a, .nav-container i {
-            color: var(--button-text-color);
+            color: var(--text-color);
             margin: 0 10px;
             text-decoration: none;
         }
@@ -51,6 +53,11 @@
             flex: 1;
             padding: 2rem;
             text-align: center;
+            border: 2px solid var(--container-border-color);
+            border-radius: 10px;
+            margin: 2rem auto;
+            max-width: 800px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         }
 
         h1 {
@@ -64,7 +71,6 @@
             background-color: var(--secondary-color);
             padding: 2rem;
             border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         }
 
         .file-input, .password-input {
@@ -84,6 +90,8 @@
             margin-top: 0.5rem;
             border: 1px solid var(--primary-color);
             border-radius: 5px;
+            background-color: var(--background-color);
+            color: var(--text-color);
         }
 
         button {
@@ -112,7 +120,7 @@
             <div class="theme-toggle">
                 <i class="fas fa-n" id="themeToggle"></i>
             </div>
-            <a href="https://discord.gg/MneB2xjtGu" class="nav-icon discord-icon" target="_blank" rel="noopener noreferrer">
+            <a href="https://discord.gg/cherry-sideloading-tm-ios-x-pc-1231663278984265809" class="nav-icon discord-icon" target="_blank" rel="noopener noreferrer">
                 <i class="fab fa-discord"></i>
             </a>
             <a href="#" class="nav-icon" id="signInButton">
@@ -123,8 +131,6 @@
                 <span id="username-display"></span>
                 <button id="devButton" class="dev-button hidden">Admin Panel</button>
             </span>
-            <a href="#" class="nav-icon hidden" id="devPanelButton"><i class="fas fa-cogs"></i></a>
-            <a href="/privacyandpolicy" class="nav-icon"><i class="fas fa-shield-alt"></i></a>
         </div>
     </nav>
     <div class="container">
@@ -157,4 +163,3 @@
     <script src="admin.js?v=<?php echo time(); ?>"></script>
 </body>
 </html>
-
