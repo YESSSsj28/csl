@@ -1,105 +1,93 @@
-import pygame
-import random
-import sys
-
-# Initialize Pygame
-pygame.init()
-
-# Screen dimensions
-WIDTH, HEIGHT = 800, 600
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Squid Game 3D")
-
-# Colors
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-
-# Clock and FPS
-clock = pygame.time.Clock()
-FPS = 60
-
-# Fonts
-font = pygame.font.Font(None, 36)
-
-# Player class
-class Player(pygame.sprite.Sprite):
-    def __init__(self, x, y):
-        super().__init__()
-        self.image = pygame.Surface((40, 60))
-        self.image.fill(GREEN)
-        self.rect = self.image.get_rect()
-        self.rect.center = (x, y)
-        self.speed = 5
-        self.is_moving = False
-
-    def update(self, keys):
-        self.is_moving = False
-        if keys[pygame.K_w]:
-            self.rect.y -= self.speed
-            self.is_moving = True
-        if keys[pygame.K_s]:
-            self.rect.y += self.speed
-            self.is_moving = True
-        if keys[pygame.K_a]:
-            self.rect.x -= self.speed
-            self.is_moving = True
-        if keys[pygame.K_d]:
-            self.rect.x += self.speed
-            self.is_moving = True
-
-# Red Light Green Light logic
-class GameState:
-    def __init__(self):
-        self.time = 0
-        self.state = "green"  # Can be "red" or "green"
-
-    def update(self):
-        self.time += 1
-        if self.time > random.randint(100, 200):
-            self.state = "red" if self.state == "green" else "green"
-            self.time = 0
-
-def main():
-    # Initialize game objects
-    player = Player(WIDTH // 2, HEIGHT - 100)
-    players = pygame.sprite.Group()
-    players.add(player)
-
-    game_state = GameState()
-
-    running = True
-    while running:
-        screen.fill(WHITE)
-
-        # Event handling
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-
-        keys = pygame.key.get_pressed()
-
-        # Update game logic
-        player.update(keys)
-        game_state.update()
-
-        # Check Red Light Green Light rules
-        if game_state.state == "red" and player.is_moving:
-            print("Player eliminated!")
-            running = False
-
-        # Draw elements
-        state_text = font.render(f"State: {game_state.state.upper()}", True, BLACK)
-        screen.blit(state_text, (10, 10))
-        players.draw(screen)
-
-        # Update screen
-        pygame.display.flip()
-        clock.tick(FPS)
-
-    pygame.quit()
-    sys.exit()
-
-if __name__ == "__main__":
-    main()
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>CSL</title>
+    <link rel="stylesheet" href="styles.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <style>
+        body {
+            background-color: black;
+            color: red;
+        }
+        nav, footer {
+            background-color: red;
+            color: black;
+        }
+        .nav-container a, .nav-container i, footer p {
+            color: black;
+        }
+        button, input, .file-input label {
+            background-color: red;
+            color: black;
+        }
+        .file-input input, .password-input input {
+            border-color: red;
+            color: black;
+        }
+    </style>
+</head>
+<body class="normal-mode">
+    <nav>
+        <div class="nav-container">
+            <div class="theme-toggle">
+                <i class="fas fa-n" id="themeToggle"></i>
+            </div>
+            <a href="https://discord.gg/MneB2xjtGu" class="nav-icon discord-icon" target="_blank" rel="noopener noreferrer">
+                <i class="fab fa-discord"></i>
+            </a>
+            <a href="#" class="nav-icon" id="signInButton">
+                <i class="fas fa-sign-in-alt"></i>
+            </a>
+            <span id="userInfo" class="user-info hidden">
+                <i class="fas fa-user"></i>
+                <span id="username-display"></span>
+                <button id="devButton" class="dev-button hidden">Admin Panel</button>
+            </span>
+            <a href="#" class="nav-icon hidden" id="devPanelButton"><i class="fas fa-cogs"></i></a>
+            <a href="/privacyandpolicy" class="nav-icon"><i class="fas fa-shield-alt"></i></a>
+        </div>
+    </nav>
+    <div class="container">
+        <h1>CSL</h1>
+        <form id="ASrequest" enctype="multipart/form-data">
+            <div class="file-input">
+                <label for="p12"><i class="fas fa-file-archive"></i> P12 File:</label>
+                <input type="file" id="p12" name="p12" accept=".p12" required />
+                <button type="button" class="file-button">Choose File</button>
+            </div>
+            <div class="file-input">
+                <label for="mobileprovision"><i class="fas fa-mobile-alt"></i> Mobile Provision File:</label>
+                <input type="file" id="mobileprovision" name="mp" accept=".mobileprovision" required />
+                <button type="button" class="file-button">Choose File</button>
+            </div>
+            <div class="file-input">
+                <label for="ipa">
+                    <i class="fas fa-file-archive"></i> IPA File:
+                    <span class="file-size-limit" title="Maximum file size limit">(Max: <span id="maxFileSize">1 GB</span>)</span>
+                </label>
+                <input type="file" id="ipa" name="ipa" accept=".ipa" required />
+                <button type="button" class="file-button">Choose File</button>
+            </div>
+            <div class="password-input">
+                <label for="password"><i class="fas fa-lock"></i> P12 Password:</label>
+                <input type="password" id="password" name="password" required autocomplete="new-password" />
+                <i class="fas fa-eye" id="togglePassword" style="position: absolute; right: 10px; top: 50px;"></i>
+            </div>
+            <button type="submit"><i class="fas fa-sign-in-alt"></i> Sign IPA</button>
+        </form>
+        <div id="loader" class="loader hidden"></div>
+        <div id="result"></div>
+    </div>
+    <footer>
+        <p>&copy; 2024 CSL. All rights reserved.</p>
+    </footer>
+    <script src="database.js?v=<?php echo time(); ?>"></script>
+    <script src="script.js"></script>
+    <script src="admin.js?v=<?php echo time(); ?>"></script>
+</body>
+</html>
