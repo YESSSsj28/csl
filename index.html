@@ -60,8 +60,10 @@
             text-align: center;
             border: 2px solid var(--container-border-color);
             border-radius: 10px;
-            margin: 2rem auto;
+            margin: 1rem auto;
             max-width: 800px;
+            max-height: calc(100vh - 6rem); /* Adjust to fit within viewport */
+            overflow-y: auto;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
             background-color: var(--background-color);
         }
@@ -120,10 +122,6 @@
         }
 
         @media (orientation: portrait) {
-            body {
-                padding: 1rem;
-            }
-
             .container {
                 margin: 1rem auto;
             }
@@ -131,7 +129,7 @@
 
         @media (orientation: landscape) {
             .container {
-                margin: 2rem auto;
+                margin: 1rem auto;
             }
         }
     </style>
