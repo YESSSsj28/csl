@@ -49,6 +49,11 @@
             text-decoration: none;
         }
 
+        .nav-container .theme-toggle {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
         .container {
             flex: 1;
             padding: 2rem;
@@ -58,6 +63,7 @@
             margin: 2rem auto;
             max-width: 800px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            background-color: var(--background-color);
         }
 
         h1 {
@@ -112,25 +118,34 @@
             text-align: center;
             padding: 1rem;
         }
+
+        @media (orientation: portrait) {
+            body {
+                padding: 1rem;
+            }
+
+            .container {
+                margin: 1rem auto;
+            }
+        }
+
+        @media (orientation: landscape) {
+            .container {
+                margin: 2rem auto;
+            }
+        }
     </style>
 </head>
 <body>
     <nav>
         <div class="nav-container">
-            <div class="theme-toggle">
-                <i class="fas fa-n" id="themeToggle"></i>
-            </div>
+            <div class="theme-toggle">CSL</div>
             <a href="https://discord.gg/cherry-sideloading-tm-ios-x-pc-1231663278984265809" class="nav-icon discord-icon" target="_blank" rel="noopener noreferrer">
                 <i class="fab fa-discord"></i>
             </a>
             <a href="#" class="nav-icon" id="signInButton">
                 <i class="fas fa-sign-in-alt"></i>
             </a>
-            <span id="userInfo" class="user-info hidden">
-                <i class="fas fa-user"></i>
-                <span id="username-display"></span>
-                <button id="devButton" class="dev-button hidden">Admin Panel</button>
-            </span>
         </div>
     </nav>
     <div class="container">
