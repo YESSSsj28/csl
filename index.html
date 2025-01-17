@@ -1,211 +1,84 @@
-let allUsers = []; // Store all users globally
-
-// Load users from the backend and display in admin panel
-async function loadUsers() {
-    console.log('Loading users...');
-    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-    if (!currentUser || !currentUser.isDev) {
-        console.error('Unauthorized access to admin panel');
-        return;
-    }
-
-    const adminPanel = document.getElementById('adminPanel');
-    if (!adminPanel || adminPanel.classList.contains('hidden')) return;
-
-    const userList = document.getElementById('adminUserList');
-    if (!userList) {
-        console.error('Admin user list element not found');
-        return;
-    }
-
-    try {
-        allUsers = await fetchUsers();
-        if (allUsers.length === 0) {
-            userList.innerHTML = '<p>No users found.</p>';
-        } else {
-            filterAndDisplayUsers();
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSL - Money Flow Tycoon</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f8ff;
+            color: #333;
         }
-    } catch (error) {
-        console.error('Error loading users:', error);
-        userList.innerHTML = '<p>Error loading users. Please try again later.</p>';
-    }
-}
-
-// Fetch users from backend API
-async function fetchUsers() {
-    try {
-        const response = await fetch('/api/users'); // Replace with actual API endpoint
-        if (!response.ok) throw new Error(`Failed to fetch users: ${response.status}`);
-        return await response.json();
-    } catch (error) {
-        console.error('Error fetching users:', error);
-        throw error;
-    }
-}
-
-// Filter and display users based on search and filter criteria
-function filterAndDisplayUsers() {
-    const userList = document.getElementById('adminUserList');
-    if (!userList) return;
-
-    const searchTerm = document.getElementById('adminUserSearch')?.value.toLowerCase() || '';
-    const premiumFilter = document.getElementById('premiumFilter')?.value || 'all';
-    const devFilter = document.getElementById('devFilter')?.value || 'all';
-
-    const filteredUsers = allUsers.filter(user => {
-        const matchesSearch = !searchTerm || user.username.toLowerCase().includes(searchTerm);
-        const matchesPremium = premiumFilter === 'all' || 
-            (premiumFilter === 'yes' && user.premium) || 
-            (premiumFilter === 'no' && !user.premium);
-        const matchesDev = devFilter === 'all' || 
-            (devFilter === 'yes' && user.isDev) || 
-            (devFilter === 'no' && !user.isDev);
-        return matchesSearch && matchesPremium && matchesDev;
-    });
-
-    userList.innerHTML = filteredUsers.map(user => `
-        <div class="user-item">
-            <span>${user.username}</span>
-            <span class="user-status">
-                ${user.premium ? '<span class="premium-badge">Premium</span>' : ''}
-                ${user.isDev ? '<span class="dev-badge">Dev</span>' : ''}
-            </span>
-            <button onclick="toggleUserOptions(${user.id})">Options</button>
-            <div id="userOptions-${user.id}" class="user-options hidden">
-                <button onclick="togglePremium(${user.id}, ${user.premium})">
-                    ${user.premium ? 'Remove Premium' : 'Add Premium'}
-                </button>
-                <button onclick="toggleDev(${user.id}, ${user.isDev})">
-                    ${user.isDev ? 'Remove Dev' : 'Make Dev'}
-                </button>
-                <button onclick="resetPassword(${user.id})">Reset Password</button>
-                <button onclick="deleteUser(${user.id})">Delete User</button>
-                <button onclick="revealPassword(${user.id})">Reveal Password</button>
-            </div>
-        </div>
-    `).join('');
-}
-
-// Toggle premium status
-async function togglePremium(id, currentStatus) {
-    try {
-        const response = await updateUser(id, { premium: !currentStatus });
-        if (response.success) {
-            console.log('Premium status updated successfully');
-            await loadUsers();
+        h1 {
+            margin-top: 20px;
         }
-    } catch (error) {
-        console.error('Error updating premium status:', error);
-    }
-}
-
-// Toggle dev status
-async function toggleDev(id, currentStatus) {
-    try {
-        const response = await updateUser(id, { isDev: !currentStatus });
-        if (response.success) {
-            console.log('Dev status updated successfully');
-            await loadUsers();
+        #money-display {
+            font-size: 2em;
+            margin: 20px;
         }
-    } catch (error) {
-        console.error('Error updating dev status:', error);
-    }
-}
-
-// Reset user password
-async function resetPassword(id) {
-    try {
-        const response = await updateUser(id, { password: null });
-        if (response.success) {
-            alert('Password reset. User can now log in with any password.');
-            await loadUsers();
+        .button {
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 1em;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
         }
-    } catch (error) {
-        console.error('Error resetting password:', error);
-    }
-}
-
-// Delete a user
-async function deleteUser(id) {
-    if (!confirm('Are you sure you want to delete this user?')) return;
-
-    try {
-        const response = await fetch(`/api/users/${id}`, { method: 'DELETE' });
-        if (response.ok) {
-            console.log('User deleted successfully');
-            await loadUsers();
-        } else {
-            throw new Error(`Failed to delete user: ${response.status}`);
+        .earn-button {
+            background-color: #4caf50;
+            color: white;
         }
-    } catch (error) {
-        console.error('Error deleting user:', error);
-    }
-}
+        .buy-button {
+            background-color: #008cba;
+            color: white;
+        }
+        #upgrades {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>CSL - Money Flow Tycoon</h1>
+    <div id="money-display">Money: $0</div>
+    <button class="button earn-button" onclick="earnMoney()">Work (+$1)</button>
 
-// Reveal user password (requires proper API endpoint)
-async function revealPassword(id) {
-    try {
-        const response = await fetch(`/api/users/${id}/password`, { method: 'GET' });
-        if (!response.ok) throw new Error(`Failed to reveal password: ${response.status}`);
-        const data = await response.json();
-        alert(`Password: ${data.password}`);
-    } catch (error) {
-        console.error('Error revealing password:', error);
-    }
-}
+    <div id="upgrades">
+        <h2>Upgrades</h2>
+        <button class="button buy-button" onclick="buyUpgrade(5, 1)">Buy Lemonade Stand ($5) +$1/sec</button>
+        <button class="button buy-button" onclick="buyUpgrade(50, 10)">Buy Hotdog Cart ($50) +$10/sec</button>
+    </div>
 
-// Update user (for toggle actions)
-async function updateUser(id, updates) {
-    try {
-        const response = await fetch(`/api/users/${id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updates),
-        });
-        if (!response.ok) throw new Error(`Failed to update user: ${response.status}`);
-        return await response.json();
-    } catch (error) {
-        console.error('Error updating user:', error);
-        throw error;
-    }
-}
+    <script>
+        let money = 0;
+        let incomePerSecond = 0;
 
-// Check if admin panel should be shown
-function checkAdminPanel() {
-    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-    const devButton = document.getElementById('devButton');
+        function updateDisplay() {
+            document.getElementById('money-display').innerText = `Money: $${money}`;
+        }
 
-    if (currentUser?.isDev) {
-        devButton?.classList.remove('hidden');
-        devButton.addEventListener('click', toggleAdminPanel);
-    } else {
-        devButton?.classList.add('hidden');
-    }
-}
+        function earnMoney() {
+            money += 1;
+            updateDisplay();
+        }
 
-// Toggle the admin panel visibility
-function toggleAdminPanel() {
-    const adminPanel = document.getElementById('adminPanel');
-    adminPanel?.classList.toggle('hidden');
-    if (!adminPanel.classList.contains('hidden')) loadUsers();
-}
+        function buyUpgrade(cost, income) {
+            if (money >= cost) {
+                money -= cost;
+                incomePerSecond += income;
+                updateDisplay();
+            } else {
+                alert("Not enough money!");
+            }
+        }
 
-// Utility functions for date filters
-function isWithinLastWeek(date) {
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    return date >= oneWeekAgo;
-}
+        function generateIncome() {
+            money += incomePerSecond;
+            updateDisplay();
+        }
 
-function isWithinLastMonth(date) {
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-    return date >= oneMonthAgo;
-}
-
-function isWithinLastYear(date) {
-    const oneYearAgo = new Date();
-    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-    return date >= oneYearAgo;
-}
-
+        setInterval(generateIncome, 1000); // Add income every second
+    </script>
+</body>
+</html>
