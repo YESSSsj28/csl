@@ -1,167 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSL - Money Flow Tycoon</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f0f8ff;
-            color: #333;
-        }
-        h1 {
-            margin-top: 20px;
-        }
-        #money-display {
-            font-size: 2em;
-            margin: 20px;
-        }
-        .button {
-            padding: 15px 30px;
-            margin: 10px;
-            font-size: 1em;
-            cursor: pointer;
-            border: none;
-            border-radius: 5px;
-        }
-        .earn-button {
-            background-color: #4caf50;
-            color: white;
-            user-select: none;
-        }
-        .buy-button {
-            background-color: #008cba;
-            color: white;
-        }
-        #upgrades {
-            margin-top: 20px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Run Linux in Browser</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+    }
+    h1 {
+      color: #333;
+    }
+    iframe {
+      border: none;
+      margin: 20px auto;
+      display: block;
+      width: 90%;
+      max-width: 1200px;
+      height: 600px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+  </style>
 </head>
 <body>
-    <h1>CSL - Money Flow Tycoon</h1>
-    <div id="money-display">Money: $0</div>
-    <button class="button earn-button" onclick="earnMoney()">Work (+$1)</button>
+  <h1>Linux in Your Browser</h1>
+  <p>Below is a Linux terminal environment running entirely within your browser. No external redirects.</p>
 
-    <div id="upgrades">
-        <h2>Upgrades</h2>
-        <button class="button buy-button" onclick="buyUpgrade('lemonade', 5, 1)">Buy Lemonade Stand ($5) +$1/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('hotdog', 50, 10)">Buy Hotdog Cart ($50) +$10/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('restaurant', 200, 50)">Buy Restaurant ($200) +$50/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('warehouse', 500, 100)">Buy Warehouse ($500) +$100/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('factory', 1500, 500)">Buy Factory ($1500) +$500/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('mall', 5000, 1000)">Buy Mall ($5000) +$1000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('casino', 10000, 5000)">Buy Casino ($10000) +$5000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('oil', 20000, 10000)">Buy Oil Rig ($20000) +$10000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('diamond_mine', 50000, 20000)">Buy Diamond Mine ($50000) +$20000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('space_station', 100000, 50000)">Buy Space Station ($100000) +$50000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('supermarket', 150000, 100000)">Buy Supermarket ($150000) +$100000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('university', 300000, 200000)">Buy University ($300000) +$200000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('airport', 500000, 400000)">Buy Airport ($500000) +$400000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('stadium', 1000000, 800000)">Buy Stadium ($1000000) +$800000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('casino_resort', 2000000, 1600000)">Buy Casino Resort ($2000000) +$1600000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('theme_park', 4000000, 3200000)">Buy Theme Park ($4000000) +$3200000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('luxury_hotel', 8000000, 6400000)">Buy Luxury Hotel ($8000000) +$6400000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('nuclear_plant', 15000000, 12800000)">Buy Nuclear Plant ($15000000) +$12800000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('solar_farm', 30000000, 25600000)">Buy Solar Farm ($30000000) +$25600000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('quantum_computer', 50000000, 51200000)">Buy Quantum Computer ($50000000) +$51200000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('space_mine', 100000000, 102400000)">Buy Space Mine ($100000000) +$102400000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('robot_factory', 200000000, 204800000)">Buy Robot Factory ($200000000) +$204800000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('artificial_lake', 400000000, 409600000)">Buy Artificial Lake ($400000000) +$409600000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('nano_factory', 800000000, 819200000)">Buy Nano Factory ($800000000) +$819200000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('sky_city', 1500000000, 1638400000)">Buy Sky City ($1500000000) +$1638400000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('underwater_city', 3000000000, 3276800000)">Buy Underwater City ($3000000000) +$3276800000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('galactic_bank', 5000000000, 6553600000)">Buy Galactic Bank ($5000000000) +$6553600000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('wormhole_factory', 10000000000, 13107200000)">Buy Wormhole Factory ($10000000000) +$13107200000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('interstellar_fleet', 20000000000, 26214400000)">Buy Interstellar Fleet ($20000000000) +$26214400000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('virtual_reality', 40000000000, 52428800000)">Buy Virtual Reality ($40000000000) +$52428800000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('hyperloop', 80000000000, 104857600000)">Buy Hyperloop ($80000000000) +$104857600000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('time_machine', 150000000000, 209715200000)">Buy Time Machine ($150000000000) +$209715200000/sec</button>
-        <button class="button buy-button" onclick="buyUpgrade('dark_matter_farm', 300000000000, 419430400000)">Buy Dark Matter Farm ($300000000000) +$419430400000/sec</button>
-    </div>
+  <!-- Embedded iframe running JSLinux -->
+  <iframe
+    src="https://bellard.org/jslinux/vm.html?url=https://bellard.org/jslinux/buildroot-x86.cfg"
+    width="100%"
+    height="600"
+    frameborder="0">
+  </iframe>
 
-    <script>
-        let money = 0;
-        let incomePerSecond = 0;
-        const upgrades = {
-            lemonade: { cost: 5, income: 1, next: 'hotdog' },
-            hotdog: { cost: 50, income: 10, next: 'restaurant' },
-            restaurant: { cost: 200, income: 50, next: 'warehouse' },
-            warehouse: { cost: 500, income: 100, next: 'factory' },
-            factory: { cost: 1500, income: 500, next: 'mall' },
-            mall: { cost: 5000, income: 1000, next: 'casino' },
-            casino: { cost: 10000, income: 5000, next: 'oil' },
-            oil: { cost: 20000, income: 10000, next: 'diamond_mine' },
-            diamond_mine: { cost: 50000, income: 20000, next: 'space_station' },
-            space_station: { cost: 100000, income: 50000, next: 'supermarket' },
-            supermarket: { cost: 150000, income: 100000, next: 'university' },
-            university: { cost: 300000, income: 200000, next: 'airport' },
-            airport: { cost: 500000, income: 400000, next: 'stadium' },
-            stadium: { cost: 1000000, income: 800000, next: 'casino_resort' },
-            casino_resort: { cost: 2000000, income: 1600000, next: 'theme_park' },
-            theme_park: { cost: 4000000, income: 3200000, next: 'luxury_hotel' },
-            luxury_hotel: { cost: 8000000, income: 6400000, next: 'nuclear_plant' },
-            nuclear_plant: { cost: 15000000, income: 12800000, next: 'solar_farm' },
-            solar_farm: { cost: 30000000, income: 25600000, next: 'quantum_computer' },
-            quantum_computer: { cost: 50000000, income: 51200000, next: 'space_mine' },
-            space_mine: { cost: 100000000, income: 102400000, next: 'robot_factory' },
-            robot_factory: { cost: 200000000, income: 204800000, next: 'artificial_lake' },
-            artificial_lake: { cost: 400000000, income: 409600000, next: 'nano_factory' },
-            nano_factory: { cost: 800000000, income: 819200000, next: 'sky_city' },
-            sky_city: { cost: 1500000000, income: 1638400000, next: 'underwater_city' },
-            underwater_city: { cost: 3000000000, income: 3276800000, next: 'galactic_bank' },
-            galactic_bank: { cost: 5000000000, income: 6553600000, next: 'wormhole_factory' },
-            wormhole_factory: { cost: 10000000000, income: 13107200000, next: 'interstellar_fleet' },
-            interstellar_fleet: { cost: 20000000000, income: 26214400000, next: 'virtual_reality' },
-            virtual_reality: { cost: 40000000000, income: 52428800000, next: 'hyperloop' },
-            hyperloop: { cost: 80000000000, income: 104857600000, next: 'time_machine' },
-            time_machine: { cost: 150000000000, income: 209715200000, next: 'dark_matter_farm' },
-            dark_matter_farm: { cost: 300000000000, income: 419430400000, next: null }
-        };
-
-        function updateDisplay() {
-            document.getElementById('money-display').innerText = `Money: $${money}`;
-        }
-
-        function earnMoney() {
-            money += 1;
-            updateDisplay();
-        }
-
-        function buyUpgrade(type, cost, income) {
-            if (money >= cost) {
-                money -= cost;
-                incomePerSecond += income;
-
-                if (upgrades[type].next) {
-                    const nextUpgrade = upgrades[type].next;
-                    const nextDetails = upgrades[nextUpgrade];
-                    const upgradeButton = document.createElement('button');
-                    upgradeButton.className = 'button buy-button';
-                    upgradeButton.innerText = `Buy ${capitalize(nextUpgrade)} ($${nextDetails.cost}) +$${nextDetails.income}/sec`;
-                    upgradeButton.onclick = () => buyUpgrade(nextUpgrade, nextDetails.cost, nextDetails.income);
-                    document.getElementById('upgrades').appendChild(upgradeButton);
-                    upgrades[type].next = null; // Prevents duplicate buttons
-                }
-
-                updateDisplay();
-            } else {
-                alert("Not enough money!");
-            }
-        }
-
-        function generateIncome() {
-            money += incomePerSecond;
-            updateDisplay();
-        }
-
-        function capitalize(word) {
-            return word.charAt(0).toUpperCase() + word.slice(1);
-        }
-
-        setInterval(generateIncome, 1000); // Add income every second
-    </script>
+  <p>Interact with the Linux system directly in your browser.</p>
 </body>
 </html>
