@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Physics, useBox, usePlane } from "@react-three/cannon";
 
@@ -45,21 +45,23 @@ const Weapon = ({ position }) => {
 
 const App = () => {
   return (
-    <Canvas shadows camera={{ position: [10, 10, 10], fov: 50 }}>
-      <ambientLight intensity={0.5} />
-      <directionalLight
-        castShadow
-        position={[10, 10, 5]}
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-      />
-      <Physics>
-        <Ground />
-        <Chest position={[0, 1, 0]} />
-        <Weapon position={[2, 1, 0]} />
-        <Weapon position={[-2, 1, 0]} />
-      </Physics>
-    </Canvas>
+    <div style={{ width: "100vw", height: "100vh" }}>
+      <Canvas shadows camera={{ position: [10, 10, 10], fov: 50 }}>
+        <ambientLight intensity={0.5} />
+        <directionalLight
+          castShadow
+          position={[10, 10, 5]}
+          shadow-mapSize-width={1024}
+          shadow-mapSize-height={1024}
+        />
+        <Physics>
+          <Ground />
+          <Chest position={[0, 1, 0]} />
+          <Weapon position={[2, 1, 0]} />
+          <Weapon position={[-2, 1, 0]} />
+        </Physics>
+      </Canvas>
+    </div>
   );
 };
 
