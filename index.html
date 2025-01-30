@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>thatnn Status</title>
   <style>
-    /* Modern design with fade effects */
     body {
       background-image: url('https://gifsec.com/wp-content/uploads/2023/01/cars-gif-1.gif');
       background-size: cover;
@@ -22,7 +21,6 @@
       position: relative;
     }
 
-    /* Semi-transparent text */
     .content {
       background-color: rgba(0, 0, 0, 0.5);
       padding: 20px;
@@ -43,7 +41,6 @@
       margin: 10px 0 0;
     }
 
-    /* Rain effect */
     .rain {
       position: absolute;
       top: 0;
@@ -62,7 +59,6 @@
       100% { background-position: 100% 100%; }
     }
 
-    /* 3D gun animation */
     .gun {
       position: absolute;
       bottom: 10%;
@@ -74,7 +70,6 @@
       transition: opacity 0.5s ease;
     }
 
-    /* Audio controls */
     .audio-controls {
       position: absolute;
       bottom: 20px;
@@ -84,7 +79,6 @@
       gap: 10px;
     }
 
-    /* Toggle effects */
     .toggle-effects {
       position: absolute;
       bottom: 20px;
@@ -99,22 +93,17 @@
     <p id="quote">"If you don't win the start, win the end" - Yug</p>
   </div>
 
-  <!-- Rain effect -->
   <div class="rain" id="rain"></div>
-
-  <!-- 3D gun animation -->
   <div class="gun" id="gun"></div>
 
-  <!-- Audio controls -->
   <div class="audio-controls">
     <audio id="audio" controls loop>
-      <source src="https://docs.google.com/uc?export=download&id=1NFdNZky6WzK1kZHGpCd_64VngF4QryBg" type="audio/mpeg">
+      <source src="/mnt/data/DUSTY LOCANE - Rolando (Caught In The Rain) (Official Video) (1).mp3" type="audio/mpeg">
       Your browser does not support the audio element.
     </audio>
     <input type="range" id="volume" min="0" max="1" step="0.1" value="0.5">
   </div>
 
-  <!-- Toggle effects -->
   <div class="toggle-effects">
     <label>
       <input type="checkbox" id="toggleEffects" checked> Enable Effects
@@ -122,13 +111,8 @@
   </div>
 
   <script>
-    // Your Discord user ID
     const discordUserId = '1274433661181104208';
-
-    // Connect to Lanyard's WebSocket for real-time updates
     const socket = new WebSocket('wss://api.lanyard.rest/socket');
-
-    // DOM elements
     const statusElement = document.getElementById('status');
     const rainElement = document.getElementById('rain');
     const gunElement = document.getElementById('gun');
@@ -136,12 +120,10 @@
     const volumeControl = document.getElementById('volume');
     const toggleEffects = document.getElementById('toggleEffects');
 
-    // Set audio volume
     volumeControl.addEventListener('input', () => {
       audioElement.volume = volumeControl.value;
     });
 
-    // Toggle effects
     toggleEffects.addEventListener('change', () => {
       if (!toggleEffects.checked) {
         rainElement.style.opacity = 0;
@@ -149,25 +131,21 @@
       }
     });
 
-    // Function to check for keywords
     function checkKeywords(text) {
       if (toggleEffects.checked) {
-        // Rain effect
         if (text.toLowerCase().includes('rain')) {
           rainElement.style.opacity = 1;
-          setTimeout(() => { rainElement.style.opacity = 0; }, 2000); // Rain lasts 2 seconds
+          setTimeout(() => { rainElement.style.opacity = 0; }, 2000);
         }
 
-        // Gun effect (triggered by "gun", "graham graham boom", etc.)
-        const gunPhrases = ['gun', 'graham graham boom', 'boom', 'pew pew']; // Add more phrases here
+        const gunPhrases = ['gun', 'graham graham boom', 'boom', 'pew pew'];
         if (gunPhrases.some(phrase => text.toLowerCase().includes(phrase))) {
           gunElement.style.opacity = 1;
-          setTimeout(() => { gunElement.style.opacity = 0; }, 2000); // Gun lasts 2 seconds
+          setTimeout(() => { gunElement.style.opacity = 0; }, 2000);
         }
       }
     }
 
-    // WebSocket event listeners
     socket.addEventListener('open', () => {
       socket.send(JSON.stringify({
         op: 2,
@@ -183,7 +161,7 @@
       if (data.t === 'INIT_STATE' || data.t === 'PRESENCE_UPDATE') {
         const status = data.d.discord_status;
         statusElement.textContent = `Status: ${status}`;
-        checkKeywords(status); // Check for keywords in status
+        checkKeywords(status);
       }
     });
 
