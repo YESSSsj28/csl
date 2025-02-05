@@ -1,1 +1,103 @@
+const player = document.getElementById('player');
+const boss = document.getElementById('boss');
+const arrow = document.getElementById('arrow');
+const bossAttack = document.getElementById('boss-attack');
 
+let playerX = window.innerWidth / 2;
+let bossHealth = 100;
+let gameOver = false;
+
+// Player movement
+document.addEventListener('keydown', (e) => {
+    if (gameOver) return;
+
+    if (e.key === 'ArrowLeft' && playerX > 0) {
+        playerX -= 10;
+    } else if (e.key === 'ArrowRight' && playerX < window.innerWidth - 50) {
+        playerX += 10;
+    } else if (e.key === ' ') {
+        shootArrow();
+    }
+    player.style.left = `${playerX}px`;
+});
+
+// Shoot arrow
+function shootArrow() {
+    if (arrow.style.display === 'block') return; // Prevent multiple arrows
+
+    arrow.style.left = `${playerX + 20}px`;
+    arrow.style.bottom = '70px';
+    arrow.style.display = 'block';
+
+    let arrowInterval = setInterval(() => {
+        let arrowBottom = parseInt(arrow.style.bottom);
+        if (arrowBottom > window.innerHeight - 100) {
+            clearInterval(arrowInterval);
+            arrow.style.display = 'none';
+            checkHit();
+        } else {
+            arrow.style.bottom = `${arrowBottom + 5}px`;
+        }
+    }, 20);
+}
+
+// Check if arrow hits the boss
+function checkHit() {
+    let arrowRect = arrow.getBoundingClientRect();
+    let bossRect = boss.getBoundingClientRect();
+
+    if (
+        arrowRect.left < bossRect.right &&
+        arrowRect.right > bossRect.left &&
+        arrowRect.bottom > bossRect.top
+    ) {
+        bossHealth -= 10;
+        if (bossHealth <= 0) {
+            endGame('You win!');
+        }
+    }
+}
+
+// Boss attack
+function bossAttackPattern() {
+    if (gameOver) return;
+
+    bossAttack.style.left = `${Math.random() * (window.innerWidth - 50)}px`;
+    bossAttack.style.top = '100px';
+    bossAttack.style.display = 'block';
+
+    let attackInterval = setInterval(() => {
+        let attackTop = parseInt(bossAttack.style.top);
+        if (attackTop > window.innerHeight - 100) {
+            clearInterval(attackInterval);
+            bossAttack.style.display = 'none';
+            checkDodge();
+        } else {
+            bossAttack.style.top = `${attackTop + 5}px`;
+        }
+    }, 20);
+}
+
+// Check if player dodges
+function checkDodge() {
+    let attackRect = bossAttack.getBoundingClientRect();
+    let playerRect = player.getBoundingClientRect();
+
+    if (
+        attackRect.left < playerRect.right &&
+        attackRect.right > playerRect.left &&
+        attackRect.bottom > playerRect.top
+    ) {
+        endGame('You lose!');
+    }
+}
+
+// End game
+function endGame(message) {
+    gameOver = true;
+    alert(message);
+    window.location.reload(); // Restart game
+}
+
+// Game loop
+setInterval(bossAttackPattern, 2000);
