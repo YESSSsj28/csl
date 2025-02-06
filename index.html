@@ -3,148 +3,145 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Boss Battle Game</title>
+  <title>3D Cave Boss Battle</title>
   <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: #000;
-      color: #fff;
-      font-family: Arial, sans-serif;
-    }
-    #game {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-    }
-    #player {
-      position: absolute;
-      width: 20px;
-      height: 20px;
-      background: #00ff00;
-      border-radius: 50%;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-    }
-    #boss {
-      position: absolute;
-      width: 40px;
-      height: 40px;
-      background: #ff0000;
-      border-radius: 50%;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-    }
-    .projectile {
-      position: absolute;
-      width: 10px;
-      height: 10px;
-      background: #ffcc00;
-      border-radius: 50%;
-    }
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
   </style>
 </head>
 <body>
-  <div id="game">
-    <div id="player"></div>
-    <div id="boss"></div>
-  </div>
-
+  <!-- Load Three.js from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r146/three.min.js"></script>
   <script>
-    const game = document.getElementById('game');
-    const player = document.getElementById('player');
-    const boss = document.getElementById('boss');
+    // Scene, Camera, Renderer
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
 
-    let mouseX = window.innerWidth / 2;
-    let mouseY = window.innerHeight / 2;
-    let bossX = window.innerWidth / 2;
-    let bossY = window.innerHeight / 2;
-    let bossSpeed = 2;
-    let bossHealth = 100;
-    let projectiles = [];
+    // Lighting
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(5, 5, 5).normalize();
+    scene.add(light);
 
-    // Track mouse movement
-    game.addEventListener('mousemove', (e) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
+    // Add ambient light to illuminate the entire scene
+    const ambientLight = new THREE.AmbientLight(0x404040); // Soft white light
+    scene.add(ambientLight);
+
+    // Ground (Cave Floor)
+    const groundGeometry = new THREE.PlaneGeometry(50, 50);
+    const groundMaterial = new THREE.MeshPhongMaterial({ color: 0x654321 });
+    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+    ground.rotation.x = -Math.PI / 2;
+    scene.add(ground);
+
+    // Cave Walls
+    const wallGeometry = new THREE.BoxGeometry(50, 10, 1);
+    const wallMaterial = new THREE.MeshPhongMaterial({ color: 0x444444 });
+    const wall1 = new THREE.Mesh(wallGeometry, wallMaterial);
+    wall1.position.set(0, 5, -25);
+    scene.add(wall1);
+
+    const wall2 = new THREE.Mesh(wallGeometry, wallMaterial);
+    wall2.position.set(0, 5, 25);
+    wall2.rotation.y = Math.PI;
+    scene.add(wall2);
+
+    const wall3 = new THREE.Mesh(wallGeometry, wallMaterial);
+    wall3.position.set(-25, 5, 0);
+    wall3.rotation.y = Math.PI / 2;
+    scene.add(wall3);
+
+    const wall4 = new THREE.Mesh(wallGeometry, wallMaterial);
+    wall4.position.set(25, 5, 0);
+    wall4.rotation.y = -Math.PI / 2;
+    scene.add(wall4);
+
+    // Player
+    const playerGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+    const playerMaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
+    const player = new THREE.Mesh(playerGeometry, playerMaterial);
+    player.position.set(0, 1, 0);
+    scene.add(player);
+
+    // Boss
+    const bossGeometry = new THREE.SphereGeometry(1, 32, 32);
+    const bossMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+    const boss = new THREE.Mesh(bossGeometry, bossMaterial);
+    boss.position.set(0, 1, -20);
+    scene.add(boss);
+
+    // Projectiles
+    const projectiles = [];
+    const projectileGeometry = new THREE.SphereGeometry(0.2, 16, 16);
+    const projectileMaterial = new THREE.MeshPhongMaterial({ color: 0xffcc00 });
+
+    // Camera and Controls
+    camera.position.set(0, 5, 10);
+    camera.lookAt(player.position);
+
+    let mouseX = 0, mouseY = 0;
+    document.addEventListener('mousemove', (e) => {
+      mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+      mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
     });
 
-    // Boss abilities
+    // Boss Abilities
     function shootProjectile() {
-      const projectile = document.createElement('div');
-      projectile.classList.add('projectile');
-      game.appendChild(projectile);
+      const projectile = new THREE.Mesh(projectileGeometry, projectileMaterial);
+      projectile.position.copy(boss.position);
+      scene.add(projectile);
 
-      const angle = Math.atan2(mouseY - bossY, mouseX - bossX);
-      const speed = 5;
-
-      projectiles.push({
-        element: projectile,
-        x: bossX,
-        y: bossY,
-        dx: Math.cos(angle) * speed,
-        dy: Math.sin(angle) * speed,
-      });
+      const direction = new THREE.Vector3().subVectors(player.position, boss.position).normalize();
+      projectiles.push({ mesh: projectile, direction });
     }
 
-    // Update game state
-    function update() {
+    // Game Loop
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // Rotate camera based on mouse movement
+      camera.position.x += mouseX * 0.1;
+      camera.position.z += mouseY * 0.1;
+      camera.lookAt(player.position);
+
       // Move boss towards player
-      const angle = Math.atan2(mouseY - bossY, mouseX - bossX);
-      bossX += Math.cos(angle) * bossSpeed;
-      bossY += Math.sin(angle) * bossSpeed;
-      boss.style.left = `${bossX}px`;
-      boss.style.top = `${bossY}px`;
+      const bossDirection = new THREE.Vector3().subVectors(player.position, boss.position).normalize();
+      boss.position.add(bossDirection.multiplyScalar(0.05));
 
       // Update projectiles
       projectiles.forEach((proj, index) => {
-        proj.x += proj.dx;
-        proj.y += proj.dy;
-        proj.element.style.left = `${proj.x}px`;
-        proj.element.style.top = `${proj.y}px`;
+        proj.mesh.position.add(proj.direction.multiplyScalar(0.5));
 
-        // Remove projectiles that go off-screen
-        if (
-          proj.x < 0 || proj.x > window.innerWidth ||
-          proj.y < 0 || proj.y > window.innerHeight
-        ) {
-          proj.element.remove();
+        // Check for collisions with player
+        if (proj.mesh.position.distanceTo(player.position) < 1) {
+          alert('Game Over!');
+          resetGame();
+        }
+
+        // Remove projectiles that go too far
+        if (proj.mesh.position.distanceTo(boss.position) > 50) {
+          scene.remove(proj.mesh);
           projectiles.splice(index, 1);
         }
       });
 
-      // Check for collisions (example: player and boss)
-      const playerRect = player.getBoundingClientRect();
-      const bossRect = boss.getBoundingClientRect();
-      if (
-        playerRect.left < bossRect.right &&
-        playerRect.right > bossRect.left &&
-        playerRect.top < bossRect.bottom &&
-        playerRect.bottom > bossRect.top
-      ) {
-        alert('Game Over!');
-        resetGame();
-      }
-
-      requestAnimationFrame(update);
+      renderer.render(scene, camera);
     }
 
-    // Reset game
+    // Reset Game
     function resetGame() {
-      bossX = window.innerWidth / 2;
-      bossY = window.innerHeight / 2;
-      bossHealth = 100;
-      projectiles.forEach(proj => proj.element.remove());
-      projectiles = [];
+      boss.position.set(0, 1, -20);
+      projectiles.forEach(proj => scene.remove(proj.mesh));
+      projectiles.length = 0;
     }
 
     // Start boss abilities
-    setInterval(shootProjectile, 1000);
+    setInterval(shootProjectile, 2000);
 
     // Start game loop
-    update();
+    animate();
   </script>
 </body>
 </html>
