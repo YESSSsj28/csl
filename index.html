@@ -1,103 +1,150 @@
-const player = document.getElementById('player');
-const boss = document.getElementById('boss');
-const arrow = document.getElementById('arrow');
-const bossAttack = document.getElementById('boss-attack');
-
-let playerX = window.innerWidth / 2;
-let bossHealth = 100;
-let gameOver = false;
-
-// Player movement
-document.addEventListener('keydown', (e) => {
-    if (gameOver) return;
-
-    if (e.key === 'ArrowLeft' && playerX > 0) {
-        playerX -= 10;
-    } else if (e.key === 'ArrowRight' && playerX < window.innerWidth - 50) {
-        playerX += 10;
-    } else if (e.key === ' ') {
-        shootArrow();
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Boss Battle Game</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
     }
-    player.style.left = `${playerX}px`;
-});
-
-// Shoot arrow
-function shootArrow() {
-    if (arrow.style.display === 'block') return; // Prevent multiple arrows
-
-    arrow.style.left = `${playerX + 20}px`;
-    arrow.style.bottom = '70px';
-    arrow.style.display = 'block';
-
-    let arrowInterval = setInterval(() => {
-        let arrowBottom = parseInt(arrow.style.bottom);
-        if (arrowBottom > window.innerHeight - 100) {
-            clearInterval(arrowInterval);
-            arrow.style.display = 'none';
-            checkHit();
-        } else {
-            arrow.style.bottom = `${arrowBottom + 5}px`;
-        }
-    }, 20);
-}
-
-// Check if arrow hits the boss
-function checkHit() {
-    let arrowRect = arrow.getBoundingClientRect();
-    let bossRect = boss.getBoundingClientRect();
-
-    if (
-        arrowRect.left < bossRect.right &&
-        arrowRect.right > bossRect.left &&
-        arrowRect.bottom > bossRect.top
-    ) {
-        bossHealth -= 10;
-        if (bossHealth <= 0) {
-            endGame('You win!');
-        }
+    #game {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
     }
-}
-
-// Boss attack
-function bossAttackPattern() {
-    if (gameOver) return;
-
-    bossAttack.style.left = `${Math.random() * (window.innerWidth - 50)}px`;
-    bossAttack.style.top = '100px';
-    bossAttack.style.display = 'block';
-
-    let attackInterval = setInterval(() => {
-        let attackTop = parseInt(bossAttack.style.top);
-        if (attackTop > window.innerHeight - 100) {
-            clearInterval(attackInterval);
-            bossAttack.style.display = 'none';
-            checkDodge();
-        } else {
-            bossAttack.style.top = `${attackTop + 5}px`;
-        }
-    }, 20);
-}
-
-// Check if player dodges
-function checkDodge() {
-    let attackRect = bossAttack.getBoundingClientRect();
-    let playerRect = player.getBoundingClientRect();
-
-    if (
-        attackRect.left < playerRect.right &&
-        attackRect.right > playerRect.left &&
-        attackRect.bottom > playerRect.top
-    ) {
-        endGame('You lose!');
+    #player {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: #00ff00;
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
     }
-}
+    #boss {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      background: #ff0000;
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .projectile {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: #ffcc00;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+  <div id="game">
+    <div id="player"></div>
+    <div id="boss"></div>
+  </div>
 
-// End game
-function endGame(message) {
-    gameOver = true;
-    alert(message);
-    window.location.reload(); // Restart game
-}
+  <script>
+    const game = document.getElementById('game');
+    const player = document.getElementById('player');
+    const boss = document.getElementById('boss');
 
-// Game loop
-setInterval(bossAttackPattern, 2000);
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+    let bossX = window.innerWidth / 2;
+    let bossY = window.innerHeight / 2;
+    let bossSpeed = 2;
+    let bossHealth = 100;
+    let projectiles = [];
+
+    // Track mouse movement
+    game.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    });
+
+    // Boss abilities
+    function shootProjectile() {
+      const projectile = document.createElement('div');
+      projectile.classList.add('projectile');
+      game.appendChild(projectile);
+
+      const angle = Math.atan2(mouseY - bossY, mouseX - bossX);
+      const speed = 5;
+
+      projectiles.push({
+        element: projectile,
+        x: bossX,
+        y: bossY,
+        dx: Math.cos(angle) * speed,
+        dy: Math.sin(angle) * speed,
+      });
+    }
+
+    // Update game state
+    function update() {
+      // Move boss towards player
+      const angle = Math.atan2(mouseY - bossY, mouseX - bossX);
+      bossX += Math.cos(angle) * bossSpeed;
+      bossY += Math.sin(angle) * bossSpeed;
+      boss.style.left = `${bossX}px`;
+      boss.style.top = `${bossY}px`;
+
+      // Update projectiles
+      projectiles.forEach((proj, index) => {
+        proj.x += proj.dx;
+        proj.y += proj.dy;
+        proj.element.style.left = `${proj.x}px`;
+        proj.element.style.top = `${proj.y}px`;
+
+        // Remove projectiles that go off-screen
+        if (
+          proj.x < 0 || proj.x > window.innerWidth ||
+          proj.y < 0 || proj.y > window.innerHeight
+        ) {
+          proj.element.remove();
+          projectiles.splice(index, 1);
+        }
+      });
+
+      // Check for collisions (example: player and boss)
+      const playerRect = player.getBoundingClientRect();
+      const bossRect = boss.getBoundingClientRect();
+      if (
+        playerRect.left < bossRect.right &&
+        playerRect.right > bossRect.left &&
+        playerRect.top < bossRect.bottom &&
+        playerRect.bottom > bossRect.top
+      ) {
+        alert('Game Over!');
+        resetGame();
+      }
+
+      requestAnimationFrame(update);
+    }
+
+    // Reset game
+    function resetGame() {
+      bossX = window.innerWidth / 2;
+      bossY = window.innerHeight / 2;
+      bossHealth = 100;
+      projectiles.forEach(proj => proj.element.remove());
+      projectiles = [];
+    }
+
+    // Start boss abilities
+    setInterval(shootProjectile, 1000);
+
+    // Start game loop
+    update();
+  </script>
+</body>
+</html>
