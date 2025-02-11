@@ -39,6 +39,19 @@
       transform: scaleX(-1); /* Mirror the webcam feed */
       display: none; /* Hide the video element */
     }
+    .hand {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: yellow;
+      border-radius: 50%;
+    }
+    #leftHand {
+      left: 100px;
+    }
+    #rightHand {
+      right: 100px;
+    }
   </style>
 </head>
 <body>
@@ -46,6 +59,8 @@
   <div id="ring">
     <div id="player1" class="player"></div>
     <div id="player2" class="player"></div>
+    <div id="leftHand" class="hand"></div>
+    <div id="rightHand" class="hand"></div>
   </div>
   <video id="webcam" autoplay playsinline></video>
   <p>Throw punches with your hands! (Jab, Uppercut, Hook)</p>
@@ -58,6 +73,8 @@
     const videoElement = document.getElementById('webcam');
     const player1 = document.getElementById('player1');
     const player2 = document.getElementById('player2');
+    const leftHand = document.getElementById('leftHand');
+    const rightHand = document.getElementById('rightHand');
 
     let player1Health = 100;
     let player2Health = 100;
@@ -73,7 +90,7 @@
       minTrackingConfidence: 0.5,
     });
 
-    // Detect punches
+    // Detect punches and update virtual hands
     hands.onResults((results) => {
       if (results.multiHandLandmarks) {
         for (const landmarks of results.multiHandLandmarks) {
@@ -83,6 +100,20 @@
           // Calculate punch direction
           const dx = indexFinger.x - wrist.x;
           const dy = indexFinger.y - wrist.y;
+
+          // Determine which hand is being tracked
+          const isLeftHand = landmarks[0].x < 0.5; // Left hand is on the left side of the screen
+
+          // Mirror the hand movements
+          if (isLeftHand) {
+            // Move the right hand on the screen
+            rightHand.style.left = `${(1 - indexFinger.x) * 600}px`; // Mirror X position
+            rightHand.style.bottom = `${indexFinger.y * 400}px`; // Y position
+          } else {
+            // Move the left hand on the screen
+            leftHand.style.left = `${(1 - indexFinger.x) * 600}px`; // Mirror X position
+            leftHand.style.bottom = `${indexFinger.y * 400}px`; // Y position
+          }
 
           // Detect punch type
           if (dy < -0.2) {
