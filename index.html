@@ -71,13 +71,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
   <script>
     const videoElement = document.getElementById('webcam');
-    const player1 = document.getElementById('player1');
-    const player2 = document.getElementById('player2');
     const leftHand = document.getElementById('leftHand');
     const rightHand = document.getElementById('rightHand');
-
-    let player1Health = 100;
-    let player2Health = 100;
 
     // Initialize MediaPipe Hands
     const hands = new Hands({
@@ -90,16 +85,11 @@
       minTrackingConfidence: 0.5,
     });
 
-    // Detect punches and update virtual hands
+    // Detect hands and update virtual hands
     hands.onResults((results) => {
       if (results.multiHandLandmarks) {
         for (const landmarks of results.multiHandLandmarks) {
           const indexFinger = landmarks[8]; // Tip of the index finger
-          const wrist = landmarks[0]; // Wrist
-
-          // Calculate punch direction
-          const dx = indexFinger.x - wrist.x;
-          const dy = indexFinger.y - wrist.y;
 
           // Determine which hand is being tracked
           const isLeftHand = landmarks[0].x < 0.5; // Left hand is on the left side of the screen
@@ -113,25 +103,6 @@
             // Move the left hand on the screen
             leftHand.style.left = `${(1 - indexFinger.x) * 600}px`; // Mirror X position
             leftHand.style.bottom = `${indexFinger.y * 400}px`; // Y position
-          }
-
-          // Detect punch type
-          if (dy < -0.2) {
-            console.log('Uppercut!');
-            player2Health -= 10;
-          } else if (dx > 0.2) {
-            console.log('Jab!');
-            player2Health -= 5;
-          } else if (dx < -0.2) {
-            console.log('Hook!');
-            player2Health -= 7;
-          }
-
-          // Update health
-          player2.style.height = `${player2Health}px`;
-          if (player2Health <= 0) {
-            alert('Player 1 Wins!');
-            resetGame();
           }
         }
       }
@@ -157,14 +128,6 @@
         console.error('Error accessing webcam:', error);
         alert('Unable to access webcam. Please allow camera permissions.');
       }
-    }
-
-    // Reset game
-    function resetGame() {
-      player1Health = 100;
-      player2Health = 100;
-      player1.style.height = '100px';
-      player2.style.height = '100px';
     }
 
     // Start the game
