@@ -3,157 +3,141 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>3D Roblox-Style Boss Battle</title>
+  <title>Virtual Boxing Game</title>
   <style>
-    body { margin: 0; overflow: hidden; }
-    canvas { display: block; width: 100%; height: 100%; }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #333;
+      color: white;
+    }
+    #ring {
+      position: relative;
+      width: 600px;
+      height: 400px;
+      margin: 20px auto;
+      background: #222;
+      border: 10px solid #555;
+      overflow: hidden;
+    }
+    .player {
+      position: absolute;
+      width: 50px;
+      height: 100px;
+      background: red;
+      bottom: 0;
+    }
+    #player1 {
+      left: 100px;
+      background: blue;
+    }
+    #player2 {
+      right: 100px;
+      background: red;
+    }
+    #webcam {
+      transform: scaleX(-1); /* Mirror the webcam feed */
+      display: none; /* Hide the video element */
+    }
   </style>
 </head>
 <body>
-  <!-- Load Babylon.js from CDN -->
-  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <h1>Virtual Boxing Game</h1>
+  <div id="ring">
+    <div id="player1" class="player"></div>
+    <div id="player2" class="player"></div>
+  </div>
+  <video id="webcam" autoplay playsinline></video>
+  <p>Throw punches with your hands! (Jab, Uppercut, Hook)</p>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
   <script>
-    // Get the canvas element
-    const canvas = document.createElement('canvas');
-    document.body.appendChild(canvas);
+    const videoElement = document.getElementById('webcam');
+    const player1 = document.getElementById('player1');
+    const player2 = document.getElementById('player2');
 
-    // Generate the Babylon.js engine
-    const engine = new BABYLON.Engine(canvas, true);
+    let player1Health = 100;
+    let player2Health = 100;
 
-    // Create the scene
-    const createScene = function () {
-      const scene = new BABYLON.Scene(engine);
+    // Initialize MediaPipe Hands
+    const hands = new Hands({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+    });
+    hands.setOptions({
+      maxNumHands: 2,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5,
+    });
 
-      // Add a light
-      const light = new BABYLON.HemisphericLight(
-        "light",
-        new BABYLON.Vector3(0, 1, 0),
-        scene
-      );
-      light.intensity = 0.7;
+    // Detect punches
+    hands.onResults((results) => {
+      if (results.multiHandLandmarks) {
+        for (const landmarks of results.multiHandLandmarks) {
+          const indexFinger = landmarks[8]; // Tip of the index finger
+          const wrist = landmarks[0]; // Wrist
 
-      // Create the ground (cave floor)
-      const ground = BABYLON.MeshBuilder.CreateGround(
-        "ground",
-        { width: 50, height: 50 },
-        scene
-      );
-      ground.material = new BABYLON.StandardMaterial("groundMat", scene);
-      ground.material.diffuseColor = new BABYLON.Color3(0.4, 0.3, 0.2);
+          // Calculate punch direction
+          const dx = indexFinger.x - wrist.x;
+          const dy = indexFinger.y - wrist.y;
 
-      // Create the player (a sphere)
-      const player = BABYLON.MeshBuilder.CreateSphere(
-        "player",
-        { diameter: 1 },
-        scene
-      );
-      player.position.y = 1;
-      player.material = new BABYLON.StandardMaterial("playerMat", scene);
-      player.material.diffuseColor = new BABYLON.Color3(0, 1, 0);
-
-      // Add a first-person camera
-      const camera = new BABYLON.FreeCamera(
-        "camera",
-        new BABYLON.Vector3(0, 2, -10),
-        scene
-      );
-      camera.attachControl(canvas, true);
-      camera.setTarget(player.position);
-
-      // Load a realistic boss model (replace with your own model if needed)
-      BABYLON.SceneLoader.ImportMesh(
-        "",
-        "https://assets.babylonjs.com/meshes/",
-        "alien.glb",
-        scene,
-        function (meshes) {
-          const boss = meshes[0];
-          boss.position = new BABYLON.Vector3(0, 1, -20);
-          boss.scaling = new BABYLON.Vector3(0.5, 0.5, 0.5);
-
-          // Boss animations (if available in the model)
-          if (boss.animations && boss.animations.length > 0) {
-            const anim = new BABYLON.Animation(
-              "bossAnim",
-              "position.z",
-              30,
-              BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-              BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
-            );
-            const keys = [
-              { frame: 0, value: -20 },
-              { frame: 100, value: 0 },
-            ];
-            anim.setKeys(keys);
-            boss.animations.push(anim);
-            scene.beginAnimation(boss, 0, 100, true);
+          // Detect punch type
+          if (dy < -0.2) {
+            console.log('Uppercut!');
+            player2Health -= 10;
+          } else if (dx > 0.2) {
+            console.log('Jab!');
+            player2Health -= 5;
+          } else if (dx < -0.2) {
+            console.log('Hook!');
+            player2Health -= 7;
           }
 
-          // Boss abilities
-          const shootProjectile = function () {
-            const projectile = BABYLON.MeshBuilder.CreateSphere(
-              "projectile",
-              { diameter: 0.4 },
-              scene
-            );
-            projectile.material = new BABYLON.StandardMaterial("projectileMat", scene);
-            projectile.material.diffuseColor = new BABYLON.Color3(1, 0.8, 0);
-            projectile.position.copyFrom(boss.position);
-
-            const direction = player.position.subtract(boss.position).normalize();
-            projectiles.push({ mesh: projectile, direction });
-          };
-
-          // Start boss abilities
-          setInterval(shootProjectile, 2000);
-        }
-      );
-
-      // Boss projectiles
-      const projectiles = [];
-
-      // Game loop
-      scene.onBeforeRenderObservable.add(() => {
-        // Update projectiles
-        projectiles.forEach((proj, index) => {
-          proj.mesh.position.addInPlace(proj.direction.scale(0.5));
-
-          // Check for collisions with player
-          if (proj.mesh.position.subtract(player.position).length() < 1) {
-            alert("Game Over!");
+          // Update health
+          player2.style.height = `${player2Health}px`;
+          if (player2Health <= 0) {
+            alert('Player 1 Wins!');
             resetGame();
           }
+        }
+      }
+    });
 
-          // Remove projectiles that go too far
-          if (proj.mesh.position.subtract(boss.position).length() > 50) {
-            proj.mesh.dispose();
-            projectiles.splice(index, 1);
-          }
+    // Request webcam access
+    async function startWebcam() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        videoElement.srcObject = stream;
+        videoElement.addEventListener('loadeddata', () => {
+          // Start MediaPipe Hands tracking
+          const camera = new Camera(videoElement, {
+            onFrame: async () => {
+              await hands.send({ image: videoElement });
+            },
+            width: 640,
+            height: 480,
+          });
+          camera.start();
         });
-      });
+      } catch (error) {
+        console.error('Error accessing webcam:', error);
+        alert('Unable to access webcam. Please allow camera permissions.');
+      }
+    }
 
-      // Reset game
-      const resetGame = function () {
-        boss.position.z = -20;
-        projectiles.forEach((proj) => proj.mesh.dispose());
-        projectiles.length = 0;
-      };
+    // Reset game
+    function resetGame() {
+      player1Health = 100;
+      player2Health = 100;
+      player1.style.height = '100px';
+      player2.style.height = '100px';
+    }
 
-      return scene;
-    };
-
-    // Create the scene
-    const scene = createScene();
-
-    // Render loop
-    engine.runRenderLoop(() => {
-      scene.render();
-    });
-
-    // Handle window resize
-    window.addEventListener("resize", () => {
-      engine.resize();
-    });
+    // Start the game
+    startWebcam();
   </script>
 </body>
 </html>
