@@ -20,25 +20,6 @@
       border: 10px solid #555;
       overflow: hidden;
     }
-    .player {
-      position: absolute;
-      width: 50px;
-      height: 100px;
-      background: red;
-      bottom: 0;
-    }
-    #player1 {
-      left: 100px;
-      background: blue;
-    }
-    #player2 {
-      right: 100px;
-      background: red;
-    }
-    #webcam {
-      transform: scaleX(-1); /* Mirror the webcam feed */
-      display: none; /* Hide the video element */
-    }
     .hand {
       position: absolute;
       width: 20px;
@@ -52,18 +33,20 @@
     #rightHand {
       right: 100px;
     }
+    #webcam {
+      transform: scaleX(-1); /* Mirror the webcam feed */
+      display: none; /* Hide the video element */
+    }
   </style>
 </head>
 <body>
   <h1>Virtual Boxing Game</h1>
   <div id="ring">
-    <div id="player1" class="player"></div>
-    <div id="player2" class="player"></div>
     <div id="leftHand" class="hand"></div>
     <div id="rightHand" class="hand"></div>
   </div>
   <video id="webcam" autoplay playsinline></video>
-  <p>Throw punches with your hands! (Jab, Uppercut, Hook)</p>
+  <p>Move your hands in front of the webcam!</p>
 
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
@@ -73,6 +56,11 @@
     const videoElement = document.getElementById('webcam');
     const leftHand = document.getElementById('leftHand');
     const rightHand = document.getElementById('rightHand');
+
+    // Debugging: Log messages to the console
+    function log(message) {
+      console.log(message);
+    }
 
     // Initialize MediaPipe Hands
     const hands = new Hands({
@@ -88,6 +76,7 @@
     // Detect hands and update virtual hands
     hands.onResults((results) => {
       if (results.multiHandLandmarks) {
+        log(`Hands detected: ${results.multiHandLandmarks.length}`);
         for (const landmarks of results.multiHandLandmarks) {
           const indexFinger = landmarks[8]; // Tip of the index finger
 
@@ -97,14 +86,22 @@
           // Mirror the hand movements
           if (isLeftHand) {
             // Move the right hand on the screen
-            rightHand.style.left = `${(1 - indexFinger.x) * 600}px`; // Mirror X position
-            rightHand.style.bottom = `${indexFinger.y * 400}px`; // Y position
+            const x = (1 - indexFinger.x) * 600; // Mirror X position
+            const y = indexFinger.y * 400; // Y position
+            rightHand.style.left = `${x}px`;
+            rightHand.style.bottom = `${y}px`;
+            log(`Right hand moved to: (${x}, ${y})`);
           } else {
             // Move the left hand on the screen
-            leftHand.style.left = `${(1 - indexFinger.x) * 600}px`; // Mirror X position
-            leftHand.style.bottom = `${indexFinger.y * 400}px`; // Y position
+            const x = (1 - indexFinger.x) * 600; // Mirror X position
+            const y = indexFinger.y * 400; // Y position
+            leftHand.style.left = `${x}px`;
+            leftHand.style.bottom = `${y}px`;
+            log(`Left hand moved to: (${x}, ${y})`);
           }
         }
+      } else {
+        log('No hands detected.');
       }
     });
 
@@ -114,6 +111,7 @@
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         videoElement.srcObject = stream;
         videoElement.addEventListener('loadeddata', () => {
+          log('Webcam access granted.');
           // Start MediaPipe Hands tracking
           const camera = new Camera(videoElement, {
             onFrame: async () => {
