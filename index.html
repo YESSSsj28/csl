@@ -10,6 +10,8 @@
       text-align: center;
       background: #333;
       color: white;
+      margin: 0;
+      padding: 0;
     }
     #ring {
       position: relative;
@@ -48,19 +50,16 @@
   <video id="webcam" autoplay playsinline></video>
   <p>Move your hands in front of the webcam!</p>
 
+  <!-- Load MediaPipe Hands -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+
   <script>
     const videoElement = document.getElementById('webcam');
     const leftHand = document.getElementById('leftHand');
     const rightHand = document.getElementById('rightHand');
-
-    // Debugging: Log messages to the console
-    function log(message) {
-      console.log(message);
-    }
 
     // Initialize MediaPipe Hands
     const hands = new Hands({
@@ -76,7 +75,6 @@
     // Detect hands and update virtual hands
     hands.onResults((results) => {
       if (results.multiHandLandmarks) {
-        log(`Hands detected: ${results.multiHandLandmarks.length}`);
         for (const landmarks of results.multiHandLandmarks) {
           const indexFinger = landmarks[8]; // Tip of the index finger
 
@@ -90,18 +88,14 @@
             const y = indexFinger.y * 400; // Y position
             rightHand.style.left = `${x}px`;
             rightHand.style.bottom = `${y}px`;
-            log(`Right hand moved to: (${x}, ${y})`);
           } else {
             // Move the left hand on the screen
             const x = (1 - indexFinger.x) * 600; // Mirror X position
             const y = indexFinger.y * 400; // Y position
             leftHand.style.left = `${x}px`;
             leftHand.style.bottom = `${y}px`;
-            log(`Left hand moved to: (${x}, ${y})`);
           }
         }
-      } else {
-        log('No hands detected.');
       }
     });
 
@@ -111,7 +105,6 @@
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         videoElement.srcObject = stream;
         videoElement.addEventListener('loadeddata', () => {
-          log('Webcam access granted.');
           // Start MediaPipe Hands tracking
           const camera = new Camera(videoElement, {
             onFrame: async () => {
