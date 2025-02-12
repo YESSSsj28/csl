@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Virtual Boxing Game</title>
+  <title>Virtual Hands</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -11,51 +11,38 @@
       background: #333;
       color: white;
       margin: 0;
-      padding: 0;
-    }
-    #ring {
-      position: relative;
-      width: 600px;
-      height: 400px;
-      margin: 20px auto;
-      background: #222;
-      border: 10px solid #555;
       overflow: hidden;
-    }
-    .hand {
-      position: absolute;
-      width: 20px;
-      height: 20px;
-      background: yellow;
-      border-radius: 50%;
-    }
-    #leftHand {
-      left: 100px;
-    }
-    #rightHand {
-      right: 100px;
     }
     #webcam {
       transform: scaleX(-1); /* Mirror the webcam feed */
       display: none; /* Hide the video element */
     }
+    .hand {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      background: yellow;
+      border-radius: 50%;
+    }
+    #leftHand {
+      background: blue;
+    }
+    #rightHand {
+      background: red;
+    }
   </style>
 </head>
 <body>
-  <h1>Virtual Boxing Game</h1>
-  <div id="ring">
-    <div id="leftHand" class="hand"></div>
-    <div id="rightHand" class="hand"></div>
-  </div>
-  <video id="webcam" autoplay playsinline></video>
+  <h1>Virtual Hands</h1>
   <p>Move your hands in front of the webcam!</p>
+  <div id="leftHand" class="hand"></div>
+  <div id="rightHand" class="hand"></div>
+  <video id="webcam" autoplay playsinline></video>
 
-  <!-- Load MediaPipe Hands -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-
   <script>
     const videoElement = document.getElementById('webcam');
     const leftHand = document.getElementById('leftHand');
@@ -81,19 +68,17 @@
           // Determine which hand is being tracked
           const isLeftHand = landmarks[0].x < 0.5; // Left hand is on the left side of the screen
 
-          // Mirror the hand movements
+          // Map hand landmarks to screen coordinates
+          const x = (1 - indexFinger.x) * window.innerWidth; // Mirror X position
+          const y = indexFinger.y * window.innerHeight; // Y position
+
+          // Update virtual hand position
           if (isLeftHand) {
-            // Move the right hand on the screen
-            const x = (1 - indexFinger.x) * 600; // Mirror X position
-            const y = indexFinger.y * 400; // Y position
-            rightHand.style.left = `${x}px`;
-            rightHand.style.bottom = `${y}px`;
-          } else {
-            // Move the left hand on the screen
-            const x = (1 - indexFinger.x) * 600; // Mirror X position
-            const y = indexFinger.y * 400; // Y position
             leftHand.style.left = `${x}px`;
-            leftHand.style.bottom = `${y}px`;
+            leftHand.style.top = `${y}px`;
+          } else {
+            rightHand.style.left = `${x}px`;
+            rightHand.style.top = `${y}px`;
           }
         }
       }
@@ -121,7 +106,7 @@
       }
     }
 
-    // Start the game
+    // Start the webcam
     startWebcam();
   </script>
 </body>
