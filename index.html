@@ -1,113 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Virtual Hands</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background: #333;
-      color: white;
-      margin: 0;
-      overflow: hidden;
-    }
-    #webcam {
-      transform: scaleX(-1); /* Mirror the webcam feed */
-      display: none; /* Hide the video element */
-    }
-    .hand {
-      position: absolute;
-      width: 50px;
-      height: 50px;
-      background: yellow;
-      border-radius: 50%;
-    }
-    #leftHand {
-      background: blue;
-    }
-    #rightHand {
-      background: red;
-    }
-  </style>
-</head>
-<body>
-  <h1>Virtual Hands</h1>
-  <p>Move your hands in front of the webcam!</p>
-  <div id="leftHand" class="hand"></div>
-  <div id="rightHand" class="hand"></div>
-  <video id="webcam" autoplay playsinline></video>
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import urllib.request
 
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-  <script>
-    const videoElement = document.getElementById('webcam');
-    const leftHand = document.getElementById('leftHand');
-    const rightHand = document.getElementById('rightHand');
+class ProxyHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        try:
+            # Forward the request to Google
+            url = "https://www.google.com" + self.path
+            response = urllib.request.urlopen(url)
+            self.send_response(response.status)
+            for header, value in response.getheaders():
+                self.send_header(header, value)
+            self.end_headers()
+            self.wfile.write(response.read())
+        except Exception as e:
+            self.send_error(500, str(e))
 
-    // Initialize MediaPipe Hands
-    const hands = new Hands({
-      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
-    });
-    hands.setOptions({
-      maxNumHands: 2,
-      modelComplexity: 1,
-      minDetectionConfidence: 0.5,
-      minTrackingConfidence: 0.5,
-    });
+def run(server_class=HTTPServer, handler_class=ProxyHandler, port=8080):
+    server_address = ('', port)
+    httpd = server_class(server_address, handler_class)
+    print(f"Starting proxy server on port {port}...")
+    httpd.serve_forever()
 
-    // Detect hands and update virtual hands
-    hands.onResults((results) => {
-      if (results.multiHandLandmarks) {
-        for (const landmarks of results.multiHandLandmarks) {
-          const indexFinger = landmarks[8]; // Tip of the index finger
-
-          // Determine which hand is being tracked
-          const isLeftHand = landmarks[0].x < 0.5; // Left hand is on the left side of the screen
-
-          // Map hand landmarks to screen coordinates
-          const x = (1 - indexFinger.x) * window.innerWidth; // Mirror X position
-          const y = indexFinger.y * window.innerHeight; // Y position
-
-          // Update virtual hand position
-          if (isLeftHand) {
-            leftHand.style.left = `${x}px`;
-            leftHand.style.top = `${y}px`;
-          } else {
-            rightHand.style.left = `${x}px`;
-            rightHand.style.top = `${y}px`;
-          }
-        }
-      }
-    });
-
-    // Request webcam access
-    async function startWebcam() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        videoElement.srcObject = stream;
-        videoElement.addEventListener('loadeddata', () => {
-          // Start MediaPipe Hands tracking
-          const camera = new Camera(videoElement, {
-            onFrame: async () => {
-              await hands.send({ image: videoElement });
-            },
-            width: 640,
-            height: 480,
-          });
-          camera.start();
-        });
-      } catch (error) {
-        console.error('Error accessing webcam:', error);
-        alert('Unable to access webcam. Please allow camera permissions.');
-      }
-    }
-
-    // Start the webcam
-    startWebcam();
-  </script>
-</body>
-</html>
+if __name__ == "__main__":
+    run()
