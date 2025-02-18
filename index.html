@@ -416,13 +416,34 @@ loadstring(game.HttpGet(game, 'https://raw.githubusercontent.com/qwertyui-is-bac
             min-height: 100vh; /* Ensure full viewport height */
         }
 
+        /* Navigation link styling */
+        .nav-link {
+            position: fixed;
+            top: 20px;
+            left: 42%; /* Adjusted to move the link slightly more to the left */
+            transform: translateX(-50%);
+            background: rgba(64, 64, 64, 0.8); /* Darker gray */
+            padding: 10px 20px;
+            border-radius: 15px; /* Rounded edges */
+            color: white;
+            text-decoration: none;
+            font-size: 1.2em;
+            transition: background 0.3s; /* Removed transform transition */
+            z-index: 1000; /* Ensure it's above other content */
+        }
+
+        .nav-link:hover {
+            background: rgba(96, 96, 96, 0.8); /* Slightly lighter on hover */
+            /* Removed transform: scale(1.05) to prevent movement */
+        }
+
         /* Container for content */
         .container {
             background: rgba(0, 0, 0, 0.8); /* Black rectangle background */
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 170, 255, 0.8);
-            margin: 20px auto; /* Center the container */
+            margin: 80px auto 20px; /* Adjusted margin to avoid overlap */
             max-width: 800px;
             width: 90%; /* Responsive width */
             text-align: center;
@@ -459,8 +480,14 @@ loadstring(game.HttpGet(game, 'https://raw.githubusercontent.com/qwertyui-is-bac
 
         /* Responsive design for smaller screens */
         @media (max-width: 600px) {
+            .nav-link {
+                top: 10px;
+                left: 37%; /* Adjusted for smaller screens */
+                font-size: 1em;
+                padding: 8px 15px;
+            }
             .container {
-                margin: 10px auto;
+                margin: 60px auto 20px;
                 padding: 15px;
             }
             .ipa-item {
@@ -470,6 +497,9 @@ loadstring(game.HttpGet(game, 'https://raw.githubusercontent.com/qwertyui-is-bac
     </style>
 </head>
 <body>
+    <!-- Navigation link -->
+    <a href="#ipas" class="nav-link">IPAs</a>
+
     <!-- IPAs Section -->
     <div id="ipas" class="container">
         <h1>IPAs</h1>
@@ -531,5 +561,18 @@ loadstring(game.HttpGet(game, 'https://raw.githubusercontent.com/qwertyui-is-bac
             </div>
         </div>
     </div>
+
+    <!-- Smooth scroll script -->
+    <script>
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
 </body>
 </html>
