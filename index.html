@@ -430,11 +430,25 @@ loadstring(game.HttpGet(game, 'https://raw.githubusercontent.com/qwertyui-is-bac
             text-decoration: none;
             font-size: 1.2em;
             transition: background 0.3s, transform 0.3s;
+            position: relative;
         }
 
         .nav-rectangle:hover {
             background: rgba(96, 96, 96, 0.8); /* Slightly lighter on hover */
             transform: scale(1.05);
+        }
+
+        /* White indicator bar */
+        .indicator-bar {
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0; /* Initially hidden */
+            height: 3px;
+            background: white;
+            border-radius: 2px;
+            transition: all 0.3s ease;
         }
 
         /* Container for content */
@@ -495,10 +509,9 @@ loadstring(game.HttpGet(game, 'https://raw.githubusercontent.com/qwertyui-is-bac
 <body>
     <!-- Navigation rectangles -->
     <div class="nav-container">
-        <a href="#download" class="nav-rectangle">Sunlight V6</a>
-        <a href="#configs" class="nav-rectangle">Tutriols</a>
-        <a href="#scripts" class="nav-rectangle">Scripts</a>
-        <a href="#ipas" class="nav-rectangle">IPAs</a> <!-- New IPA link -->
+        <a href="#ipas" class="nav-rectangle" id="nav-ipas">IPAs</a> <!-- Only IPAs link -->
+        <!-- White indicator bar -->
+        <div class="indicator-bar" id="indicator-bar"></div>
     </div>
 
     <!-- IPAs Section -->
@@ -562,7 +575,7 @@ loadstring(game.HttpGet(game, 'https://raw.githubusercontent.com/qwertyui-is-bac
         </div>
     </div>
 
-    <!-- Smooth scroll script -->
+    <!-- Smooth scroll and indicator bar script -->
     <script>
         // Smooth scroll for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -571,6 +584,34 @@ loadstring(game.HttpGet(game, 'https://raw.githubusercontent.com/qwertyui-is-bac
                 document.querySelector(this.getAttribute('href')).scrollIntoView({
                     behavior: 'smooth'
                 });
+            });
+        });
+
+        // Update indicator bar position based on scroll
+        const sections = document.querySelectorAll('.container');
+        const navLinks = document.querySelectorAll('.nav-rectangle');
+        const indicatorBar = document.getElementById('indicator-bar');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (pageYOffset >= sectionTop - sectionHeight / 3) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href').includes(current)) {
+                    link.classList.add('active');
+                    // Move and resize the indicator bar
+                    const linkRect = link.getBoundingClientRect();
+                    const navRect = document.querySelector('.nav-container').getBoundingClientRect();
+                    indicatorBar.style.left = `${linkRect.left - navRect.left + linkRect.width / 2}px`;
+                    indicatorBar.style.width = `${linkRect.width}px`; // Match the width of the text
+                }
             });
         });
     </script>
