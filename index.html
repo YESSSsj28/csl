@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -442,8 +443,7 @@ loadstring(game.HttpGet(game, 'https://raw.githubusercontent.com/qwertyui-is-bac
         .indicator-bar {
             position: absolute;
             bottom: -5px;
-            left: 50%;
-            transform: translateX(-50%);
+            left: 0;
             width: 0; /* Initially hidden */
             height: 3px;
             background: white;
@@ -603,13 +603,11 @@ loadstring(game.HttpGet(game, 'https://raw.githubusercontent.com/qwertyui-is-bac
             });
 
             navLinks.forEach(link => {
-                link.classList.remove('active');
                 if (link.getAttribute('href').includes(current)) {
-                    link.classList.add('active');
                     // Move and resize the indicator bar
                     const linkRect = link.getBoundingClientRect();
                     const navRect = document.querySelector('.nav-container').getBoundingClientRect();
-                    indicatorBar.style.left = `${linkRect.left - navRect.left + linkRect.width / 2}px`;
+                    indicatorBar.style.left = `${linkRect.left - navRect.left}px`;
                     indicatorBar.style.width = `${linkRect.width}px`; // Match the width of the text
                 }
             });
