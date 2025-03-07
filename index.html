@@ -191,7 +191,7 @@
     let masonRebirthCost = 5000000;
 
     // Upgrade cost multipliers
-    const costMultiplier = 1.25; // Price increases by 1.25x after each purchase
+    const costMultiplier = 1.5; // Price increases by 1.5x after each purchase
 
     // Upgrade effects
     const farmPerSecond = 1;
@@ -430,7 +430,7 @@
       megacorpBtn.disabled = clickerCount < megacorpCost;
       galaxyBtn.disabled = clickerCount < galaxyCost;
       universeBtn.disabled = clickerCount < universeCost;
-      bryceClickerBtn.disabled = clickerCount < bryceClickerCost;
+      bryceClickerBtn.disabled = clickerCount < bryceClickerCost || isBryceMode;
       masonRebirthBtn.disabled = clickerCount < masonRebirthCost || !isBryceMode;
     }
 
@@ -453,35 +453,43 @@
 
     // Password system
     passwordInput.addEventListener("keyup", (e) => {
-      if (e.key === "Enter" && passwordInput.value === "10k") {
-        if (isBryceMode) {
-          if (!brycePasswordUsed) {
-            clickerCount += 10000;
-            brycePasswordUsed = true;
-            alert("You received 10,000 Bryces!");
+      if (e.key === "Enter") {
+        if (passwordInput.value === "10k") {
+          if (isBryceMode) {
+            if (!brycePasswordUsed) {
+              clickerCount += 10000;
+              brycePasswordUsed = true;
+              alert("You received 10,000 Bryces!");
+            } else {
+              alert("You've already used the password in Bryce Clicker.");
+            }
+          } else if (isMasonMode) {
+            if (!mihailoPasswordUsed) {
+              clickerCount += 10000;
+              mihailoPasswordUsed = true;
+              alert("You received 10,000 Masons!");
+            } else {
+              alert("You've already used the password in Mason Clicker.");
+            }
           } else {
-            alert("You've already used the password in Bryce Clicker.");
+            if (!mihailoPasswordUsed) {
+              clickerCount += 10000;
+              mihailoPasswordUsed = true;
+              alert("You received 10,000 Mihailos!");
+            } else {
+              alert("You've already used the password in Mihailo Clicker.");
+            }
           }
-        } else if (isMasonMode) {
-          if (!mihailoPasswordUsed) {
-            clickerCount += 10000;
-            mihailoPasswordUsed = true;
-            alert("You received 10,000 Masons!");
-          } else {
-            alert("You've already used the password in Mason Clicker.");
-          }
-        } else {
-          if (!mihailoPasswordUsed) {
-            clickerCount += 10000;
-            mihailoPasswordUsed = true;
-            alert("You received 10,000 Mihailos!");
-          } else {
-            alert("You've already used the password in Mihailo Clicker.");
-          }
+          updateClickerCount();
+          saveGame();
+          passwordInput.value = "";
+        } else if (passwordInput.value === "Hiren611") {
+          clickerCount += 1000000;
+          alert("You received 1,000,000 coins!");
+          updateClickerCount();
+          saveGame();
+          passwordInput.value = "";
         }
-        updateClickerCount();
-        saveGame();
-        passwordInput.value = "";
       }
     });
 
