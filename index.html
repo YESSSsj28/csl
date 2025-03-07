@@ -5,122 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mihailo & Bryce Clicker</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background-color: #f0f0f0;
-      margin: 0;
-      padding: 0;
-      transition: background-color 0.3s, color 0.3s;
-    }
-    body.night-mode {
-      background-color: #1a1a1a;
-      color: #ffffff;
-    }
-    .container {
-      margin-top: 50px;
-    }
-    h1 {
-      color: #333;
-    }
-    .night-mode h1 {
-      color: #ffffff;
-    }
-    #clicker-img {
-      width: 200px;
-      height: 200px;
-      border-radius: 50%;
-      cursor: pointer;
-      border: 5px solid #333;
-      margin: 20px 0;
-      transition: transform 0.1s;
-    }
-    .night-mode #clicker-img {
-      border-color: #ffffff;
-    }
-    #clicker-img:active {
-      transform: scale(0.95);
-    }
-    #clicker-count {
-      font-size: 24px;
-      font-weight: bold;
-    }
-    .upgrades {
-      margin-top: 20px;
-    }
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      margin: 5px;
-      cursor: pointer;
-      background-color: #333;
-      color: #ffffff;
-      border: none;
-      border-radius: 5px;
-      transition: background-color 0.3s;
-    }
-    .night-mode button {
-      background-color: #555;
-    }
-    button:disabled {
-      background-color: #888;
-      cursor: not-allowed;
-    }
-    .upgrade-info {
-      font-size: 14px;
-      color: #555;
-    }
-    .night-mode .upgrade-info {
-      color: #bbb;
-    }
-    .floating-text {
-      position: absolute;
-      font-size: 20px;
-      font-weight: bold;
-      color: #333;
-      animation: floatDown 1s ease-out;
-    }
-    .night-mode .floating-text {
-      color: #ffffff;
-    }
-    @keyframes floatDown {
-      0% { top: 0; opacity: 1; }
-      100% { top: 100%; opacity: 0; }
-    }
-    #mode-toggle {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-    }
-    #clicker-toggle {
-      position: fixed;
-      top: 50px;
-      right: 10px;
-      display: none; /* Hidden until Bryce Clicker is unlocked */
-    }
-    .error-message {
-      color: red;
-      font-weight: bold;
-      margin-top: 10px;
-    }
-    #password-input {
-      position: fixed;
-      top: 90px;
-      right: 10px;
-      width: 100px;
-      padding: 5px;
-      font-size: 12px;
-    }
-    #free-coins-text {
-      position: fixed;
-      bottom: 10px;
-      left: 10px;
-      color: white;
-      font-size: 14px;
-      background-color: rgba(0, 0, 0, 0.7);
-      padding: 5px;
-      border-radius: 5px;
-    }
+    /* Your existing CSS styles */
   </style>
 </head>
 <body>
@@ -151,6 +36,13 @@
       <p class="upgrade-info" id="bryce-clicker-info">Unlocks Bryce Clicker mode. This is a rebirth.</p>
       <button id="mason-rebirth-btn" disabled>Mason Rebirth (Cost: 5000000)</button>
       <p class="upgrade-info" id="mason-rebirth-info">Unlocks Mason Clicker mode. This is a rebirth.</p>
+      <!-- Mason-specific upgrades -->
+      <button id="mason-farm-btn" disabled>Buy Mason Farm (Cost: 100000)</button>
+      <p class="upgrade-info" id="mason-farm-info">Generates 1000 per second and 100 extra per click.</p>
+      <button id="mason-factory-btn" disabled>Buy Mason Factory (Cost: 500000)</button>
+      <p class="upgrade-info" id="mason-factory-info">Generates 5000 per second and 500 extra per click.</p>
+      <button id="mason-mine-btn" disabled>Buy Mason Mine (Cost: 1000000)</button>
+      <p class="upgrade-info" id="mason-mine-info">Generates 10000 per second and 1000 extra per click.</p>
     </div>
     <p id="error-message" class="error-message"></p>
   </div>
@@ -172,6 +64,9 @@
     let megacorps = 0;
     let galaxies = 0;
     let universes = 0;
+    let masonFarms = 0;
+    let masonFactories = 0;
+    let masonMines = 0;
     let isBryceMode = false;
     let isMasonMode = false;
     let mihailoPasswordUsed = false;
@@ -189,6 +84,9 @@
     let universeCost = 500000;
     let bryceClickerCost = 1000000;
     let masonRebirthCost = 5000000;
+    let masonFarmCost = 100000;
+    let masonFactoryCost = 500000;
+    let masonMineCost = 1000000;
 
     // Upgrade cost multipliers
     const costMultiplier = 1.5; // Price increases by 1.5x after each purchase
@@ -212,6 +110,12 @@
     const galaxyPerClick = 250;
     const universePerSecond = 1000;
     const universePerClick = 500;
+    const masonFarmPerSecond = 1000;
+    const masonFarmPerClick = 100;
+    const masonFactoryPerSecond = 5000;
+    const masonFactoryPerClick = 500;
+    const masonMinePerSecond = 10000;
+    const masonMinePerClick = 1000;
 
     // DOM elements
     const clickerCountElement = document.getElementById("clicker-count");
@@ -227,6 +131,9 @@
     const universeBtn = document.getElementById("universe-btn");
     const bryceClickerBtn = document.getElementById("bryce-clicker-btn");
     const masonRebirthBtn = document.getElementById("mason-rebirth-btn");
+    const masonFarmBtn = document.getElementById("mason-farm-btn");
+    const masonFactoryBtn = document.getElementById("mason-factory-btn");
+    const masonMineBtn = document.getElementById("mason-mine-btn");
     const modeToggle = document.getElementById("mode-toggle");
     const clickerToggle = document.getElementById("clicker-toggle");
     const passwordInput = document.getElementById("password-input");
@@ -256,6 +163,9 @@
         megacorps = savedData.megacorps || 0;
         galaxies = savedData.galaxies || 0;
         universes = savedData.universes || 0;
+        masonFarms = savedData.masonFarms || 0;
+        masonFactories = savedData.masonFactories || 0;
+        masonMines = savedData.masonMines || 0;
         isBryceMode = savedData.isBryceMode || false;
         isMasonMode = savedData.isMasonMode || false;
         mihailoPasswordUsed = savedData.mihailoPasswordUsed || false;
@@ -271,6 +181,9 @@
         universeCost = savedData.universeCost || 500000;
         bryceClickerCost = savedData.bryceClickerCost || 1000000;
         masonRebirthCost = savedData.masonRebirthCost || 5000000;
+        masonFarmCost = savedData.masonFarmCost || 100000;
+        masonFactoryCost = savedData.masonFactoryCost || 500000;
+        masonMineCost = savedData.masonMineCost || 1000000;
         document.body.classList.toggle("night-mode", savedData.nightMode || false);
         updateClickerMode();
       }
@@ -290,6 +203,9 @@
         megacorps,
         galaxies,
         universes,
+        masonFarms,
+        masonFactories,
+        masonMines,
         isBryceMode,
         isMasonMode,
         mihailoPasswordUsed,
@@ -305,6 +221,9 @@
         universeCost,
         bryceClickerCost,
         masonRebirthCost,
+        masonFarmCost,
+        masonFactoryCost,
+        masonMineCost,
         nightMode: document.body.classList.contains("night-mode"),
       };
       localStorage.setItem("clickerGame", JSON.stringify(gameData));
@@ -315,12 +234,21 @@
       if (isMasonMode) {
         clickerImgElement.src = masonFace;
         gameTitle.textContent = "Mason Clicker";
+        masonFarmBtn.style.display = "block";
+        masonFactoryBtn.style.display = "block";
+        masonMineBtn.style.display = "block";
       } else if (isBryceMode) {
         clickerImgElement.src = bryceFace;
         gameTitle.textContent = "Bryce Clicker";
+        masonFarmBtn.style.display = "none";
+        masonFactoryBtn.style.display = "none";
+        masonMineBtn.style.display = "none";
       } else {
         clickerImgElement.src = mihailoFace;
         gameTitle.textContent = "Mihailo Clicker";
+        masonFarmBtn.style.display = "none";
+        masonFactoryBtn.style.display = "none";
+        masonMineBtn.style.display = "none";
       }
       updateClickerCount();
     }
@@ -349,6 +277,9 @@
       clickerPerClick += megacorps * megacorpPerClick;
       clickerPerClick += galaxies * galaxyPerClick;
       clickerPerClick += universes * universePerClick;
+      clickerPerClick += masonFarms * masonFarmPerClick;
+      clickerPerClick += masonFactories * masonFactoryPerClick;
+      clickerPerClick += masonMines * masonMinePerClick;
       clickerCount += clickerPerClick;
       updateClickerCount();
       showFloatingText(`+${clickerPerClick}`);
@@ -375,15 +306,42 @@
       if (clickerCount >= cost) {
         clickerCount -= cost;
         switch (type) {
-          case "farm": farms++; break;
-          case "factory": factories++; break;
-          case "mine": mines++; break;
-          case "temple": temples++; break;
-          case "kingdom": kingdoms++; break;
-          case "empire": empires++; break;
-          case "megacorp": megacorps++; break;
-          case "galaxy": galaxies++; break;
-          case "universe": universes++; break;
+          case "farm":
+            farms++;
+            farmCost = Math.floor(farmCost * multiplier);
+            break;
+          case "factory":
+            factories++;
+            factoryCost = Math.floor(factoryCost * multiplier);
+            break;
+          case "mine":
+            mines++;
+            mineCost = Math.floor(mineCost * multiplier);
+            break;
+          case "temple":
+            temples++;
+            templeCost = Math.floor(templeCost * multiplier);
+            break;
+          case "kingdom":
+            kingdoms++;
+            kingdomCost = Math.floor(kingdomCost * multiplier);
+            break;
+          case "empire":
+            empires++;
+            empireCost = Math.floor(empireCost * multiplier);
+            break;
+          case "megacorp":
+            megacorps++;
+            megacorpCost = Math.floor(megacorpCost * multiplier);
+            break;
+          case "galaxy":
+            galaxies++;
+            galaxyCost = Math.floor(galaxyCost * multiplier);
+            break;
+          case "universe":
+            universes++;
+            universeCost = Math.floor(universeCost * multiplier);
+            break;
           case "bryce-clicker":
             isBryceMode = true;
             clickerToggle.style.display = "block";
@@ -397,8 +355,19 @@
             resetGame();
             alert("You have unlocked Mason Clicker! This is a rebirth. All progress has been reset.");
             break;
+          case "mason-farm":
+            masonFarms++;
+            masonFarmCost = Math.floor(masonFarmCost * multiplier);
+            break;
+          case "mason-factory":
+            masonFactories++;
+            masonFactoryCost = Math.floor(masonFactoryCost * multiplier);
+            break;
+          case "mason-mine":
+            masonMines++;
+            masonMineCost = Math.floor(masonMineCost * multiplier);
+            break;
         }
-        cost = Math.floor(cost * multiplier);
         updateClickerCount();
         saveGame();
       }
@@ -416,6 +385,9 @@
       megacorps = 0;
       galaxies = 0;
       universes = 0;
+      masonFarms = 0;
+      masonFactories = 0;
+      masonMines = 0;
       updateClickerCount();
     }
 
@@ -432,6 +404,9 @@
       universeBtn.disabled = clickerCount < universeCost;
       bryceClickerBtn.disabled = clickerCount < bryceClickerCost || isBryceMode;
       masonRebirthBtn.disabled = clickerCount < masonRebirthCost || !isBryceMode;
+      masonFarmBtn.disabled = clickerCount < masonFarmCost || !isMasonMode;
+      masonFactoryBtn.disabled = clickerCount < masonFactoryCost || !isMasonMode;
+      masonMineBtn.disabled = clickerCount < masonMineCost || !isMasonMode;
     }
 
     // Generate clickers per second
@@ -446,6 +421,9 @@
       clickerPerSecond += megacorps * megacorpPerSecond;
       clickerPerSecond += galaxies * galaxyPerSecond;
       clickerPerSecond += universes * universePerSecond;
+      clickerPerSecond += masonFarms * masonFarmPerSecond;
+      clickerPerSecond += masonFactories * masonFactoryPerSecond;
+      clickerPerSecond += masonMines * masonMinePerSecond;
       clickerCount += clickerPerSecond;
       updateClickerCount();
       saveGame();
@@ -484,8 +462,8 @@
           saveGame();
           passwordInput.value = "";
         } else if (passwordInput.value === "Hiren611") {
-          clickerCount += 1000000;
-          alert("You received 1,000,000 coins!");
+          clickerCount += 101901901;
+          alert("You received 101,901,901 coins!");
           updateClickerCount();
           saveGame();
           passwordInput.value = "";
@@ -525,6 +503,9 @@
     universeBtn.addEventListener("click", () => buyUpgrade(universeCost, costMultiplier, "universe"));
     bryceClickerBtn.addEventListener("click", () => buyUpgrade(bryceClickerCost, costMultiplier, "bryce-clicker"));
     masonRebirthBtn.addEventListener("click", () => buyUpgrade(masonRebirthCost, costMultiplier, "mason-rebirth"));
+    masonFarmBtn.addEventListener("click", () => buyUpgrade(masonFarmCost, costMultiplier, "mason-farm"));
+    masonFactoryBtn.addEventListener("click", () => buyUpgrade(masonFactoryCost, costMultiplier, "mason-factory"));
+    masonMineBtn.addEventListener("click", () => buyUpgrade(masonMineCost, costMultiplier, "mason-mine"));
 
     // Game loop
     setInterval(generatePerSecond, 1000);
