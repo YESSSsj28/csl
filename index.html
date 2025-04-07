@@ -1,182 +1,110 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sunlight V6</title>
+    <title>Sunlight V6 & IPAs</title>
     <style>
-        /* Body styling with gradient background */
-        body {
-            background: linear-gradient(to bottom, #00aaff, black);
-            color: white;
-            font-family: Arial, sans-serif;
+        /* Modern Reset */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        body, h1, h2, h3, p, ol, li {
             margin: 0;
+        }
+        ol, li {
             padding: 0;
-            overflow-x: hidden;
+            list-style: none;
+        }
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+        button {
+            border: none;
+            background: transparent;
+            padding: 0;
+            font-family: inherit;
+            font-size: inherit;
+            cursor: pointer;
         }
 
-        /* Navigation rectangles */
+        /* Modern Body Styling */
+        body {
+            background: linear-gradient(135deg, #00aaff, #004488); /* More subtle gradient */
+            color: #f0f0f0; /* Lighter text for better contrast */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Modern font */
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Modern Navigation */
         .nav-container {
             position: fixed;
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            gap: 10px;
+            gap: 15px;
             z-index: 1000;
+            padding: 10px;
+            background: rgba(30, 30, 30, 0.9); /* Dark translucent background */
+            border-radius: 25px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         }
 
         .nav-rectangle {
-            background: rgba(64, 64, 64, 0.8); /* Darker gray */
-            padding: 10px 20px;
-            border-radius: 15px; /* Rounded edges */
-            color: white;
-            text-decoration: none;
-            font-size: 1.2em;
-            transition: background 0.3s, transform 0.3s;
+            background: #444; /* Dark gray */
+            padding: 12px 25px;
+            border-radius: 20px;
+            color: #eee;
+            font-size: 1.1em;
+            transition: background 0.3s ease, transform 0.2s ease-in-out;
         }
 
         .nav-rectangle:hover {
-            background: rgba(96, 96, 96, 0.8); /* Slightly lighter on hover */
-            transform: scale(1.05);
+            background: #666;
+            transform: scale(1.08);
         }
 
-        /* Configs rectangle at the bottom of the scripts section */
-        .configs-rectangle {
-            background: #1e3a5f; /* Lightish-darkish blue */
-            padding: 15px 25px;
+        /* Modern Container */
+        .container {
+            background: rgba(30, 30, 30, 0.9);
+            padding: 30px;
             border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 170, 255, 0.3);
+            margin: 100px auto 30px; /* Adjusted top margin */
+            max-width: 900px;
+            width: 95%;
             text-align: center;
-            margin-top: 20px;
-            font-size: 1.3em;
-            color: white;
         }
 
-        .configs-rectangle a {
-            color: white;
-            text-decoration: none;
-        }
-
-        .configs-rectangle a:hover {
-            color: #00aaff;
-        }
-
-        /* Steps styling */
-        .steps {
-            background: rgba(0, 0, 0, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px auto;
-            max-width: 800px;
-            text-align: left;
-            font-size: 1.1em;
-            line-height: 1.6;
-        }
-
-        .steps ol {
-            padding-left: 20px;
-        }
-
-        .steps li {
+        .container h1, .container h2, .container h3 {
+            color: #00aaff; /* Accent color for headings */
             margin-bottom: 15px;
         }
 
-        .steps a {
-            color: #00aaff;
-            text-decoration: none;
+        .container p {
+            line-height: 1.7;
+            margin-bottom: 20px;
+            color: #ddd;
         }
 
-        .steps a:hover {
-            text-decoration: underline;
-        }
-
-        /* Container for content */
-        .container {
-            background: rgba(0, 0, 0, 0.8); /* Black rectangle background */
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 170, 255, 0.8);
-            margin: 120px auto 20px; /* Added more space at the top */
-            max-width: 800px;
-            text-align: center;
-        }
-
-        /* Scripts section */
-        #scripts {
-            background: rgba(0, 0, 0, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px auto;
-            max-width: 800px;
-            text-align: left;
-        }
-
-        /* Code block styling */
-        .code-block {
-            background: #1e1e1e;
-            color: #d4d4d4;
-            padding: 15px;
-            border-radius: 5px;
-            font-family: "Courier New", monospace;
-            overflow-x: auto;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            position: relative;
-            margin-top: 20px;
-        }
-
-        /* Copy button styling */
-        .copy-button {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: #00aaff;
-            color: black;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.9em;
-            transition: background 0.3s, transform 0.3s;
-        }
-
-        .copy-button:hover {
-            background: #0088cc;
-            transform: scale(1.05);
-        }
-
-        /* Big red text for "SKID" */
-        .skid-text {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 5em;
-            color: red;
-            font-weight: bold;
-            text-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
-            z-index: 10000;
-            display: none;
-            animation: fadeOut 5s ease-out;
-        }
-
-        @keyframes fadeOut {
-            0% { opacity: 1; }
-            100% { opacity: 0; }
-        }
-
-        /* Existing styles for the download section */
+        /* Modern Download Button */
         .download-btn {
             display: inline-block;
-            margin-top: 20px;
-            padding: 10px 20px;
+            padding: 12px 30px;
             background: #00aaff;
-            color: black;
-            text-decoration: none;
+            color: #222;
             font-weight: bold;
-            border-radius: 5px;
-            transition: 0.3s;
+            border-radius: 8px;
+            transition: background 0.3s ease, transform 0.2s ease-in-out;
+            box-shadow: 0 2px 5px rgba(0, 170, 255, 0.5);
         }
 
         .download-btn:hover {
@@ -184,15 +112,16 @@
             transform: scale(1.05);
         }
 
+        /* Modern iPad Frame */
         .ipad-frame {
-            background: #000;
-            border-radius: 30px;
-            padding: 15px;
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            background: #111;
+            border-radius: 40px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(255, 255, 255, 0.1);
             position: relative;
-            width: 80%;
-            max-width: 600px;
-            margin: 20px auto;
+            width: 70%;
+            max-width: 500px;
+            margin: 30px auto;
         }
 
         .ipad-frame::before {
@@ -201,122 +130,243 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 94%;
-            height: 94%;
+            width: 96%;
+            height: 96%;
             background: #000;
-            border-radius: 20px;
+            border-radius: 30px;
             z-index: 1;
         }
 
         .ipad-frame img {
             width: 100%;
-            border-radius: 20px;
+            border-radius: 30px;
             position: relative;
             z-index: 2;
+            display: block; /* Prevent extra space below image */
         }
 
         .swipe-line {
             position: absolute;
-            bottom: 10px;
+            bottom: 15px;
             left: 50%;
             transform: translateX(-50%);
-            width: 60px;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.7);
-            border-radius: 2px;
+            width: 70px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 3px;
             z-index: 3;
         }
 
-        /* Responsive design for smaller screens */
-        @media (max-width: 600px) {
+        /* Modern Scripts Section */
+        #scripts {
+            text-align: left;
+        }
+
+        .code-block {
+            background: #222;
+            color: #eee;
+            padding: 18px;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            position: relative;
+            margin-top: 25px;
+        }
+
+        /* Modern Copy Button */
+        .copy-button {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: #00aaff;
+            color: #222;
+            border-radius: 5px;
+            padding: 8px 15px;
+            font-size: 0.95em;
+            transition: background 0.3s ease, transform 0.2s ease-in-out;
+            box-shadow: 0 1px 3px rgba(0, 170, 255, 0.5);
+        }
+
+        .copy-button:hover {
+            background: #0088cc;
+            transform: scale(1.05);
+        }
+
+        /* Modern Configs Rectangle */
+        .configs-rectangle {
+            background: #2c5364; /* Darker blue */
+            padding: 18px 30px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 30px;
+            font-size: 1.15em;
+            color: #eee;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .configs-rectangle a {
+            color: #00aaff;
+            transition: color 0.3s ease;
+        }
+
+        .configs-rectangle a:hover {
+            color: #00ccee;
+            text-decoration: underline;
+        }
+
+        /* Modern Steps Styling */
+        .steps {
+            background: rgba(30, 30, 30, 0.9);
+            padding: 30px;
+            border-radius: 10px;
+            margin: 30px auto;
+            max-width: 900px;
+            width: 95%;
+            text-align: left;
+            font-size: 1em;
+            line-height: 1.8;
+            color: #ddd;
+        }
+
+        .steps h3 {
+            color: #00aaff;
+            margin-bottom: 15px;
+        }
+
+        .steps ol {
+            padding-left: 25px;
+        }
+
+        .steps li {
+            margin-bottom: 18px;
+        }
+
+        .steps a {
+            color: #00aaff;
+            transition: color 0.3s ease, text-decoration 0.3s ease;
+        }
+
+        .steps a:hover {
+            color: #00ccee;
+            text-decoration: underline;
+        }
+
+        .steps strong {
+            color: #fff;
+        }
+
+        /* Modern "SKID" Text */
+        .skid-text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 6em;
+            color: #ff4d4d; /* Brighter red */
+            font-weight: bold;
+            text-shadow: 0 0 15px rgba(255, 0, 0, 0.7);
+            z-index: 10000;
+            display: none;
+            animation: fadeOut 3s ease-out; /* Faster fade out */
+        }
+
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
             .nav-container {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
                 top: 10px;
+                left: 50%;
+                transform: translateX(-50%);
             }
             .nav-rectangle {
-                padding: 8px 15px;
+                padding: 10px 20px;
                 font-size: 1em;
+            }
+            .container, .steps {
+                padding: 20px;
+                margin-top: 80px;
             }
             .ipad-frame {
                 width: 90%;
             }
-            .configs-rectangle {
-                font-size: 1.1em; /* Slightly smaller on mobile */
+            .code-block {
+                font-size: 0.9em;
             }
-            .steps {
-                font-size: 1em;
+            .copy-button {
+                font-size: 0.85em;
+                padding: 6px 10px;
+            }
+            .configs-rectangle {
+                font-size: 1.05em;
+            }
+            .skid-text {
+                font-size: 4em;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Navigation rectangles -->
-    <div class="nav-container">
+    <nav class="nav-container">
         <a href="#download" class="nav-rectangle">Sunlight V6</a>
-        <a href="#configs" class="nav-rectangle">Tutorials</a> <!-- Updated text here -->
+        <a href="#configs" class="nav-rectangle">Tutorials</a>
         <a href="#scripts" class="nav-rectangle">Scripts</a>
-    </div>
+        <a href="#ipas-section" class="nav-rectangle">IPAs</a>
+    </nav>
 
-    <!-- Download section -->
-    <div id="download" class="container">
+    <section id="download" class="container">
         <h1>Sunlight V6</h1>
         <p>Sunlight V6 completely destroys other hacks and tools, making it the best choice for anyone looking to dominate. Its power and speed leave no room for competition.</p>
         <a href="https://www.mediafire.com/file/jw5d3mamp4r9f94/SunlightV6+(3).zip/file" class="download-btn" target="_blank" aria-label="Download Sunlight V6">Download File</a>
-        <div class="image-container">
-            <!-- iPad-like frame -->
-            <div class="ipad-frame">
-                <!-- Image -->
-                <img src="https://i.imgur.com/LAzPrEB.png" alt="Sunlight V6 Image">
-                <!-- Small white line (swipe indicator) -->
-                <div class="swipe-line"></div>
-            </div>
+        <div class="ipad-frame">
+            <img src="https://i.imgur.com/LAzPrEB.png" alt="Sunlight V6 Image">
+            <div class="swipe-line"></div>
         </div>
-    </div>
+    </section>
 
-    <!-- Scripts section -->
-    <div id="scripts" class="container">
+    <section id="scripts" class="container">
         <h2>Scripts</h2>
 
-        <!-- Night -->
         <h3>Night</h3>
         <div class="code-block">
             <pre id="night-script">
 loadstring(game:HttpGet("https://raw.githubusercontent.com/warprbx/NightRewrite/refs/heads/main/Night/Loader.luau"))()
             </pre>
-            <!-- Copy button -->
             <button class="copy-button" onclick="copyScript('night-script')">Copy</button>
         </div>
 
-        <!-- Skidware Rewrite -->
         <h3>Skidware Rewrite</h3>
         <div class="code-block">
             <pre id="skidware-rewrite">
 loadstring(game:HttpGet("https://raw.githubusercontent.com/VapeVoidware/VWRewrite/main/NewMainScript.lua", true))()
             </pre>
-            <!-- Copy button -->
             <button class="copy-button" onclick="copyScript('skidware-rewrite', true)">Copy</button>
         </div>
 
-        <!-- Skidware Old -->
         <h3>Skidware Old</h3>
         <div class="code-block">
             <pre id="skidware-old">
 loadstring(game:HttpGet("https://raw.githubusercontent.com/VapeVoidware/vapevoidware/main/NewMainScript.lua", true))()
             </pre>
-            <!-- Copy button -->
             <button class="copy-button" onclick="copyScript('skidware-old', true)">Copy</button>
         </div>
 
-        <!-- Fisch Script RONIX HUB -->
         <h3>Fisch Script RONIX HUB</h3>
         <div class="code-block">
             <pre id="fisch-script">
 loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/9b72c93a476b7824899492f2ede56297.lua"))()
             </pre>
-            <!-- Copy button -->
             <button class="copy-button" onclick="copyScript('fisch-script')">Copy</button>
         </div>
 
-        <!-- Bloxstrap Script -->
         <h3>Bloxstrap Script</h3>
         <div class="code-block">
             <pre id="bloxstrap-script">
@@ -327,16 +377,13 @@ getgenv().presets = {
 }
 loadstring(game.HttpGet(game, 'https://raw.githubusercontent.com/qwertyui-is-back/Bloxstrap/main/init.lua', true))()
             </pre>
-            <!-- Copy button -->
             <button class="copy-button" onclick="copyScript('bloxstrap-script')">Copy</button>
         </div>
 
-        <!-- Configs rectangle at the bottom of the scripts section -->
         <div id="configs" class="configs-rectangle">
             <a href="#how-to-get-executer">How to get configs (iOS only)</a>
         </div>
 
-        <!-- Steps for getting Roblox Executer -->
         <div id="how-to-get-executer" class="steps">
             <h3>How to get Roblox Executer</h3>
             <ol>
@@ -350,19 +397,56 @@ loadstring(game.HttpGet(game, 'https://raw.githubusercontent.com/qwertyui-is-bac
                 <li>Go back to the <strong>esign khoindvn</strong> app and click <strong>Download esign certificate</strong>. Click <strong>More</strong> and save it to your files.</li>
                 <li>In the esign app, click the <strong>three dots</strong> at the top, then click <strong>Import</strong>. Find the esign certs, click it, then click <strong>Unzip</strong>.</li>
                 <li>After unzipping, you should see a folder called <strong>esign certs</strong>. Find the name of your cert, click it, and select <strong>Import Certificate Management</strong>. It should say <strong>Imported Successfully</strong>. Click the back arrow.</li>
-                <li>Go to <a href="https://www.mediafire.com/file/21658u1jzzinlj1/Delta-659.473-01.ipa/file" target="_blank">this link</a>. If you're in Safari, click the download and click the icon next to the refresh button (the share icon). Instead of sending the file, click <strong>Save to Files</strong>. If you see a <strong>More</strong> option, click it and then <strong>Save to Files</strong>.</li>
+                <li>Go to <a href="https://www.mediafire.com/file/21658u1jzzinlj1/Delta-6559.473-01.ipa/file" target="_blank">this link</a>. If you're in Safari, click the download and click the icon next to the refresh button (the share icon). Instead of sending the file, click <strong>Save to Files</strong>. If you see a <strong>More</strong> option, click it and then <strong>Save to Files</strong>.</li>
                 <li>Open the esign app, click the <strong>three dots</strong>, and click <strong>Import</strong>. Find <strong>Delta</strong>, click it, then click <strong>Unzip</strong>. If a message like <strong>Import to App Library</strong> pops up, click <strong>No</strong>.</li>
                 <li>After unzipping, you should see a folder called <strong>Payload</strong>. Click it, then click <strong>roblox.app</strong>. Click <strong>Signature</strong> and make sure <strong>Install After Signed</strong> is turned on. Click <strong>Signature</strong> and wait.</li>
                 <li>It should pop up with a message like <strong>esign.yyyue.xyz would like to install Delta</strong>. Click <strong>Install</strong>. If it pops up multiple times, click <strong>Cancel</strong>. Boom, it's installed!</li>
             </ol>
             <p><strong>Note:</strong> If you need help with getting the Delta key, search on YouTube or elsewhere.</p>
         </div>
-    </div>
+    </section>
 
-    <!-- Big red text for "SKID" -->
+    <section id="ipas-section" class="container">
+        <h2>IPAs</h2>
+        <div class="ipa-list">
+            <div class="ipa-item">
+                <a href="https://www.mediafire.com/file/hx10ub52tcypopw/AmongUs+v2024.10.29_BabyloniPA.ipa/file" target="_blank">Among Us IPA</a>
+            </div>
+            <div class="ipa-item">
+                <a href="https://www.mediafire.com/file/d4crt3cl33xteh1/Pyoncord-251.0-SultanMods.ipa/file" target="_blank">Better Discord IPA</a>
+            </div>
+            <div class="ipa-item">
+                <a href="https://www.mediafire.com/file/kjp31syzjtdz3yf/CapCut12.6.0%5B.ipa/file" target="_blank">CapCut Premium IPA</a>
+            </div>
+            <div class="ipa-item">
+                <a href="https://www.mediafire.com/file/t7f4o5m3cy3pnfv/cashapp_recracked_nabzclan(FIXED)4.5.ipa/file" target="_blank">CashApp Fake IPA</a>
+            </div>
+            <div class="ipa-item">
+                <a href="https://www.mediafire.com/file/kj322xn1j00ctpk/Genie-v7.2.1Moe.ipa/file" target="_blank">Genie AI IPA</a>
+            </div>
+            <div class="ipa-item">
+                <a href="https://www.mediafire.com/file/km8ghyok0k6vzu2/Instagram-v353.1.0-ChocoMulti-1.2.0-Natlus.ipa/file" target="_blank">Instagram IPA</a>
+            </div>
+            <div class="ipa-item">
+                <a href="https://www.mediafire.com/file/5gro2eshbycsirp/Showmania+-+Kamohacks+%5Bv2.0%5D.ipa/file" target="_blank">Showmania IPA (Free Movies)</a>
+            </div>
+            <div class="ipa-item">
+                <a href="https://www.mediafire.com/file/r9lh6ocbrmukpvb/TikTok-v36.9.0-ChocoMulti-v1.2.0-Natlus.ipa/file" target="_blank">TikTok IPA</a>
+            </div>
+            <div class="ipa-item">
+                <a href="https://www.mediafire.com/file/stjf40jl3slr3vu/Twitch21.6ADFREE.ipa/file" target="_blank">Twitch IPA</a>
+            </div>
+            <div class="ipa-item">
+                <a href="https://www.mediafire.com/file/79swtzpd0ugjhk9/YouTube19.42.1YTLite5.0.2Moe.ipa/file" target="_blank">YouTube Free Premium IPA</a>
+            </div>
+            <div class="ipa-item">
+                <a href="https://www.mediafire.com/file/8au5e6fikpk4kiy/YTMusicUltimate+_7.23.3_Jacks_Apps.ipa/file" target="_blank">YouTube Music IPA</a>
+            </div>
+        </div>
+    </section>
+
     <div id="skid-text" class="skid-text">SKID</div>
 
-    <!-- Smooth scroll and copy script -->
     <script>
         // Smooth scroll for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -384,7 +468,7 @@ loadstring(game.HttpGet(game, 'https://raw.githubusercontent.com/qwertyui-is-bac
                     skidText.style.display = 'block';
                     setTimeout(() => {
                         skidText.style.display = 'none';
-                    }, 5000); // Hide after 5 seconds
+                    }, 3000); // Hide after 3 seconds
                 } else {
                     alert('Script copied to clipboard!');
                 }
@@ -395,192 +479,3 @@ loadstring(game.HttpGet(game, 'https://raw.githubusercontent.com/qwertyui-is-bac
     </script>
 </body>
 </html>
-
-
-
-
-
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IPAs</title>
-    <style>
-        /* Body styling with gradient background */
-        body {
-            background: linear-gradient(to bottom, #00aaff, black);
-            color: white;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-            display: flex;
-            flex-direction: column;
-            align-items: center; /* Center everything horizontally */
-            justify-content: flex-start; /* Start content from the top */
-            min-height: 100vh; /* Ensure full viewport height */
-        }
-
-        /* Navigation link styling */
-        .nav-link {
-            position: fixed;
-            top: 20px;
-            left: 32%; /* Adjusted to move the link slightly to the right */
-            transform: translateX(-50%);
-            background: rgba(64, 64, 64, 0.8); /* Darker gray */
-            padding: 10px 20px;
-            border-radius: 15px; /* Rounded edges */
-            color: white;
-            text-decoration: none;
-            font-size: 1.2em;
-            transition: background 0.3s; /* Removed transform transition */
-            z-index: 1000; /* Ensure it's above other content */
-        }
-
-        .nav-link:hover {
-            background: rgba(96, 96, 96, 0.8); /* Slightly lighter on hover */
-            /* Removed transform: scale(1.05) to prevent movement */
-        }
-
-        /* Container for content */
-        .container {
-            background: rgba(0, 0, 0, 0.8); /* Black rectangle background */
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 170, 255, 0.8);
-            margin: 120px auto 20px; /* Increased top margin to avoid overlap */
-            max-width: 800px;
-            width: 90%; /* Responsive width */
-            text-align: center;
-        }
-
-        /* IPA list styling */
-        .ipa-list {
-            text-align: left;
-            margin-top: 20px;
-        }
-
-        .ipa-item {
-            background: rgba(64, 64, 64, 0.8);
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            transition: background 0.3s, transform 0.3s;
-        }
-
-        .ipa-item:hover {
-            background: rgba(96, 96, 96, 0.8);
-            transform: scale(1.02);
-        }
-
-        .ipa-item a {
-            color: white;
-            text-decoration: none;
-            font-size: 1.1em;
-        }
-
-        .ipa-item a:hover {
-            color: #00aaff;
-        }
-
-        /* Responsive design for smaller screens */
-        @media (max-width: 600px) {
-            .nav-link {
-                top: 10px;
-                left: 27%; /* Adjusted for smaller screens */
-                font-size: 1em;
-                padding: 8px 15px;
-            }
-            .container {
-                margin: 100px auto 20px; /* Adjusted for smaller screens */
-                padding: 15px;
-            }
-            .ipa-item {
-                padding: 10px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <!-- Navigation link -->
-    <a href="#ipas" class="nav-link">IPAs</a>
-
-    <!-- IPAs Section -->
-    <div id="ipas" class="container">
-        <h1>IPAs</h1>
-        <div class="ipa-list">
-            <!-- Alphabetical Order -->
-            <!-- Among Us IPA -->
-            <div class="ipa-item">
-                <a href="https://www.mediafire.com/file/hx10ub52tcypopw/AmongUs+v2024.10.29_BabyloniPA.ipa/file" target="_blank">Among Us IPA</a>
-            </div>
-
-            <!-- Better Discord IPA -->
-            <div class="ipa-item">
-                <a href="https://www.mediafire.com/file/d4crt3cl33xteh1/Pyoncord-251.0-SultanMods.ipa/file" target="_blank">Better Discord IPA</a>
-            </div>
-
-            <!-- CapCut Premium IPA -->
-            <div class="ipa-item">
-                <a href="https://www.mediafire.com/file/kjp31syzjtdz3yf/CapCut12.6.0%5B.ipa/file" target="_blank">CapCut Premium IPA</a>
-            </div>
-
-            <!-- CashApp Fake IPA -->
-            <div class="ipa-item">
-                <a href="https://www.mediafire.com/file/t7f4o5m3cy3pnfv/cashapp_recracked_nabzclan(FIXED)4.5.ipa/file" target="_blank">CashApp Fake IPA</a>
-            </div>
-
-            <!-- Genie AI IPA -->
-            <div class="ipa-item">
-                <a href="https://www.mediafire.com/file/kj322xn1j00ctpk/Genie-v7.2.1Moe.ipa/file" target="_blank">Genie AI IPA</a>
-            </div>
-
-            <!-- Instagram IPA -->
-            <div class="ipa-item">
-                <a href="https://www.mediafire.com/file/km8ghyok0k6vzu2/Instagram-v353.1.0-ChocoMulti-1.2.0-Natlus.ipa/file" target="_blank">Instagram IPA</a>
-            </div>
-
-            <!-- Showmania IPA (Free Movies) -->
-            <div class="ipa-item">
-                <a href="https://www.mediafire.com/file/5gro2eshbycsirp/Showmania+-+Kamohacks+%5Bv2.0%5D.ipa/file" target="_blank">Showmania IPA (Free Movies)</a>
-            </div>
-
-            <!-- TikTok IPA -->
-            <div class="ipa-item">
-                <a href="https://www.mediafire.com/file/r9lh6ocbrmukpvb/TikTok-v36.9.0-ChocoMulti-v1.2.0-Natlus.ipa/file" target="_blank">TikTok IPA</a>
-            </div>
-
-            <!-- Twitch IPA -->
-            <div class="ipa-item">
-                <a href="https://www.mediafire.com/file/stjf40jl3slr3vu/Twitch21.6ADFREE.ipa/file" target="_blank">Twitch IPA</a>
-            </div>
-
-            <!-- YouTube Free Premium IPA -->
-            <div class="ipa-item">
-                <a href="https://www.mediafire.com/file/79swtzpd0ugjhk9/YouTube19.42.1YTLite5.0.2Moe.ipa/file" target="_blank">YouTube Free Premium IPA</a>
-            </div>
-
-            <!-- YouTube Music IPA -->
-            <div class="ipa-item">
-                <a href="https://www.mediafire.com/file/8au5e6fikpk4kiy/YTMusicUltimate+_7.23.3_Jacks_Apps.ipa/file" target="_blank">YouTube Music IPA</a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Smooth scroll script -->
-    <script>
-        // Smooth scroll for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                document.querySelector(this.getAttribute('href')).scrollIntoView({
-                    behavior: 'smooth'
-                });
-            });
-        });
-    </script>
-</body>
-</html>
-
