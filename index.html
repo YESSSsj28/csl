@@ -1,1 +1,634 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Vocab Study — Flashcards + Quiz + TTS</title>
+<style>
+  :root{
+    --bg:#071021; --card:#0b1220; --muted:#9aa4b2; --accent:#6ee7b7; --glass: rgba(255,255,255,0.03);
+    --good:#1f7a3a; --bad:#7a1f1f;
+  }
+  html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
+  body{background:linear-gradient(180deg,var(--bg),#04101a);color:#e6eef6;display:flex;align-items:flex-start;justify-content:center;padding:18px;}
+  .app{width:100%;max-width:1150px}
+  header{display:flex;gap:12px;align-items:center;margin-bottom:14px}
+  h1{font-size:20px;margin:0;color:var(--accent)}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-left:auto}
+  button,select,input,textarea{background:var(--card);border:1px solid rgba(255,255,255,0.04);color:inherit;padding:8px 10px;border-radius:10px}
+  .top{display:grid;grid-template-columns:1fr 380px;gap:14px}
+  .panel{background:var(--glass);padding:14px;border-radius:12px;box-shadow:0 6px 24px rgba(2,6,23,0.6)}
+  textarea{width:100%;height:180px;resize:vertical;font-family:monospace;font-size:13px;color:#dfeaf7}
+  .hint{color:var(--muted);font-size:12px;margin-top:6px}
+  .card-area{display:flex;gap:12px;align-items:flex-start;margin-top:14px}
+  .card{flex:1;padding:28px;border-radius:14px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));min-height:220px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+  .word{font-size:30px;font-weight:800;letter-spacing:0.2px}
+  .definition{font-size:16px;color:var(--muted);margin-top:12px;max-width:900px}
+  .tools{display:flex;gap:8px;flex-wrap:wrap}
+  .big{padding:10px 12px;font-weight:700}
+  .footer-controls{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
+  .small{padding:6px 8px;font-size:14px}
+  .meta{color:var(--muted);font-size:13px}
+  .kbd{background:#0b1320;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.03)}
+  .leftcol{display:flex;flex-direction:column;gap:12px}
+  .row{display:flex;gap:8px;align-items:center}
+  .center{display:flex;align-items:center;gap:8px}
+  .link{background:transparent;border:0;color:var(--accent);text-decoration:underline;cursor:pointer}
+  .study-list{max-height:360px;overflow:auto;padding:6px;border-radius:8px}
+  .list-item{padding:8px;border-radius:8px;margin-bottom:6px;background:rgba(255,255,255,0.01);cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+  .badge{background:#071426;border-radius:8px;padding:6px 8px;border:1px solid rgba(255,255,255,0.02);font-size:13px}
+  .quiz-area{margin-top:12px}
+  .choice{background:rgba(255,255,255,0.02);padding:10px;border-radius:8px;margin:8px 0;cursor:pointer}
+  .choice.correct{border:2px solid var(--good);background:rgba(31,122,58,0.08)}
+  .choice.wrong{border:2px solid var(--bad);background:rgba(122,31,31,0.06)}
+  .status{display:flex;gap:8px;align-items:center}
+  .progress-bar{height:8px;background:rgba(255,255,255,0.04);border-radius:99px;overflow:hidden;margin-top:8px}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),#38bdf8);width:0%}
+  footer{margin-top:18px;color:var(--muted);font-size:13px;text-align:center}
+  @media(max-width:980px){ .top{grid-template-columns:1fr} .card-area{flex-direction:column} .panel{padding:12px} }
+</style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Vocab Study — Flashcards + Quiz + TTS</h1>
+      <div class="controls">
+        <button id="loadSample" class="small">Load sample</button>
+        <button id="clearAll" class="small">Clear</button>
+        <div class="badge" id="count">0 words</div>
+      </div>
+    </header>
 
+    <div class="top">
+      <div class="panel leftcol">
+        <div>
+          <div class="meta">Paste your list (CSV: <code>word,definition</code> per line) or use sample. Then click Load.</div>
+          <textarea id="inputArea" placeholder='Example CSV:
+suspend,to set aside or temporarily stop
+export,to sell abroad
+...'></textarea>
+        </div>
+
+        <div class="row" style="margin-top:8px">
+          <button id="loadBtn" class="big">Load</button>
+          <button id="saveLocal" class="small">Save locally</button>
+          <button id="exportJson" class="small">Export JSON</button>
+          <button id="importJson" class="small">Import JSON</button>
+          <input id="fileInput" type="file" accept="application/json" style="display:none">
+        </div>
+
+        <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;">
+          <label class="meta">Study filter</label>
+          <button id="showAll" class="small">All</button>
+          <button id="showUnknown" class="small">Only Unknown</button>
+          <button id="downloadPrint" class="small">Printable Sheet</button>
+        </div>
+
+        <div style="margin-top:12px">
+          <div class="meta">Study list (click any to jump)</div>
+          <div class="study-list panel" id="studyList"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div style="display:flex;gap:8px;justify-content:space-between;align-items:center">
+          <div>
+            <label class="meta">Voice</label><br>
+            <select id="voiceSelect" style="min-width:220px"></select>
+          </div>
+          <div>
+            <label class="meta">Rate</label><br>
+            <input id="rate" type="number" min="0.5" max="2.0" step="0.1" value="1" style="width:80px">
+          </div>
+        </div>
+
+        <div style="margin-top:12px" class="row">
+          <button id="prev" class="small">◀ Prev</button>
+          <button id="reveal" class="small">Reveal</button>
+          <button id="next" class="small">Next ▶</button>
+          <button id="shuffle" class="small">Shuffle</button>
+        </div>
+
+        <div style="margin-top:12px" class="row">
+          <label class="meta">Mode</label>
+          <button id="toggleReverse" class="small">Word → Definition</button>
+          <button id="readCurrent" class="small">Read current</button>
+          <button id="readAll" class="small">Read all</button>
+        </div>
+
+        <div style="margin-top:12px">
+          <div class="meta">Quiz Mode</div>
+          <div class="quiz-area">
+            <button id="startQuiz" class="small">Start Multiple-choice Quiz</button>
+            <div id="quizBox" style="margin-top:8px"></div>
+            <div id="quizProgress" class="meta" style="margin-top:6px"></div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px" class="row">
+          <div class="meta">Keyboard: ← → = nav, Space = reveal</div>
+        </div>
+
+        <div style="margin-top:12px" class="status">
+          <div class="meta">Current: <strong id="index">0</strong>/<span id="total">0</span></div>
+          <div class="progress-bar" style="flex:1;margin-left:8px"><div class="progress-fill" id="progressFill"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-area">
+      <div class="card panel" id="card">
+        <div class="word" id="cardText">No words loaded</div>
+        <div class="definition" id="cardDef"></div>
+
+        <div style="margin-top:18px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <button id="markKnown" class="small">Mark Known ✅</button>
+          <button id="markUnknown" class="small">Mark Unknown ❌</button>
+          <div class="meta" id="knownCount">Known: 0</div>
+        </div>
+      </div>
+
+      <div style="width:300px" class="panel">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="tools">
+            <button id="shuffle2" class="small">Shuffle</button>
+            <button id="flipOne" class="small">Flip this</button>
+            <button id="studyMode" class="small">Reverse Mode</button>
+          </div>
+
+          <div class="footer-controls">
+            <button id="autoPlayToggle" class="small">Autoplay OFF</button>
+            <button id="clearLocal" class="small">Clear saved</button>
+            <button id="downloadJson" class="small">Download JSON</button>
+          </div>
+
+          <div style="margin-top:8px">
+            <div class="meta">Tips: Paste CSV or JSON. Toggle "Word → Definition" to reverse cards.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <span class="meta">Made for quick vocab practice • Dark theme</span>
+    </footer>
+  </div>
+
+<script>
+/* Full-feature Vocab Study App */
+const inputArea = document.getElementById('inputArea');
+const loadBtn = document.getElementById('loadBtn');
+const loadSample = document.getElementById('loadSample');
+const clearAllBtn = document.getElementById('clearAll');
+const cardText = document.getElementById('cardText');
+const cardDef = document.getElementById('cardDef');
+const prevBtn = document.getElementById('prev');
+const nextBtn = document.getElementById('next');
+const revealBtn = document.getElementById('reveal');
+const shuffleBtn = document.getElementById('shuffle');
+const indexEl = document.getElementById('index');
+const totalEl = document.getElementById('total');
+const countBadge = document.getElementById('count');
+const toggleReverse = document.getElementById('toggleReverse');
+const readAllBtn = document.getElementById('readAll');
+const readCurBtn = document.getElementById('readCurrent');
+const voiceSelect = document.getElementById('voiceSelect');
+const rateInput = document.getElementById('rate');
+const saveLocalBtn = document.getElementById('saveLocal');
+const clearLocalBtn = document.getElementById('clearLocal');
+const exportJsonBtn = document.getElementById('exportJson');
+const fileInput = document.getElementById('fileInput');
+const importJsonBtn = document.getElementById('importJson');
+const studyListEl = document.getElementById('studyList');
+const showAllBtn = document.getElementById('showAll');
+const showUnknownBtn = document.getElementById('showUnknown');
+const downloadPrintBtn = document.getElementById('downloadPrint');
+const shuffle2 = document.getElementById('shuffle2');
+const flipOne = document.getElementById('flipOne');
+const studyMode = document.getElementById('studyMode');
+const autoPlayToggle = document.getElementById('autoPlayToggle');
+const markKnownBtn = document.getElementById('markKnown');
+const markUnknownBtn = document.getElementById('markUnknown');
+const knownCountEl = document.getElementById('knownCount');
+const downloadJson = document.getElementById('downloadJson');
+const startQuiz = document.getElementById('startQuiz');
+const quizBox = document.getElementById('quizBox');
+const quizProgress = document.getElementById('quizProgress');
+const progressFill = document.getElementById('progressFill');
+
+let vocab = [];
+let current = 0;
+let showDefinition = false;
+let reverseMode = false;
+let autoplay = false;
+let filterMode = 'all'; // 'all' or 'unknown'
+let knownSet = new Set();
+let quizState = null;
+
+/* sample vocab (from your Canvas screenshots + extras). */
+const sample = [
+  {word:"suspend", definition:"to set aside or temporarily stop"},
+  {word:"adapt", definition:"to change in response to new conditions"},
+  {word:"convert", definition:"to change (often beliefs or religion)"},
+  {word:"principals", definition:"principal; most important"},
+  {word:"emphasis", definition:"special stress placed on something"},
+  {word:"impose", definition:"to force on others"},
+  {word:"relied", definition:"depended on"},
+  {word:"export", definition:"to sell goods to foreign markets"},
+  {word:"diversity", definition:"variety; many different types"},
+  {word:"import", definition:"to bring goods in from foreign markets"},
+  {word:"militia", definition:"a military force made up of ordinary citizens"},
+  {word:"mercantilism", definition:"economic theory: build wealth by controlling trade and colonies"},
+  {word:"subsistence farming", definition:"producing just enough to meet immediate needs"},
+  {word:"epidemic", definition:"an illness that affects a large number of people"},
+  {word:"immigration", definition:"the permanent movement of people to a new country"},
+  {word:"apprentice", definition:"a person who works for another to learn a trade"},
+  {word:"alliance", definition:"an agreement between two or more parties"},
+  {word:"civic virtue", definition:"actions that support the community or common good"},
+  {word:"triangular trade", definition:"a trade route connecting three destinations"},
+  {word:"cash crop", definition:"a crop grown to be sold for profit"},
+  {word:"neutral", definition:"not favoring either side; unbiased"},
+  {word:"Iroquois Confederacy", definition:"a confederation of Native American nations"}
+];
+
+/* Utilities */
+function saveToLocal(){
+  localStorage.setItem('vocabStudy_v1', JSON.stringify({vocab, known:Array.from(knownSet)}));
+}
+function loadFromLocal(){
+  try{
+    const j = JSON.parse(localStorage.getItem('vocabStudy_v1')||'null');
+    if(j && Array.isArray(j.vocab)) { vocab = j.vocab; knownSet = new Set(j.known||[]); current = 0; renderCard(); rebuildList(); updateMeta(); }
+  }catch(e){}
+}
+
+/* parse CSV/JSON input */
+function parseInput(raw){
+  raw = (raw||'').trim();
+  if(!raw) return [];
+  try {
+    const j = JSON.parse(raw);
+    if(Array.isArray(j)){
+      if(j.length && Array.isArray(j[0])){
+        return j.map(a=>({word:String(a[0]||"").trim(),definition:String(a[1]||"").trim()}));
+      } else {
+        return j.map(o => ({word:String(o.word||o.term||o[0]||"").trim(), definition:String(o.definition||o.def||o[1]||o.meaning||"").trim()}));
+      }
+    }
+  } catch(e){}
+  const lines = raw.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  const out = [];
+  lines.forEach(line=>{
+    let parts = line.split(',');
+    if(parts.length<2){
+      if(line.includes(' - ')) parts = line.split(' - ');
+      else if(line.includes(' — ')) parts = line.split(' — ');
+      else if(line.includes(': ')) parts = line.split(': ');
+      else if(line.includes('\t')) parts = line.split('\t');
+    }
+    const w = parts[0] ? parts[0].trim() : "";
+    const def = parts.slice(1).join(',').trim() || "";
+    if(w) out.push({word:w,definition:def || "—"});
+  });
+  return out;
+}
+
+/* render */
+function updateMeta(){
+  indexEl.textContent = vocab.length ? (current+1) : 0;
+  totalEl.textContent = vocab.length;
+  countBadge.textContent = vocab.length + " word" + (vocab.length===1 ? "" : "s");
+  knownCountEl.textContent = `Known: ${knownSet.size}`;
+  const pct = vocab.length ? Math.round((knownSet.size / vocab.length) * 100) : 0;
+  progressFill.style.width = pct + '%';
+}
+function renderCard(){
+  if(!vocab.length){ cardText.textContent = "No words loaded"; cardDef.textContent=""; updateMeta(); return; }
+  // ensure current valid under filter
+  const visible = getVisibleArray();
+  if(visible.length===0){ cardText.textContent = "No words for this filter"; cardDef.textContent=""; updateMeta(); return; }
+  // map current index to visible array
+  if(current < 0) current = 0;
+  if(current >= visible.length) current = visible.length - 1;
+  const item = visible[current];
+  if(!reverseMode){
+    cardText.textContent = item.word;
+    cardDef.textContent = showDefinition ? item.definition : "— click Reveal —";
+  } else {
+    cardText.textContent = item.definition;
+    cardDef.textContent = showDefinition ? item.word : "— click Reveal —";
+  }
+  updateMeta();
+  rebuildList(); // highlight
+}
+
+/* study list based on filter */
+function getVisibleArray(){
+  if(filterMode==='all') return vocab;
+  return vocab.filter(v => !knownSet.has(v.word));
+}
+function rebuildList(){
+  const arr = getVisibleArray();
+  studyListEl.innerHTML = '';
+  arr.forEach((it, i)=>{
+    const div = document.createElement('div');
+    div.className = 'list-item';
+    div.innerHTML = `<div style="flex:1"><strong style="font-weight:700">${it.word}</strong><div style="color:var(--muted);font-size:13px">${it.definition}</div></div>
+      <div style="margin-left:8px;text-align:right">${ knownSet.has(it.word) ? '✅' : '' }</div>`;
+    div.addEventListener('click', ()=>{ current = i; showDefinition=false; renderCard(); scrollToTop(); });
+    studyListEl.appendChild(div);
+  });
+}
+
+/* navigation */
+prevBtn.addEventListener('click', ()=>{
+  if(!vocab.length) return;
+  current = (current - 1 + getVisibleArray().length) % getVisibleArray().length;
+  showDefinition=false; renderCard();
+});
+nextBtn.addEventListener('click', ()=>{
+  if(!vocab.length) return;
+  current = (current + 1) % getVisibleArray().length;
+  showDefinition=false; renderCard();
+});
+revealBtn.addEventListener('click', ()=>{ showDefinition = true; renderCard(); });
+
+/* shuffle */
+function shuffleArray(a){
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+}
+shuffleBtn.addEventListener('click', ()=>{
+  shuffleArray(vocab); current = 0; showDefinition=false; renderCard(); saveToLocal();
+});
+shuffle2.addEventListener('click', ()=> shuffleBtn.click());
+flipOne.addEventListener('click', ()=> { showDefinition = !showDefinition; renderCard(); });
+
+/* reverse toggle */
+toggleReverse.addEventListener('click', ()=>{
+  reverseMode = !reverseMode;
+  toggleReverse.textContent = reverseMode ? "Definition → Word" : "Word → Definition";
+  showDefinition = false;
+  renderCard();
+});
+studyMode.addEventListener('click', ()=> toggleReverse.click());
+
+/* voices */
+function populateVoices(){
+  const voices = speechSynthesis.getVoices();
+  voiceSelect.innerHTML = "";
+  voices.forEach((v,i)=>{
+    const opt = document.createElement('option');
+    opt.value = v.name;
+    opt.textContent = `${v.name} ${v.lang ? '('+v.lang+')' : ''}`;
+    voiceSelect.appendChild(opt);
+  });
+  if(!voiceSelect.value && voices.length) voiceSelect.value = voices[0].name;
+}
+speechSynthesis.onvoiceschanged = populateVoices;
+populateVoices();
+
+function speakText(text){
+  return new Promise((res,rej)=>{
+    if(!('speechSynthesis' in window)){ res(); return; }
+    const ut = new SpeechSynthesisUtterance(text);
+    const selected = voiceSelect.value;
+    if(selected){
+      const v = speechSynthesis.getVoices().find(x=>x.name===selected);
+      if(v) ut.voice = v;
+    }
+    ut.rate = parseFloat(rateInput.value) || 1;
+    ut.onend = ()=>setTimeout(res, 120);
+    ut.onerror = (e)=>{ console.warn("TTS error", e); res(); };
+    speechSynthesis.speak(ut);
+  });
+}
+
+/* Read current */
+readCurBtn.addEventListener('click', async ()=>{
+  const visible = getVisibleArray();
+  if(!visible.length) return;
+  const item = visible[current];
+  if(!reverseMode){
+    await speakText(item.word);
+    await speakText(item.definition);
+  } else {
+    await speakText(item.definition);
+    await speakText(item.word);
+  }
+});
+
+/* Read all sequentially (cancellable by toggling autoplayer) */
+readAllBtn.addEventListener('click', async ()=>{
+  const arr = getVisibleArray();
+  if(!arr.length) return;
+  readAllBtn.textContent = "Reading…";
+  for(let i=0;i<arr.length;i++){
+    if(!arr.length) break;
+    current = i; renderCard();
+    const item = arr[i];
+    if(!reverseMode){
+      await speakText(item.word);
+      await speakText(item.definition);
+    } else {
+      await speakText(item.definition);
+      await speakText(item.word);
+    }
+  }
+  readAllBtn.textContent = "Read all";
+});
+
+/* AutoPlay reads each card sequentially */
+autoPlayToggle.addEventListener('click', ()=>{
+  autoplay = !autoplay;
+  autoPlayToggle.textContent = autoplay ? "Autoplay ON" : "Autoplay OFF";
+  if(autoplay) doAutoplay();
+});
+
+async function doAutoplay(){
+  const arr = getVisibleArray();
+  for(let i=current;i<arr.length;i++){
+    if(!autoplay) break;
+    current = i; showDefinition=false; renderCard();
+    await speakText( reverseMode ? arr[i].definition : arr[i].word );
+    showDefinition = true; renderCard();
+    await speakText( reverseMode ? arr[i].word : arr[i].definition );
+    await new Promise(r => setTimeout(r, 300));
+  }
+  autoplay = false;
+  autoPlayToggle.textContent = "Autoplay OFF";
+}
+
+/* mark known/unknown */
+markKnownBtn.addEventListener('click', ()=>{
+  const arr = getVisibleArray();
+  if(!arr.length) return;
+  knownSet.add(arr[current].word);
+  saveToLocal(); renderCard();
+});
+markUnknownBtn.addEventListener('click', ()=>{
+  const arr = getVisibleArray();
+  if(!arr.length) return;
+  knownSet.delete(arr[current].word);
+  saveToLocal(); renderCard();
+});
+
+/* Load and Save */
+loadBtn.addEventListener('click', ()=>{
+  const parsed = parseInput(inputArea.value);
+  if(!parsed.length){
+    alert("No valid entries found. Paste CSV lines like:\nword,definition\nor a JSON array [{word:'',definition:''}, ...]");
+    return;
+  }
+  vocab = parsed;
+  current = 0; showDefinition=false; knownSet = new Set(); renderCard(); saveToLocal();
+});
+loadSample.addEventListener('click', ()=>{
+  vocab = sample.slice();
+  current = 0; showDefinition=false; knownSet = new Set(); renderCard(); saveToLocal();
+});
+clearAllBtn.addEventListener('click', ()=>{
+  if(!confirm('Clear all vocab and saved progress?')) return;
+  vocab = []; knownSet = new Set(); current = 0; inputArea.value = ''; renderCard(); saveToLocal();
+});
+saveLocalBtn.addEventListener('click', ()=> saveToLocal());
+
+clearLocalBtn.addEventListener('click', ()=>{
+  if(!confirm('Clear saved data in localStorage?')) return;
+  localStorage.removeItem('vocabStudy_v1'); knownSet = new Set(); alert('Saved data cleared'); loadFromLocal(); renderCard();
+});
+
+/* export/import JSON */
+exportJsonBtn.addEventListener('click', ()=>{
+  const data = JSON.stringify(vocab, null, 2);
+  const blob = new Blob([data], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'vocab.json'; a.click();
+  URL.revokeObjectURL(url);
+});
+downloadJson.addEventListener('click', ()=> exportJsonBtn.click());
+
+importJsonBtn.addEventListener('click', ()=> fileInput.click());
+fileInput.addEventListener('change', (e)=>{
+  const f = e.target.files[0];
+  if(!f) return;
+  const rdr = new FileReader();
+  rdr.onload = ()=> {
+    try{
+      const j = JSON.parse(rdr.result);
+      if(Array.isArray(j)){ vocab = j.map(x=>({word:String(x.word||x[0]||"").trim(),definition:String(x.definition||x[1]||"").trim()})); current=0; knownSet=new Set(); renderCard(); saveToLocal(); }
+      else alert('JSON must be an array of {word,definition} or [[word,definition],...]');
+    }catch(err){ alert('Error parsing JSON: ' + err.message); }
+  };
+  rdr.readAsText(f);
+});
+
+/* printable sheet */
+downloadPrintBtn.addEventListener('click', ()=>{
+  const rows = vocab.map(it => `<tr><td style="padding:6px;border:1px solid #ddd">${escapeHtml(it.word)}</td><td style="padding:6px;border:1px solid #ddd">${escapeHtml(it.definition)}</td></tr>`).join('');
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Printable Vocab</title>
+  <style>body{font-family:Arial,Helvetica,sans-serif;padding:18px;color:#111}table{border-collapse:collapse;width:100%}th{background:#f2f2f2;padding:8px}td{padding:6px}</style>
+  </head><body><h2>Vocab Printable</h2><table><tr><th>Word</th><th>Definition</th></tr>${rows}</table></body></html>`;
+  const w = window.open('', '_blank');
+  w.document.write(html); w.document.close();
+});
+
+/* quiz mode (multiple choice) */
+startQuiz.addEventListener('click', ()=>{
+  if(!vocab.length){ alert('Load words first'); return; }
+  startMultipleChoiceQuiz();
+});
+function startMultipleChoiceQuiz(){
+  const pool = vocab.slice();
+  shuffleArray(pool);
+  quizState = {pool, index:0, correct:0, total:pool.length};
+  renderQuizQuestion();
+}
+function renderQuizQuestion(){
+  quizBox.innerHTML = '';
+  if(!quizState) return;
+  if(quizState.index >= quizState.pool.length){
+    quizBox.innerHTML = `<div class="meta">Quiz complete — Score: ${quizState.correct}/${quizState.total}</div>`;
+    quizProgress.textContent = '';
+    quizState = null;
+    return;
+  }
+  const item = quizState.pool[quizState.index];
+  const choices = [item.definition];
+  // pick 3 other wrong definitions
+  const others = vocab.filter(v => v.word !== item.word).map(v=>v.definition);
+  shuffleArray(others);
+  for(let i=0;i<3 && i<others.length;i++) choices.push(others[i]);
+  shuffleArray(choices);
+  const prompt = reverseMode ? `Which word matches: "${item.definition}"?` : `Which definition matches: "${item.word}"?`;
+  const qTitle = document.createElement('div');
+  qTitle.className = 'meta';
+  qTitle.textContent = prompt;
+  quizBox.appendChild(qTitle);
+  choices.forEach(ch => {
+    const d = document.createElement('div');
+    d.className = 'choice';
+    d.textContent = ch;
+    d.addEventListener('click', ()=> {
+      const correct = (!reverseMode && ch === item.definition) || (reverseMode && ch === item.word);
+      if(correct){ d.classList.add('correct'); quizState.correct++; }
+      else { d.classList.add('wrong'); /* mark correct choice */ Array.from(quizBox.querySelectorAll('.choice')).find(x=> x.textContent === ( !reverseMode ? item.definition : item.word ) ).classList.add('correct'); }
+      quizState.index++;
+      setTimeout(()=> renderQuizQuestion(), 800);
+    });
+    quizBox.appendChild(d);
+  });
+  quizProgress.textContent = `Question ${quizState.index+1} of ${quizState.total}`;
+}
+
+/* helpers */
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function scrollToTop(){ window.scrollTo({top:0,behavior:'smooth'}); }
+
+/* keyboard */
+document.addEventListener('keydown', (e)=>{
+  if(e.code === 'ArrowLeft') prevBtn.click();
+  if(e.code === 'ArrowRight') nextBtn.click();
+  if(e.code === 'Space') { e.preventDefault(); revealBtn.click(); }
+});
+
+/* initial load */
+function init(){
+  // try local first
+  loadFromLocal();
+  if(!vocab.length) {
+    // populate input for convenience
+    inputArea.value = sample.map(s=>`${s.word},${s.definition}`).join('\n');
+  }
+  rebuildList();
+  renderCard();
+  populateVoices();
+}
+init();
+
+/* show / filter toggles */
+showAllBtn.addEventListener('click', ()=> { filterMode='all'; current=0; renderCard(); });
+showUnknownBtn.addEventListener('click', ()=> { filterMode='unknown'; current=0; renderCard(); });
+
+/* file export for full data */
+downloadJson.addEventListener('click', ()=> {
+  const data = {vocab, known:Array.from(knownSet)};
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'vocab_with_progress.json'; a.click();
+  URL.revokeObjectURL(url);
+});
+
+/* load sample on empty double-click */
+document.getElementById('card').addEventListener('dblclick', ()=> loadSample.click());
+
+/* make sure UI updates when vocab changes */
+const observer = new MutationObserver(()=> updateMeta());
+observer.observe(studyListEl, {childList:true, subtree:true});
+
+</script>
+</body>
+</html>
