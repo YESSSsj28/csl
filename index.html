@@ -1,243 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vocab Study — Flashcards & Quiz</title>
-<style>
-  :root{
-    --bg:#071021; --card:#0b1220; --muted:#9aa4b2; --accent:#6ee7b7; --good:#1f7a3a; --bad:#7a1f1f;
-  }
-  *{box-sizing:border-box;margin:0;padding:0;}
-  html,body{height:100%;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:#e6eef6;overflow:hidden;}
-  body{display:flex;justify-content:center;align-items:center;}
-  .app{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;}
-  button{background:var(--card);border:none;color:inherit;padding:10px 16px;border-radius:12px;cursor:pointer;transition:0.2s;}
-  button:hover{background:rgba(30,40,60,0.6);}
-  .centered{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
-  h1{color:var(--accent);margin-bottom:8px;}
-  .mode-select{display:flex;gap:16px;}
-  .full-screen{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-  .card{width:400px;height:250px;background:var(--card);border-radius:20px;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:28px;font-weight:700;perspective:1000px;position:relative;}
-  .card-inner{width:100%;height:100%;transition:transform 0.6s;transform-style:preserve-3d;position:absolute;top:0;left:0;}
-  .card.flipped .card-inner{transform:rotateY(180deg);}
-  .card-front,.card-back{width:100%;height:100%;position:absolute;backface-visibility:hidden;display:flex;align-items:center;justify-content:center;padding:16px;text-align:center;}
-  .card-back{transform:rotateY(180deg);color:var(--accent);}
-  .controls{display:flex;gap:12px;margin-top:16px;}
-  .progress-container{width:80%;height:12px;background:rgba(255,255,255,0.1);border-radius:8px;margin-top:16px;}
-  .progress-fill{height:100%;background:var(--accent);width:0%;border-radius:8px;transition:0.3s;}
-  .quiz-options{display:flex;flex-direction:column;gap:12px;margin-top:16px;}
-  .quiz-btn{padding:10px 14px;border-radius:10px;background:var(--card);cursor:pointer;transition:0.2s;}
-  .quiz-btn.correct{background:var(--good);}
-  .quiz-btn.wrong{background:var(--bad);}
-  .fade-slide{transition:all 0.5s ease;}
-  .confetti{position:absolute;width:100%;height:100%;pointer-events:none;overflow:hidden;}
-  .confetti-piece{position:absolute;width:8px;height:8px;background:var(--accent);animation:fall 1s linear forwards;}
-  @keyframes fall{0%{transform:translateY(0) rotate(0deg);}100%{transform:translateY(100vh) rotate(360deg);}}
-</style>
+  <meta charset="UTF-8">
+  <title>Notification Timer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: #1e1e1e;
+      color: #f0f0f0;
+    }
+    input, button {
+      margin: 10px;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+    }
+    input {
+      width: 100px;
+      text-align: center;
+    }
+    button {
+      background: #4caf50;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #45a049;
+    }
+  </style>
 </head>
 <body>
-<div class="app" id="app">
-  <div class="centered" id="modeSelectScreen">
-    <h1>Vocab Study</h1>
-    <div class="mode-select">
-      <button id="flashcardsBtn">Flashcards</button>
-      <button id="allWordsBtn">All Words</button>
-      <button id="quizBtn">Quiz Mode</button>
-    </div>
-  </div>
+  <h1>Notification Timer</h1>
+  <label for="seconds">Enter time (1-60 seconds):</label>
+  <input type="number" id="seconds" min="1" max="60" value="5">
+  <button onclick="startTimer()">Start</button>
 
-  <div class="full-screen" id="flashcardsScreen" style="display:none;">
-    <div class="card fade-slide" id="card">
-      <div class="card-inner">
-        <div class="card-front" id="cardFront">Word</div>
-        <div class="card-back" id="cardBack">Definition</div>
-      </div>
-    </div>
-    <div class="controls">
-      <button id="prevCard">◀ Prev</button>
-      <button id="flipCard">Flip</button>
-      <button id="nextCard">Next ▶</button>
-    </div>
-    <div class="progress-container">
-      <div class="progress-fill" id="flashcardProgress"></div>
-    </div>
-    <div class="controls">
-      <button id="restartFlashcards" style="display:none;">Do Again</button>
-      <button id="backToMode1">Back</button>
-    </div>
-  </div>
+  <script>
+    // Request notification permission
+    if (Notification.permission !== "granted") {
+      Notification.requestPermission();
+    }
 
-  <div class="full-screen" id="allWordsScreen" style="display:none;overflow:auto;padding:24px;">
-    <button id="backToMode2">Back</button>
-    <table style="width:100%;border-collapse:collapse;margin-top:16px;">
-      <thead><tr><th style="text-align:left;padding:8px;border-bottom:1px solid #333">Word</th><th style="text-align:left;padding:8px;border-bottom:1px solid #333">Definition</th></tr></thead>
-      <tbody id="allWordsTable"></tbody>
-    </table>
-  </div>
+    function startTimer() {
+      const seconds = parseInt(document.getElementById("seconds").value);
+      if (isNaN(seconds) || seconds < 1 || seconds > 60) {
+        alert("Please enter a number between 1 and 60.");
+        return;
+      }
 
-  <div class="full-screen" id="quizScreen" style="display:none;">
-    <div id="quizQuestion" style="font-size:24px;text-align:center;"></div>
-    <div class="quiz-options" id="quizOptions"></div>
-    <div class="progress-container">
-      <div class="progress-fill" id="quizProgress"></div>
-    </div>
-    <div class="controls">
-      <button id="backToMode3">Back</button>
-    </div>
-  </div>
+      alert(`Notification will appear in ${seconds} seconds!`);
 
-  <div class="confetti" id="confettiContainer"></div>
-</div>
-
-<script>
-const vocab = [
-  {word:"suspend", definition:"set aside or temporarily stop"},
-  {word:"adapt", definition:"change in response to a new set of conditions"},
-  {word:"convert", definition:"change the religious beliefs of"},
-  {word:"principals", definition:"most important"},
-  {word:"emphasis", definition:"special stress"},
-  {word:"impose", definition:"force on others"},
-  {word:"relied", definition:"depended on"},
-  {word:"export", definition:"to sell abroad"},
-  {word:"diversity", definition:"variety"},
-  {word:"import", definition:"to bring in from foreign markets"},
-  {word:"militia", definition:"a military force made up of ordinary citizens"},
-  {word:"mercantilism", definition:"economic theory to build wealth by controlling trade"},
-  {word:"subsistence farming", definition:"producing just enough to meet needs"},
-  {word:"epidemic", definition:"illness affecting many people"},
-  {word:"immigration", definition:"permanent movement of people to a new country"},
-  {word:"apprentice", definition:"works for another to learn a trade"},
-  {word:"alliance", definition:"agreement between two or more parties"},
-  {word:"civic virtue", definition:"actions supporting the community"},
-  {word:"triangular trade", definition:"trade route connecting three destinations"},
-  {word:"cash crop", definition:"crop grown to be sold for profit"},
-  {word:"neutral", definition:"not favoring either side"},
-  {word:"Iroquois Confederacy", definition:"a confederation of Native American nations"}
-];
-
-let currentIndex = 0;
-let knownSet = new Set();
-let flashcardsScreen = document.getElementById('flashcardsScreen');
-let allWordsScreen = document.getElementById('allWordsScreen');
-let quizScreen = document.getElementById('quizScreen');
-let modeSelectScreen = document.getElementById('modeSelectScreen');
-let card = document.getElementById('card');
-let cardFront = document.getElementById('cardFront');
-let cardBack = document.getElementById('cardBack');
-let flashProgress = document.getElementById('flashcardProgress');
-let restartBtn = document.getElementById('restartFlashcards');
-
-function shuffleArray(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
-
-function showCard(){
-  const item = vocab[currentIndex];
-  cardFront.textContent = item.word;
-  cardBack.textContent = item.definition;
-  card.classList.remove('flipped');
-  flashProgress.style.width = ((currentIndex+1)/vocab.length*100)+'%';
-}
-
-document.getElementById('flipCard').onclick = ()=>{card.classList.toggle('flipped');};
-document.getElementById('nextCard').onclick = ()=>{
-  currentIndex++;
-  if(currentIndex>=vocab.length){flashcardsScreen.querySelector('#restartFlashcards').style.display='inline-block';return;}
-  showCard();
-};
-document.getElementById('prevCard').onclick = ()=>{
-  if(currentIndex>0){currentIndex--;showCard();}
-};
-restartBtn.onclick = ()=>{
-  currentIndex=0;
-  showCard();
-  restartBtn.style.display='none';
-};
-
-document.getElementById('flashcardsBtn').onclick = ()=>{
-  modeSelectScreen.style.display='none';
-  flashcardsScreen.style.display='flex';
-  currentIndex=0; showCard();
-};
-document.getElementById('allWordsBtn').onclick = ()=>{
-  modeSelectScreen.style.display='none';
-  allWordsScreen.style.display='flex';
-  populateAllWords();
-};
-document.getElementById('backToMode1').onclick = ()=>{flashcardsScreen.style.display='none';modeSelectScreen.style.display='flex';};
-document.getElementById('backToMode2').onclick = ()=>{allWordsScreen.style.display='none';modeSelectScreen.style.display='flex';};
-document.getElementById('backToMode3').onclick = ()=>{quizScreen.style.display='none';modeSelectScreen.style.display='flex';};
-
-function populateAllWords(){
-  const tbody = document.getElementById('allWordsTable');
-  tbody.innerHTML='';
-  vocab.forEach(v=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML=`<td style="padding:6px;border-bottom:1px solid #333">${v.word}</td><td style="padding:6px;border-bottom:1px solid #333">${v.definition}</td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-// --- QUIZ MODE ---
-let quizState = null;
-let quizOptionsEl = document.getElementById('quizOptions');
-let quizQuestionEl = document.getElementById('quizQuestion');
-let quizProgressEl = document.getElementById('quizProgress');
-
-document.getElementById('quizBtn').onclick = ()=>{startQuiz();};
-
-function startQuiz(){
-  modeSelectScreen.style.display='none';
-  quizScreen.style.display='flex';
-  quizState = {pool:[...vocab], index:0, correct:0, wrong:[], shuffledPool:[]};
-  shuffleArray(quizState.pool);
-  renderQuizQuestion();
-}
-
-function renderQuizQuestion(){
-  quizOptionsEl.innerHTML='';
-  if(quizState.index>=quizState.pool.length){
-    quizQuestionEl.textContent = `Quiz Complete! Score: ${quizState.correct}/${quizState.pool.length}`;
-    if(quizState.wrong.length) alert('Words you missed:\n'+quizState.wrong.map(w=>w.word+' → '+w.definition).join('\n'));
-    quizProgressEl.style.width='100%';
-    return;
-  }
-  const item = quizState.pool[quizState.index];
-  let choices = [item.word];
-  const others = vocab.filter(v=>v.word!==item.word).map(v=>v.word);
-  shuffleArray(others);
-  for(let i=0;i<3 && i<others.length;i++) choices.push(others[i]);
-  shuffleArray(choices);
-  quizQuestionEl.textContent = item.definition;
-  choices.forEach(c=>{
-    const btn = document.createElement('button');
-    btn.className='quiz-btn';
-    btn.textContent=c;
-    btn.onclick = ()=>{
-      if(c===item.word){btn.classList.add('correct');quizState.correct++;} 
-      else{btn.classList.add('wrong');quizState.wrong.push(item);}
-      Array.from(quizOptionsEl.children).forEach(b=>b.disabled=true);
-      setTimeout(()=>{
-        quizState.index++;
-        renderQuizQuestion();
-      },600);
-    };
-    quizOptionsEl.appendChild(btn);
-  });
-  quizProgressEl.style.width=((quizState.index)/quizState.pool.length*100)+'%';
-}
-
-// --- Confetti Effect ---
-function confetti(){
-  const container = document.getElementById('confettiContainer');
-  for(let i=0;i<50;i++){
-    const piece=document.createElement('div');
-    piece.className='confetti-piece';
-    piece.style.left=Math.random()*100+'%';
-    piece.style.background=`hsl(${Math.random()*360},70%,60%)`;
-    container.appendChild(piece);
-    setTimeout(()=>piece.remove(),1000);
-  }
-}
-</script>
+      setTimeout(() => {
+        if (Notification.permission === "granted") {
+          new Notification("⏰ Time's up!", {
+            body: `Your ${seconds}-second timer is done.`,
+            icon: "https://cdn-icons-png.flaticon.com/512/3909/3909444.png"
+          });
+        } else {
+          alert("Time's up!");
+        }
+      }, seconds * 1000);
+    }
+  </script>
 </body>
 </html>
