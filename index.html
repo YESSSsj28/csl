@@ -1,155 +1,325 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Notification Timer</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#1e1e1e">
+  <meta charset="utf-8" />
+  <title>Notification Timer (single-file PWA)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#1e1e1e" />
   <style>
     body {
       font-family: Arial, sans-serif;
       text-align: center;
-      padding: 50px;
+      padding: 32px;
       background: #1e1e1e;
-      color: #f0f0f0;
+      color: #eaeaea;
+      min-height: 100vh;
+      box-sizing: border-box;
     }
-    input, button {
-      margin: 10px;
-      padding: 10px;
-      font-size: 16px;
+    h1 { margin-bottom: 6px; }
+    #status { margin-bottom: 14px; font-size: 14px; opacity: 0.9; }
+    .controls { margin: 14px 0; }
+    input[type="number"] {
+      width: 110px;
+      padding: 8px;
       border-radius: 8px;
       border: none;
-    }
-    input {
-      width: 100px;
       text-align: center;
+      font-size: 16px;
     }
     button {
-      background: #4caf50;
-      color: white;
+      margin-left: 10px;
+      padding: 9px 14px;
+      border-radius: 8px;
+      border: none;
+      font-size: 15px;
       cursor: pointer;
     }
-    button:hover {
-      background: #45a049;
-    }
-    #installBtn {
-      display: none;
-      background: #2196f3;
-    }
+    button#startBtn { background: #4caf50; color: white; }
+    button#installBtn { background: #1976d2; color: white; display: none; margin-top: 12px; }
+    #countdown { margin-top: 18px; font-size: 20px; min-height: 26px; }
+    small { display:block; margin-top:8px; opacity:0.8 }
   </style>
 </head>
 <body>
   <h1>Background Notification Timer</h1>
-  <label>Enter time (1–60 seconds):</label><br>
-  <input type="number" id="seconds" min="1" max="60" value="5">
-  <button id="startBtn" disabled>Set Timer</button>
-  <br>
+  <div id="status">Initializing…</div>
+
+  <div class="controls">
+    <label>Enter time (1–60 seconds):</label><br>
+    <input id="seconds" type="number" min="1" max="60" value="5" />
+    <button id="startBtn" disabled>Set Timer</button>
+  </div>
+
   <button id="installBtn">Install App</button>
 
+  <div id="countdown"></div>
+  <small id="note">Tip: For install & full PWA behavior, serve this page over HTTPS or from localhost.</small>
+
   <script>
-    // --- Inline Service Worker ---
+    // ------------------------
+    // Inline service worker code (string)
+    // ------------------------
     const swCode = `
-      self.addEventListener("install", () => self.skipWaiting());
-      self.addEventListener("activate", (event) => {
-        event.waitUntil(self.clients.claim());
+      self.addEventListener('install', (e) => {
+        self.skipWaiting();
       });
-      self.addEventListener("message", (event) => {
-        const { delay } = event.data;
-        setTimeout(() => {
-          self.registration.showNotification("⏰ Time's Up!", {
-            body: \`Your \${delay}-second timer is done.\`,
-            icon: "https://cdn-icons-png.flaticon.com/512/3909/3909444.png",
-            vibrate: [200, 100, 200],
-          });
-        }, delay * 1000);
+
+      self.addEventListener('activate', (e) => {
+        e.waitUntil(self.clients.claim());
+      });
+
+      self.addEventListener('notificationclick', (event) => {
+        event.notification.close();
+        // focus the client if possible
+        event.waitUntil(
+          self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+            if (clients && clients.length) {
+              return clients[0].focus();
+            }
+            return;
+          })
+        );
+      });
+
+      self.addEventListener('message', (event) => {
+        const delay = Number((event.data && event.data.delay) || 0);
+        // Ensure worker stays alive until timer finishes
+        event.waitUntil(
+          new Promise((resolve) => {
+            // small safety: clamp delay between 1 and 60
+            const d = Math.min(Math.max(delay, 1), 60);
+            setTimeout(resolve, d * 1000);
+          }).then(() => {
+            // show the notification
+            return self.registration.showNotification("⏰ Time's Up!", {
+              body: \`Your \${delay}-second timer is done.\`,
+              icon: "https://cdn-icons-png.flaticon.com/512/3909/3909444.png",
+              vibrate: [200, 100, 200],
+              tag: "bg-timer-notification"
+            });
+          })
+        );
       });
     `;
 
-    const startBtn = document.getElementById("startBtn");
+    // ------------------------
+    // Globals & DOM
+    // ------------------------
+    const startBtn = document.getElementById('startBtn');
+    const installBtn = document.getElementById('installBtn');
+    const secondsInput = document.getElementById('seconds');
+    const statusEl = document.getElementById('status');
+    const countdownEl = document.getElementById('countdown');
 
-    // Register service worker and wait until it's ready
-    if ("serviceWorker" in navigator) {
-      const blob = new Blob([swCode], { type: "application/javascript" });
-      const swUrl = URL.createObjectURL(blob);
-      navigator.serviceWorker.register(swUrl).then(() => {
-        console.log("✅ Service worker registered.");
-        return navigator.serviceWorker.ready;
-      }).then((reg) => {
-        console.log("✅ Service worker ready.");
-        startBtn.disabled = false; // Enable button once SW is active
-      });
+    let swRegistration = null;      // navigator.serviceWorker.ready result
+    let deferredPrompt = null;      // beforeinstallprompt event
+    let countdownInterval = null;   // interval id for visible countdown
+
+    // Utility to set status text
+    function setStatus(text) {
+      statusEl.textContent = text;
     }
 
-    // Ask for notification permission
-    if (Notification.permission !== "granted") {
-      Notification.requestPermission();
-    }
-
-    // Start timer
-    startBtn.addEventListener("click", () => {
-      const seconds = parseInt(document.getElementById("seconds").value);
-      if (isNaN(seconds) || seconds < 1 || seconds > 60) {
-        alert("Enter a number between 1 and 60.");
+    // ------------------------
+    // Register inline Service Worker using a blob URL
+    // ------------------------
+    async function registerInlineSW() {
+      if (!('serviceWorker' in navigator)) {
+        setStatus('Service workers are not supported in this browser.');
         return;
       }
-      if (navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({ delay: seconds });
-        alert(`🔔 Notification set for ${seconds} seconds!`);
-      } else {
-        alert("Service worker not ready yet. Try again.");
+
+      try {
+        const blob = new Blob([swCode], { type: 'application/javascript' });
+        const swUrl = URL.createObjectURL(blob);
+
+        // Register
+        await navigator.serviceWorker.register(swUrl);
+        // Wait until active controlling registration is ready
+        swRegistration = await navigator.serviceWorker.ready;
+        setStatus('Service worker ready. Requesting notification permission...');
+        startBtn.disabled = false;
+        return;
+      } catch (err) {
+        console.error('SW registration failed:', err);
+        setStatus('Service worker registration failed. See console.');
       }
-    });
+    }
 
-    // --- Inline Manifest for PWA ---
-    const manifest = {
-      name: "Notification Timer",
-      short_name: "Timer",
-      start_url: ".",
-      display: "standalone",
-      background_color: "#1e1e1e",
-      theme_color: "#1e1e1e",
-      icons: [
-        {
-          src: "https://cdn-icons-png.flaticon.com/512/3909/3909444.png",
-          sizes: "192x192",
-          type: "image/png"
-        },
-        {
-          src: "https://cdn-icons-png.flaticon.com/512/3909/3909444.png",
-          sizes: "512x512",
-          type: "image/png"
+    // ------------------------
+    // Ask for notification permission early
+    // ------------------------
+    async function ensureNotificationPermission() {
+      if (!('Notification' in window)) {
+        setStatus('Notifications API not supported.');
+        return false;
+      }
+      if (Notification.permission === 'granted') {
+        setStatus('Notifications permission: granted.');
+        return true;
+      }
+      try {
+        const p = await Notification.requestPermission();
+        if (p === 'granted') {
+          setStatus('Notifications permission: granted.');
+          return true;
+        } else {
+          setStatus('Notifications permission: denied. Notifications will not appear.');
+          return false;
         }
-      ]
-    };
-    const manifestBlob = new Blob([JSON.stringify(manifest)], { type: "application/json" });
-    const manifestURL = URL.createObjectURL(manifestBlob);
-    const manifestLink = document.createElement("link");
-    manifestLink.rel = "manifest";
-    manifestLink.href = manifestURL;
-    document.head.appendChild(manifestLink);
+      } catch (err) {
+        console.error('Permission request error:', err);
+        setStatus('Notification permission request error.');
+        return false;
+      }
+    }
 
-    // --- Install button handling ---
-    let deferredPrompt;
-    const installBtn = document.getElementById("installBtn");
+    // ------------------------
+    // Start the timer
+    // ------------------------
+    async function setTimer() {
+      const raw = parseInt(secondsInput.value, 10);
+      const seconds = Number.isFinite(raw) ? raw : NaN;
+      if (isNaN(seconds) || seconds < 1 || seconds > 60) {
+        alert('Enter a number between 1 and 60.');
+        return;
+      }
 
-    window.addEventListener("beforeinstallprompt", (e) => {
+      // Ensure permission
+      const ok = await ensureNotificationPermission();
+      if (!ok) return;
+
+      // Disable UI while running
+      startBtn.disabled = true;
+      secondsInput.disabled = true;
+      setStatus(`Timer set for ${seconds} second(s).`);
+
+      // Try to send to service worker
+      try {
+        if (swRegistration && swRegistration.active) {
+          // send message directly to active worker
+          swRegistration.active.postMessage({ delay: seconds });
+          console.log('Message posted to swRegistration.active');
+        } else if (navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({ delay: seconds });
+          console.log('Message posted to navigator.serviceWorker.controller');
+        } else {
+          // fallback: use in-page Notification (works only while page open)
+          console.warn('No active service worker; using in-page fallback (won\'t fire if tab closed).');
+          setTimeout(() => {
+            new Notification("⏰ Time's Up!", {
+              body: `Your ${seconds}-second timer is done (fallback).`,
+              icon: "https://cdn-icons-png.flaticon.com/512/3909/3909444.png"
+            });
+          }, seconds * 1000);
+        }
+      } catch (err) {
+        console.error('Failed to post message to SW:', err);
+        // fallback to in-page
+        setTimeout(() => {
+          new Notification("⏰ Time's Up!", {
+            body: `Your ${seconds}-second timer is done (fallback).`,
+            icon: "https://cdn-icons-png.flaticon.com/512/3909/3909444.png"
+          });
+        }, seconds * 1000);
+      }
+
+      // Show visible countdown (for while page is open)
+      startCountdown(seconds);
+    }
+
+    // ------------------------
+    // Visible countdown UI
+    // ------------------------
+    function startCountdown(seconds) {
+      clearInterval(countdownInterval);
+      let remaining = seconds;
+      countdownEl.textContent = `Countdown: ${remaining}s`;
+      countdownInterval = setInterval(() => {
+        remaining--;
+        if (remaining <= 0) {
+          clearInterval(countdownInterval);
+          countdownEl.textContent = 'Waiting for notification…';
+          // re-enable inputs after a short delay
+          setTimeout(() => {
+            startBtn.disabled = false;
+            secondsInput.disabled = false;
+            setStatus('Ready. (Notifications will appear even if tab is closed—if allowed)');
+          }, 500);
+        } else {
+          countdownEl.textContent = `Countdown: ${remaining}s`;
+        }
+      }, 1000);
+    }
+
+    // ------------------------
+    // PWA inline manifest (blob)
+    // ------------------------
+    function installInlineManifest() {
+      const manifest = {
+        name: "Notification Timer",
+        short_name: "Timer",
+        start_url: ".",
+        display: "standalone",
+        background_color: "#1e1e1e",
+        theme_color: "#1e1e1e",
+        icons: [
+          { src: "https://cdn-icons-png.flaticon.com/512/3909/3909444.png", sizes: "192x192", type: "image/png" },
+          { src: "https://cdn-icons-png.flaticon.com/512/3909/3909444.png", sizes: "512x512", type: "image/png" }
+        ]
+      };
+      const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = url;
+      document.head.appendChild(link);
+    }
+
+    // ------------------------
+    // Install prompt handling
+    // ------------------------
+    window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      installBtn.style.display = "inline-block";
+      installBtn.style.display = 'inline-block';
     });
 
-    installBtn.addEventListener("click", () => {
-      installBtn.style.display = "none";
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      installBtn.style.display = 'none';
       deferredPrompt.prompt();
-      deferredPrompt.userChoice.then((choice) => {
-        if (choice.outcome === "accepted") {
-          console.log("✅ App installed");
-        } else {
-          console.log("❌ App dismissed");
-        }
-        deferredPrompt = null;
-      });
+      const choice = await deferredPrompt.userChoice;
+      if (choice && choice.outcome === 'accepted') {
+        console.log('User accepted install');
+        setStatus('App installed (or installation accepted).');
+      } else {
+        console.log('User dismissed install');
+        setStatus('Install dismissed.');
+      }
+      deferredPrompt = null;
     });
+
+    // ------------------------
+    // Hook up UI
+    // ------------------------
+    startBtn.addEventListener('click', setTimer);
+
+    // Kick things off
+    (async function init() {
+      setStatus('Registering service worker…');
+      installInlineManifest();
+      await registerInlineSW();
+      // Request permission once so the browser will show prompt early
+      if (Notification && Notification.permission !== 'granted') {
+        // do not await here to avoid blocking; update status after user responds
+        Notification.requestPermission().then(p => {
+          setStatus(`Notification permission: ${p}`);
+        });
+      } else if (Notification && Notification.permission === 'granted') {
+        setStatus('Notifications permission: granted. Ready.');
+      }
+    })();
   </script>
 </body>
 </html>
