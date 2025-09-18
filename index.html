@@ -3,14 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <title>Notification Timer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1e1e1e">
   <style>
     body {
       font-family: Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
+      text-align: center;
+      padding: 50px;
       background: #1e1e1e;
       color: #f0f0f0;
     }
@@ -36,37 +35,113 @@
   </style>
 </head>
 <body>
-  <h1>Notification Timer</h1>
-  <label for="seconds">Enter time (1-60 seconds):</label>
+  <h1>Background Notification Timer</h1>
+  <label>Enter time (1–60 seconds):</label><br>
   <input type="number" id="seconds" min="1" max="60" value="5">
-  <button onclick="startTimer()">Start</button>
+  <button onclick="setTimer()">Set Timer</button>
+  <br>
+  <button id="installBtn" style="display:none; background:#2196f3;">Install App</button>
 
   <script>
+    // --- Inline Service Worker ---
+    const swCode = `
+      self.addEventListener("install", (event) => {
+        self.skipWaiting();
+      });
+      self.addEventListener("activate", (event) => {
+        event.waitUntil(self.clients.claim());
+      });
+      self.addEventListener("message", (event) => {
+        const { delay } = event.data;
+        setTimeout(() => {
+          self.registration.showNotification("⏰ Time's Up!", {
+            body: \`Your \${delay}-second timer is done.\`,
+            icon: "https://cdn-icons-png.flaticon.com/512/3909/3909444.png",
+            vibrate: [200, 100, 200],
+          });
+        }, delay * 1000);
+      });
+    `;
+
+    // Register inline service worker
+    if ("serviceWorker" in navigator) {
+      const blob = new Blob([swCode], { type: "application/javascript" });
+      const swUrl = URL.createObjectURL(blob);
+      navigator.serviceWorker.register(swUrl).then(() => {
+        console.log("✅ Service worker registered.");
+      });
+    }
+
     // Request notification permission
     if (Notification.permission !== "granted") {
       Notification.requestPermission();
     }
 
-    function startTimer() {
+    function setTimer() {
       const seconds = parseInt(document.getElementById("seconds").value);
       if (isNaN(seconds) || seconds < 1 || seconds > 60) {
-        alert("Please enter a number between 1 and 60.");
+        alert("Enter a number between 1 and 60.");
         return;
       }
 
-      alert(`Notification will appear in ${seconds} seconds!`);
-
-      setTimeout(() => {
-        if (Notification.permission === "granted") {
-          new Notification("⏰ Time's up!", {
-            body: `Your ${seconds}-second timer is done.`,
-            icon: "https://cdn-icons-png.flaticon.com/512/3909/3909444.png"
-          });
-        } else {
-          alert("Time's up!");
-        }
-      }, seconds * 1000);
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ delay: seconds });
+        alert(`🔔 Notification set for ${seconds} seconds!`);
+      } else {
+        alert("Service worker not ready yet. Try again.");
+      }
     }
+
+    // --- Inline Manifest for PWA ---
+    const manifest = {
+      name: "Notification Timer",
+      short_name: "Timer",
+      start_url: ".",
+      display: "standalone",
+      background_color: "#1e1e1e",
+      theme_color: "#1e1e1e",
+      icons: [
+        {
+          src: "https://cdn-icons-png.flaticon.com/512/3909/3909444.png",
+          sizes: "192x192",
+          type: "image/png"
+        },
+        {
+          src: "https://cdn-icons-png.flaticon.com/512/3909/3909444.png",
+          sizes: "512x512",
+          type: "image/png"
+        }
+      ]
+    };
+    const manifestBlob = new Blob([JSON.stringify(manifest)], { type: "application/json" });
+    const manifestURL = URL.createObjectURL(manifestBlob);
+    const manifestLink = document.createElement("link");
+    manifestLink.rel = "manifest";
+    manifestLink.href = manifestURL;
+    document.head.appendChild(manifestLink);
+
+    // --- Install button handling ---
+    let deferredPrompt;
+    const installBtn = document.getElementById("installBtn");
+
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBtn.style.display = "inline-block";
+    });
+
+    installBtn.addEventListener("click", () => {
+      installBtn.style.display = "none";
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choice) => {
+        if (choice.outcome === "accepted") {
+          console.log("✅ App installed");
+        } else {
+          console.log("❌ App dismissed");
+        }
+        deferredPrompt = null;
+      });
+    });
   </script>
 </body>
 </html>
