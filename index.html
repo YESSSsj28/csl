@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Face Detection App</title>
+    <title>Face Detccection App</title>
     <style>
         /* Styling for the face detection website */
         * {
@@ -164,12 +164,9 @@
         </div>
     </div>
 
-    <!-- Face-api.js library for accurate face detection -->
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-    
     <script>
-        // Professional face detection using face-api.js
-        class ProfessionalFaceDetector {
+        // Advanced face detection using MediaPipe Face Detection API
+        class AdvancedFaceDetector {
             constructor() {
                 this.video = document.getElementById('video');
                 this.canvas = document.getElementById('canvas');
@@ -179,10 +176,11 @@
                 this.status = document.getElementById('status');
                 this.stream = null;
                 this.isDetecting = false;
-                this.modelsLoaded = false;
+                this.faceDetection = null;
+                this.camera = null;
                 
                 this.initializeEventListeners();
-                this.loadModels();
+                this.initializeFaceDetection();
             }
             
             initializeEventListeners() {
@@ -190,32 +188,33 @@
                 this.stopBtn.addEventListener('click', () => this.stopCamera());
             }
             
-            async loadModels() {
+            async initializeFaceDetection() {
                 try {
-                    this.status.textContent = 'Loading AI models...';
+                    this.status.textContent = 'Initializing face detection...';
                     
-                    // Load face-api.js models
-                    await Promise.all([
-                        faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights'),
-                        faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights'),
-                        faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights')
-                    ]);
+                    // Use MediaPipe Face Detection (no external models needed)
+                    this.faceDetection = new FaceDetection({
+                        locateFile: (file) => {
+                            return `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`;
+                        }
+                    });
                     
-                    this.modelsLoaded = true;
-                    this.status.textContent = 'AI models loaded! Ready to start.';
+                    this.faceDetection.setOptions({
+                        model: 'short',
+                        minDetectionConfidence: 0.5,
+                    });
+                    
+                    this.faceDetection.onResults((results) => this.onResults(results));
+                    
+                    this.status.textContent = 'Face detection ready! Click Start Camera.';
                     
                 } catch (error) {
-                    console.error('Error loading models:', error);
-                    this.status.textContent = 'Error loading AI models. Please refresh the page.';
+                    console.error('Error initializing face detection:', error);
+                    this.status.textContent = 'Using fallback detection method...';
                 }
             }
             
             async startCamera() {
-                if (!this.modelsLoaded) {
-                    this.status.textContent = 'Please wait for AI models to load...';
-                    return;
-                }
-                
                 try {
                     this.status.textContent = 'Starting camera...';
                     
@@ -238,7 +237,7 @@
                     
                     this.startBtn.disabled = true;
                     this.stopBtn.disabled = false;
-                    this.status.textContent = 'Camera started - AI face detection active!';
+                    this.status.textContent = 'Camera started - detecting faces...';
                     
                 } catch (error) {
                     console.error('Error accessing camera:', error);
@@ -252,6 +251,11 @@
                     this.stream = null;
                 }
                 
+                if (this.camera) {
+                    this.camera.stop();
+                    this.camera = null;
+                }
+                
                 this.video.srcObject = null;
                 this.isDetecting = false;
                 
@@ -262,72 +266,235 @@
                 this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
             }
             
-            async startDetection() {
+            startDetection() {
                 this.isDetecting = true;
-                this.detectFaces();
+                
+                if (this.faceDetection) {
+                    // Use MediaPipe for accurate detection
+                    this.camera = new Camera(this.video, {
+                        onFrame: async () => {
+                            if (this.isDetecting) {
+                                await this.faceDetection.send({image: this.video});
+                            }
+                        },
+                        width: 640,
+                        height: 480
+                    });
+                    this.camera.start();
+                } else {
+                    // Fallback to improved basic detection
+                    this.fallbackDetection();
+                }
             }
             
-            async detectFaces() {
+            onResults(results) {
                 if (!this.isDetecting) return;
                 
-                try {
-                    // Clear canvas
-                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                // Clear previous drawings
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw video frame
+                this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw face detection results
+                if (results.detections && results.detections.length > 0) {
+                    results.detections.forEach((detection, index) => {
+                        const bbox = detection.locationData.relativeBoundingBox;
+                        const x = bbox.xCenter * this.canvas.width - (bbox.width * this.canvas.width) / 2;
+                        const y = bbox.yCenter * this.canvas.height - (bbox.height * this.canvas.height) / 2;
+                        const width = bbox.width * this.canvas.width;
+                        const height = bbox.height * this.canvas.height;
+                        
+                        // Draw face rectangle
+                        this.ctx.strokeStyle = '#00ff00';
+                        this.ctx.lineWidth = 3;
+                        this.ctx.strokeRect(x, y, width, height);
+                        
+                        // Draw confidence score
+                        const confidence = detection.score[0];
+                        this.ctx.fillStyle = '#00ff00';
+                        this.ctx.font = '16px Arial';
+                        this.ctx.fillText(`Face ${index + 1}: ${(confidence * 100).toFixed(1)}%`, x, y - 10);
+                        
+                        // Draw face landmarks if available
+                        if (detection.locationData.relativeKeypoints) {
+                            this.ctx.fillStyle = '#ff0000';
+                            detection.locationData.relativeKeypoints.forEach(landmark => {
+                                const landmarkX = landmark.x * this.canvas.width;
+                                const landmarkY = landmark.y * this.canvas.height;
+                                this.ctx.beginPath();
+                                this.ctx.arc(landmarkX, landmarkY, 3, 0, 2 * Math.PI);
+                                this.ctx.fill();
+                            });
+                        }
+                    });
                     
-                    // Draw video frame
+                    this.status.textContent = `Detected ${results.detections.length} face(s) with high accuracy!`;
+                } else {
+                    this.status.textContent = 'No faces detected';
+                }
+            }
+            
+            // Fallback detection method (improved basic algorithm)
+            fallbackDetection() {
+                const detect = () => {
+                    if (!this.isDetecting) return;
+                    
+                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
                     this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
                     
-                    // Use face-api.js for professional face detection
-                    const detections = await faceapi.detectAllFaces(this.video, new faceapi.TinyFaceDetectorOptions())
-                        .withFaceLandmarks();
+                    // Improved basic face detection
+                    this.basicFaceDetection();
                     
-                    // Draw detection results
-                    if (detections.length > 0) {
-                        detections.forEach((detection, index) => {
-                            const box = detection.detection.box;
-                            
-                            // Draw face rectangle
-                            this.ctx.strokeStyle = '#00ff00';
-                            this.ctx.lineWidth = 3;
-                            this.ctx.strokeRect(box.x, box.y, box.width, box.height);
-                            
-                            // Draw confidence score
-                            const confidence = detection.detection.score;
-                            this.ctx.fillStyle = '#00ff00';
-                            this.ctx.font = '16px Arial';
-                            this.ctx.fillText(`Face ${index + 1}: ${(confidence * 100).toFixed(1)}%`, box.x, box.y - 10);
-                            
-                            // Draw face landmarks (optional - shows facial features)
-                            if (detection.landmarks) {
-                                this.ctx.fillStyle = '#ff0000';
-                                detection.landmarks.positions.forEach(point => {
-                                    this.ctx.beginPath();
-                                    this.ctx.arc(point.x, point.y, 2, 0, 2 * Math.PI);
-                                    this.ctx.fill();
-                                });
-                            }
-                        });
-                        
-                        this.status.textContent = `Detected ${detections.length} face(s) with ${(detections[0].detection.score * 100).toFixed(1)}% confidence`;
-                    } else {
-                        this.status.textContent = 'No faces detected';
+                    requestAnimationFrame(detect);
+                };
+                detect();
+            }
+            
+            basicFaceDetection() {
+                const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+                const faces = this.detectFacesInImage(imageData);
+                
+                faces.forEach((face, index) => {
+                    this.ctx.strokeStyle = '#ffff00';
+                    this.ctx.lineWidth = 3;
+                    this.ctx.strokeRect(face.x, face.y, face.width, face.height);
+                    this.ctx.fillStyle = '#ffff00';
+                    this.ctx.font = '16px Arial';
+                    this.ctx.fillText(`Face ${index + 1} (Basic)`, face.x, face.y - 10);
+                });
+                
+                if (faces.length > 0) {
+                    this.status.textContent = `Detected ${faces.length} face(s) using basic detection`;
+                }
+            }
+            
+            detectFacesInImage(imageData) {
+                const faces = [];
+                const data = imageData.data;
+                const width = imageData.width;
+                const height = imageData.height;
+                
+                // Improved face detection algorithm
+                const skinRegions = [];
+                
+                // Scan for skin-tone regions
+                for (let y = 0; y < height - 80; y += 15) {
+                    for (let x = 0; x < width - 80; x += 15) {
+                        if (this.isSkinTone(data, x, y, width)) {
+                            skinRegions.push({x, y});
+                        }
                     }
-                    
-                } catch (error) {
-                    console.error('Detection error:', error);
-                    this.status.textContent = 'Detection error occurred';
                 }
                 
-                // Continue detection
-                if (this.isDetecting) {
-                    requestAnimationFrame(() => this.detectFaces());
+                // Group nearby skin regions
+                const faceRegions = this.groupRegions(skinRegions);
+                
+                // Validate and size each potential face
+                faceRegions.forEach(region => {
+                    if (this.isValidFace(region, data, width, height)) {
+                        faces.push({
+                            x: region.x - 30,
+                            y: region.y - 30,
+                            width: region.width + 60,
+                            height: region.height + 60
+                        });
+                    }
+                });
+                
+                return faces;
+            }
+            
+            isSkinTone(data, x, y, width) {
+                const index = (y * width + x) * 4;
+                const r = data[index];
+                const g = data[index + 1];
+                const b = data[index + 2];
+                
+                return (
+                    r > 70 && g > 30 && b > 10 &&
+                    r > g && r > b &&
+                    (r + g + b) > 120 &&
+                    (r + g + b) < 650 &&
+                    Math.abs(r - g) > 8 &&
+                    Math.max(r, g, b) - Math.min(r, g, b) > 8
+                );
+            }
+            
+            groupRegions(regions) {
+                const groups = [];
+                const used = new Set();
+                
+                regions.forEach(region => {
+                    if (used.has(`${region.x},${region.y}`)) return;
+                    
+                    const group = [region];
+                    used.add(`${region.x},${region.y}`);
+                    
+                    regions.forEach(otherRegion => {
+                        if (used.has(`${otherRegion.x},${otherRegion.y}`)) return;
+                        
+                        const distance = Math.sqrt(
+                            Math.pow(region.x - otherRegion.x, 2) + 
+                            Math.pow(region.y - otherRegion.y, 2)
+                        );
+                        
+                        if (distance < 50) {
+                            group.push(otherRegion);
+                            used.add(`${otherRegion.x},${otherRegion.y}`);
+                        }
+                    });
+                    
+                    if (group.length > 3) {
+                        const bounds = this.getBounds(group);
+                        groups.push(bounds);
+                    }
+                });
+                
+                return groups;
+            }
+            
+            getBounds(regions) {
+                let minX = Math.min(...regions.map(r => r.x));
+                let maxX = Math.max(...regions.map(r => r.x));
+                let minY = Math.min(...regions.map(r => r.y));
+                let maxY = Math.max(...regions.map(r => r.y));
+                
+                return {
+                    x: minX,
+                    y: minY,
+                    width: maxX - minX,
+                    height: maxY - minY
+                };
+            }
+            
+            isValidFace(region, data, width, height) {
+                const aspectRatio = region.width / region.height;
+                if (aspectRatio < 0.4 || aspectRatio > 2.5) return false;
+                
+                if (region.width < 30 || region.height < 30) return false;
+                
+                let skinPixels = 0;
+                let totalPixels = 0;
+                
+                for (let y = region.y; y < region.y + region.height; y += 6) {
+                    for (let x = region.x; x < region.x + region.width; x += 6) {
+                        if (x >= 0 && x < width && y >= 0 && y < height) {
+                            totalPixels++;
+                            if (this.isSkinTone(data, x, y, width)) {
+                                skinPixels++;
+                            }
+                        }
+                    }
                 }
+                
+                return totalPixels > 0 && (skinPixels / totalPixels) > 0.2;
             }
         }
 
         // Initialize the face detector when the page loads
         document.addEventListener('DOMContentLoaded', () => {
-            new ProfessionalFaceDetector();
+            new AdvancedFaceDetector();
         });
     </script>
 </body>
