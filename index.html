@@ -284,12 +284,14 @@
                 const width = imageData.width;
                 const height = imageData.height;
                 
-                // Simple but effective face detection
+                // Focus ONLY on upper 60% of image where faces are (not hands)
+                const faceSearchHeight = Math.floor(height * 0.6);
+                
                 const skinRegions = [];
                 
-                // Scan for skin-tone pixels
-                for (let y = 0; y < height - 50; y += 10) {
-                    for (let x = 0; x < width - 50; x += 10) {
+                // Scan only upper portion for skin-tone pixels
+                for (let y = 0; y < faceSearchHeight - 60; y += 12) {
+                    for (let x = 0; x < width - 60; x += 12) {
                         if (this.isSkinTone(data, x, y, width)) {
                             skinRegions.push({x, y});
                         }
@@ -299,15 +301,15 @@
                 // Group nearby skin regions
                 const faceRegions = this.groupRegions(skinRegions);
                 
-                // Create face rectangles
+                // Create face rectangles with face-specific validation
                 faceRegions.forEach(region => {
                     if (this.isValidFace(region, data, width, height)) {
                         faces.push({
-                            x: region.x - 20,
-                            y: region.y - 20,
-                            width: region.width + 40,
-                            height: region.height + 40,
-                            confidence: 85
+                            x: region.x - 25,
+                            y: region.y - 25,
+                            width: region.width + 50,
+                            height: region.height + 50,
+                            confidence: 90
                         });
                     }
                 });
@@ -336,13 +338,16 @@
                 const groups = [];
                 const used = new Set();
                 
-                regions.forEach(region => {
+                // Sort regions by Y position (top to bottom) to prioritize upper regions
+                const sortedRegions = regions.sort((a, b) => a.y - b.y);
+                
+                sortedRegions.forEach(region => {
                     if (used.has(`${region.x},${region.y}`)) return;
                     
                     const group = [region];
                     used.add(`${region.x},${region.y}`);
                     
-                    // Find nearby regions
+                    // Find nearby regions with larger distance for better grouping
                     regions.forEach(otherRegion => {
                         if (used.has(`${otherRegion.x},${otherRegion.y}`)) return;
                         
@@ -351,19 +356,22 @@
                             Math.pow(region.y - otherRegion.y, 2)
                         );
                         
-                        if (distance < 30) { // Simple distance threshold
+                        if (distance < 60) { // Larger distance for better grouping
                             group.push(otherRegion);
                             used.add(`${otherRegion.x},${otherRegion.y}`);
                         }
                     });
                     
-                    if (group.length > 2) { // Minimum regions for a face
+                    // Require more regions for a valid face group
+                    if (group.length > 8) { // Higher threshold for better grouping
                         const bounds = this.getBounds(group);
                         groups.push(bounds);
                     }
                 });
                 
-                return groups;
+                // Sort groups by size (largest first) and return only the biggest ones
+                groups.sort((a, b) => (b.width * b.height) - (a.width * a.height));
+                return groups.slice(0, 3); // Return max 3 faces
             }
             
             getBounds(regions) {
@@ -383,16 +391,22 @@
             
             
             isValidFace(region, data, width, height) {
-                // Simple face validation
+                // Very strict face validation to avoid multiple small detections
                 const aspectRatio = region.width / region.height;
-                if (aspectRatio < 0.3 || aspectRatio > 3.0) return false; // Very lenient proportions
                 
-                // Minimum size requirements
-                if (region.width < 20 || region.height < 20) return false;
+                // Face-like proportions (more restrictive)
+                if (aspectRatio < 0.7 || aspectRatio > 1.5) return false;
                 
-                // Simple skin tone check
+                // Larger minimum size for a face (avoids small fragments)
+                if (region.width < 60 || region.height < 60) return false;
+                
+                // Check if region is in upper portion (faces are typically in top half)
+                if (region.y > height * 0.4) return false;
+                
+                // Enhanced skin tone analysis for face detection
                 let skinPixels = 0;
                 let totalPixels = 0;
+                let faceLikePixels = 0;
                 
                 for (let y = region.y; y < region.y + region.height; y += 8) {
                     for (let x = region.x; x < region.x + region.width; x += 8) {
@@ -400,13 +414,35 @@
                             totalPixels++;
                             if (this.isSkinTone(data, x, y, width)) {
                                 skinPixels++;
+                                
+                                // Check for face-like features (eyes, nose area)
+                                if (this.isFaceLikeFeature(data, x, y, width, region)) {
+                                    faceLikePixels++;
+                                }
                             }
                         }
                     }
                 }
                 
-                // Require at least 10% skin tone
-                return totalPixels > 0 && (skinPixels / totalPixels) > 0.1;
+                const skinPercentage = skinPixels / totalPixels;
+                const faceLikePercentage = faceLikePixels / totalPixels;
+                
+                // Much stricter requirements
+                return totalPixels > 0 && 
+                       skinPercentage > 0.4 && 
+                       faceLikePercentage > 0.15;
+            }
+            
+            isFaceLikeFeature(data, x, y, width, region) {
+                // Check for darker areas that might be eyes, nose, mouth
+                const index = (y * width + x) * 4;
+                const r = data[index];
+                const g = data[index + 1];
+                const b = data[index + 2];
+                const brightness = (r + g + b) / 3;
+                
+                // Look for darker areas in the face region (eyes, nose, mouth)
+                return brightness < 100 && brightness > 30;
             }
         }
 
