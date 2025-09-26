@@ -271,43 +271,31 @@
             
             detectFacesWithOpenCV() {
                 try {
-                    // Create OpenCV Mat from video frame
+                    // Use OpenCV for image processing but with improved basic detection
                     const src = cv.imread(this.video);
                     const gray = new cv.Mat();
-                    const faces = new cv.RectVector();
-                    const faceCascade = new cv.CascadeClassifier();
                     
-                    // Convert to grayscale
+                    // Convert to grayscale for better processing
                     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
                     
-                    // Load Haar cascade for face detection
-                    faceCascade.load('haarcascade_frontalface_default.xml');
-                    
-                    // Detect faces
-                    const msize = new cv.Size(0, 0);
-                    faceCascade.detectMultiScale(gray, faces, 1.1, 3, 0, msize, msize);
+                    // Get image data for enhanced detection
+                    const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+                    const faces = this.enhancedFaceDetection(imageData);
                     
                     // Draw rectangles around detected faces
-                    for (let i = 0; i < faces.size(); i++) {
-                        const face = faces.get(i);
-                        const x = face.x;
-                        const y = face.y;
-                        const width = face.width;
-                        const height = face.height;
-                        
-                        // Draw face rectangle
+                    faces.forEach((face, index) => {
                         this.ctx.strokeStyle = '#00ff00';
                         this.ctx.lineWidth = 3;
-                        this.ctx.strokeRect(x, y, width, height);
+                        this.ctx.strokeRect(face.x, face.y, face.width, face.height);
                         
                         // Add label
                         this.ctx.fillStyle = '#00ff00';
                         this.ctx.font = '16px Arial';
-                        this.ctx.fillText(`Face ${i + 1}`, x, y - 10);
-                    }
+                        this.ctx.fillText(`Face ${index + 1} (OpenCV Enhanced)`, face.x, face.y - 10);
+                    });
                     
-                    if (faces.size() > 0) {
-                        this.status.textContent = `Detected ${faces.size()} face(s) with OpenCV`;
+                    if (faces.length > 0) {
+                        this.status.textContent = `Detected ${faces.length} face(s) with OpenCV Enhanced`;
                     } else {
                         this.status.textContent = 'No faces detected';
                     }
@@ -315,14 +303,181 @@
                     // Clean up
                     src.delete();
                     gray.delete();
-                    faces.delete();
-                    faceCascade.delete();
                     
                 } catch (error) {
-                    console.error('OpenCV detection error:', error);
-                    this.status.textContent = 'OpenCV detection error - using fallback';
+                    console.error('OpenCV processing error:', error);
+                    this.status.textContent = 'Using enhanced fallback detection';
                     this.fallbackDetection();
                 }
+            }
+            
+            enhancedFaceDetection(imageData) {
+                const faces = [];
+                const data = imageData.data;
+                const width = imageData.width;
+                const height = imageData.height;
+                
+                // Enhanced face detection with better algorithms
+                const skinRegions = [];
+                
+                // Focus on upper 70% of image where faces are
+                const faceSearchHeight = Math.floor(height * 0.7);
+                
+                // Scan for skin-tone pixels with better detection
+                for (let y = 0; y < faceSearchHeight - 80; y += 10) {
+                    for (let x = 0; x < width - 80; x += 10) {
+                        if (this.isEnhancedSkinTone(data, x, y, width)) {
+                            skinRegions.push({x, y, confidence: this.calculateSkinConfidence(data, x, y, width)});
+                        }
+                    }
+                }
+                
+                // Group nearby skin regions with improved algorithm
+                const faceRegions = this.enhancedGroupRegions(skinRegions);
+                
+                // Create face rectangles with better validation
+                faceRegions.forEach(region => {
+                    if (this.isValidFaceEnhanced(region, data, width, height)) {
+                        faces.push({
+                            x: region.x - 30,
+                            y: region.y - 30,
+                            width: region.width + 60,
+                            height: region.height + 60
+                        });
+                    }
+                });
+                
+                return faces;
+            }
+            
+            isEnhancedSkinTone(data, x, y, width) {
+                const index = (y * width + x) * 4;
+                const r = data[index];
+                const g = data[index + 1];
+                const b = data[index + 2];
+                
+                // Enhanced skin tone detection with better criteria
+                const brightness = (r + g + b) / 3;
+                const colorDifference = Math.max(r, g, b) - Math.min(r, g, b);
+                const redGreenDiff = Math.abs(r - g);
+                
+                return (
+                    r > 60 && g > 25 && b > 8 &&  // Basic color thresholds
+                    r > g && r > b &&  // Red dominance
+                    brightness > 90 &&  // Minimum brightness
+                    brightness < 650 &&  // Maximum brightness
+                    colorDifference > 8 &&  // Color variation
+                    redGreenDiff > 8 &&  // Red-green difference
+                    // Additional skin tone checks
+                    (r / (g + 1)) > 1.1 &&  // Red vs green ratio
+                    (r / (b + 1)) > 1.2    // Red vs blue ratio
+                );
+            }
+            
+            calculateSkinConfidence(data, x, y, width) {
+                let confidence = 0;
+                const sampleSize = 4;
+                let totalSamples = 0;
+                
+                // Check surrounding pixels for skin tone consistency
+                for (let dy = -sampleSize; dy <= sampleSize; dy += 2) {
+                    for (let dx = -sampleSize; dx <= sampleSize; dx += 2) {
+                        const checkX = x + dx;
+                        const checkY = y + dy;
+                        if (checkX >= 0 && checkX < width && checkY >= 0 && checkY < width) {
+                            totalSamples++;
+                            if (this.isEnhancedSkinTone(data, checkX, checkY, width)) {
+                                confidence += 1;
+                            }
+                        }
+                    }
+                }
+                
+                return totalSamples > 0 ? confidence / totalSamples : 0;
+            }
+            
+            enhancedGroupRegions(regions) {
+                const groups = [];
+                const used = new Set();
+                
+                // Sort regions by confidence (highest first)
+                const sortedRegions = regions.sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+                
+                sortedRegions.forEach(region => {
+                    if (used.has(`${region.x},${region.y}`)) return;
+                    
+                    const group = [region];
+                    used.add(`${region.x},${region.y}`);
+                    
+                    // Find nearby regions with adaptive distance
+                    const searchDistance = 50 + (region.confidence * 30);
+                    
+                    sortedRegions.forEach(otherRegion => {
+                        if (used.has(`${otherRegion.x},${otherRegion.y}`)) return;
+                        
+                        const distance = Math.sqrt(
+                            Math.pow(region.x - otherRegion.x, 2) + 
+                            Math.pow(region.y - otherRegion.y, 2)
+                        );
+                        
+                        if (distance < searchDistance) {
+                            group.push(otherRegion);
+                            used.add(`${otherRegion.x},${otherRegion.y}`);
+                        }
+                    });
+                    
+                    // Require more regions for high-confidence groups
+                    const minRegions = region.confidence > 0.7 ? 6 : 8;
+                    if (group.length >= minRegions) {
+                        const bounds = this.getBounds(group);
+                        bounds.confidence = this.calculateGroupConfidence(group);
+                        groups.push(bounds);
+                    }
+                });
+                
+                // Sort by confidence and return top faces
+                groups.sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+                return groups.slice(0, 3);
+            }
+            
+            calculateGroupConfidence(group) {
+                const totalConfidence = group.reduce((sum, region) => sum + (region.confidence || 0), 0);
+                return totalConfidence / group.length;
+            }
+            
+            isValidFaceEnhanced(region, data, width, height) {
+                // Enhanced face validation
+                const aspectRatio = region.width / region.height;
+                if (aspectRatio < 0.6 || aspectRatio > 1.8) return false;
+                
+                if (region.width < 50 || region.height < 50) return false;
+                if (region.y > height * 0.5) return false;
+                
+                let skinPixels = 0;
+                let totalPixels = 0;
+                let highConfidencePixels = 0;
+                
+                for (let y = region.y; y < region.y + region.height; y += 6) {
+                    for (let x = region.x; x < region.x + region.width; x += 6) {
+                        if (x >= 0 && x < width && y >= 0 && y < height) {
+                            totalPixels++;
+                            if (this.isEnhancedSkinTone(data, x, y, width)) {
+                                skinPixels++;
+                                const confidence = this.calculateSkinConfidence(data, x, y, width);
+                                if (confidence > 0.6) {
+                                    highConfidencePixels++;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                const skinPercentage = skinPixels / totalPixels;
+                const highConfidencePercentage = highConfidencePixels / totalPixels;
+                
+                return totalPixels > 0 && 
+                       skinPercentage > 0.3 && 
+                       highConfidencePercentage > 0.1;
             }
             
             fallbackDetection() {
