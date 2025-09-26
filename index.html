@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Face Detccection App</title>
+    <title>Face Detection App</title>
     <style>
         /* Styling for the face detection website */
         * {
@@ -165,8 +165,8 @@
     </div>
 
     <script>
-        // Advanced face detection using MediaPipe Face Detection API
-        class AdvancedFaceDetector {
+        // Pure JavaScript face detection - no external libraries
+        class PureFaceDetector {
             constructor() {
                 this.video = document.getElementById('video');
                 this.canvas = document.getElementById('canvas');
@@ -176,42 +176,14 @@
                 this.status = document.getElementById('status');
                 this.stream = null;
                 this.isDetecting = false;
-                this.faceDetection = null;
-                this.camera = null;
+                this.detectionInterval = null;
                 
                 this.initializeEventListeners();
-                this.initializeFaceDetection();
             }
             
             initializeEventListeners() {
                 this.startBtn.addEventListener('click', () => this.startCamera());
                 this.stopBtn.addEventListener('click', () => this.stopCamera());
-            }
-            
-            async initializeFaceDetection() {
-                try {
-                    this.status.textContent = 'Initializing face detection...';
-                    
-                    // Use MediaPipe Face Detection (no external models needed)
-                    this.faceDetection = new FaceDetection({
-                        locateFile: (file) => {
-                            return `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`;
-                        }
-                    });
-                    
-                    this.faceDetection.setOptions({
-                        model: 'short',
-                        minDetectionConfidence: 0.5,
-                    });
-                    
-                    this.faceDetection.onResults((results) => this.onResults(results));
-                    
-                    this.status.textContent = 'Face detection ready! Click Start Camera.';
-                    
-                } catch (error) {
-                    console.error('Error initializing face detection:', error);
-                    this.status.textContent = 'Using fallback detection method...';
-                }
             }
             
             async startCamera() {
@@ -251,9 +223,9 @@
                     this.stream = null;
                 }
                 
-                if (this.camera) {
-                    this.camera.stop();
-                    this.camera = null;
+                if (this.detectionInterval) {
+                    clearInterval(this.detectionInterval);
+                    this.detectionInterval = null;
                 }
                 
                 this.video.srcObject = null;
@@ -269,135 +241,78 @@
             startDetection() {
                 this.isDetecting = true;
                 
-                if (this.faceDetection) {
-                    // Use MediaPipe for accurate detection
-                    this.camera = new Camera(this.video, {
-                        onFrame: async () => {
-                            if (this.isDetecting) {
-                                await this.faceDetection.send({image: this.video});
-                            }
-                        },
-                        width: 640,
-                        height: 480
-                    });
-                    this.camera.start();
-                } else {
-                    // Fallback to improved basic detection
-                    this.fallbackDetection();
-                }
+                this.detectionInterval = setInterval(() => {
+                    if (this.isDetecting) {
+                        this.detectFaces();
+                    }
+                }, 100); // Check every 100ms
             }
             
-            onResults(results) {
-                if (!this.isDetecting) return;
-                
+            detectFaces() {
                 // Clear previous drawings
                 this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
                 
                 // Draw video frame
                 this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
                 
-                // Draw face detection results
-                if (results.detections && results.detections.length > 0) {
-                    results.detections.forEach((detection, index) => {
-                        const bbox = detection.locationData.relativeBoundingBox;
-                        const x = bbox.xCenter * this.canvas.width - (bbox.width * this.canvas.width) / 2;
-                        const y = bbox.yCenter * this.canvas.height - (bbox.height * this.canvas.height) / 2;
-                        const width = bbox.width * this.canvas.width;
-                        const height = bbox.height * this.canvas.height;
-                        
-                        // Draw face rectangle
-                        this.ctx.strokeStyle = '#00ff00';
-                        this.ctx.lineWidth = 3;
-                        this.ctx.strokeRect(x, y, width, height);
-                        
-                        // Draw confidence score
-                        const confidence = detection.score[0];
-                        this.ctx.fillStyle = '#00ff00';
-                        this.ctx.font = '16px Arial';
-                        this.ctx.fillText(`Face ${index + 1}: ${(confidence * 100).toFixed(1)}%`, x, y - 10);
-                        
-                        // Draw face landmarks if available
-                        if (detection.locationData.relativeKeypoints) {
-                            this.ctx.fillStyle = '#ff0000';
-                            detection.locationData.relativeKeypoints.forEach(landmark => {
-                                const landmarkX = landmark.x * this.canvas.width;
-                                const landmarkY = landmark.y * this.canvas.height;
-                                this.ctx.beginPath();
-                                this.ctx.arc(landmarkX, landmarkY, 3, 0, 2 * Math.PI);
-                                this.ctx.fill();
-                            });
-                        }
-                    });
+                // Get image data for analysis
+                const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+                const faces = this.findFaces(imageData);
+                
+                // Draw rectangles around detected faces
+                faces.forEach((face, index) => {
+                    this.ctx.strokeStyle = '#00ff00';
+                    this.ctx.lineWidth = 3;
+                    this.ctx.strokeRect(face.x, face.y, face.width, face.height);
                     
-                    this.status.textContent = `Detected ${results.detections.length} face(s) with high accuracy!`;
+                    // Add label with confidence
+                    this.ctx.fillStyle = '#00ff00';
+                    this.ctx.font = '16px Arial';
+                    this.ctx.fillText(`Face ${index + 1} (${face.confidence}%)`, face.x, face.y - 10);
+                });
+                
+                if (faces.length > 0) {
+                    this.status.textContent = `Detected ${faces.length} face(s)`;
                 } else {
                     this.status.textContent = 'No faces detected';
                 }
             }
             
-            // Fallback detection method (improved basic algorithm)
-            fallbackDetection() {
-                const detect = () => {
-                    if (!this.isDetecting) return;
-                    
-                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                    this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
-                    
-                    // Improved basic face detection
-                    this.basicFaceDetection();
-                    
-                    requestAnimationFrame(detect);
-                };
-                detect();
-            }
-            
-            basicFaceDetection() {
-                const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-                const faces = this.detectFacesInImage(imageData);
-                
-                faces.forEach((face, index) => {
-                    this.ctx.strokeStyle = '#ffff00';
-                    this.ctx.lineWidth = 3;
-                    this.ctx.strokeRect(face.x, face.y, face.width, face.height);
-                    this.ctx.fillStyle = '#ffff00';
-                    this.ctx.font = '16px Arial';
-                    this.ctx.fillText(`Face ${index + 1} (Basic)`, face.x, face.y - 10);
-                });
-                
-                if (faces.length > 0) {
-                    this.status.textContent = `Detected ${faces.length} face(s) using basic detection`;
-                }
-            }
-            
-            detectFacesInImage(imageData) {
+            findFaces(imageData) {
                 const faces = [];
                 const data = imageData.data;
                 const width = imageData.width;
                 const height = imageData.height;
                 
-                // Improved face detection algorithm
+                // Focus on upper 80% of image (where faces typically are)
+                const searchHeight = Math.floor(height * 0.8);
+                
+                // Enhanced skin tone detection
                 const skinRegions = [];
                 
-                // Scan for skin-tone regions
-                for (let y = 0; y < height - 80; y += 15) {
-                    for (let x = 0; x < width - 80; x += 15) {
+                // Scan for skin-tone pixels with adaptive step size
+                for (let y = 0; y < searchHeight - 60; y += 8) {
+                    for (let x = 0; x < width - 60; x += 8) {
                         if (this.isSkinTone(data, x, y, width)) {
-                            skinRegions.push({x, y});
+                            const confidence = this.calculateSkinConfidence(data, x, y, width);
+                            skinRegions.push({x, y, confidence});
                         }
                     }
                 }
                 
-                // Group nearby skin regions
-                const faceRegions = this.groupRegions(skinRegions);
+                // Group nearby skin regions into potential faces
+                const faceRegions = this.groupSkinRegions(skinRegions);
                 
-                // Validate and size each potential face
+                // Validate and create face rectangles
                 faceRegions.forEach(region => {
                     if (this.isValidFace(region, data, width, height)) {
+                        const headSize = this.calculateHeadSize(region);
                         faces.push({
-                            x: region.x - 30,
-                            y: region.y - 30,
-                            width: region.width + 60,
-                            height: region.height + 60
+                            x: headSize.x,
+                            y: headSize.y,
+                            width: headSize.width,
+                            height: headSize.height,
+                            confidence: Math.round(region.confidence * 100)
                         });
                     }
                 });
@@ -411,27 +326,63 @@
                 const g = data[index + 1];
                 const b = data[index + 2];
                 
+                // Enhanced skin tone detection
+                const brightness = (r + g + b) / 3;
+                const colorDifference = Math.max(r, g, b) - Math.min(r, g, b);
+                const redGreenDiff = Math.abs(r - g);
+                
                 return (
-                    r > 70 && g > 30 && b > 10 &&
-                    r > g && r > b &&
-                    (r + g + b) > 120 &&
-                    (r + g + b) < 650 &&
-                    Math.abs(r - g) > 8 &&
-                    Math.max(r, g, b) - Math.min(r, g, b) > 8
+                    r > 60 && g > 25 && b > 8 &&  // Basic color thresholds
+                    r > g && r > b &&  // Red dominance
+                    brightness > 80 &&  // Minimum brightness
+                    brightness < 600 &&  // Maximum brightness
+                    colorDifference > 6 &&  // Color variation
+                    redGreenDiff > 6 &&  // Red-green difference
+                    // Additional skin tone checks
+                    (r / (g + 1)) > 1.05 &&  // Red vs green ratio
+                    (r / (b + 1)) > 1.1     // Red vs blue ratio
                 );
             }
             
-            groupRegions(regions) {
+            calculateSkinConfidence(data, x, y, width) {
+                let confidence = 0;
+                const sampleSize = 3;
+                let totalSamples = 0;
+                
+                // Check surrounding pixels for skin tone consistency
+                for (let dy = -sampleSize; dy <= sampleSize; dy++) {
+                    for (let dx = -sampleSize; dx <= sampleSize; dx++) {
+                        const checkX = x + dx;
+                        const checkY = y + dy;
+                        if (checkX >= 0 && checkX < width && checkY >= 0 && checkY < width) {
+                            totalSamples++;
+                            if (this.isSkinTone(data, checkX, checkY, width)) {
+                                confidence += 1;
+                            }
+                        }
+                    }
+                }
+                
+                return totalSamples > 0 ? confidence / totalSamples : 0;
+            }
+            
+            groupSkinRegions(regions) {
                 const groups = [];
                 const used = new Set();
                 
-                regions.forEach(region => {
+                // Sort by confidence (highest first)
+                const sortedRegions = regions.sort((a, b) => b.confidence - a.confidence);
+                
+                sortedRegions.forEach(region => {
                     if (used.has(`${region.x},${region.y}`)) return;
                     
                     const group = [region];
                     used.add(`${region.x},${region.y}`);
                     
-                    regions.forEach(otherRegion => {
+                    // Find nearby regions with adaptive distance
+                    const searchDistance = 40 + (region.confidence * 20); // Higher confidence = larger search area
+                    
+                    sortedRegions.forEach(otherRegion => {
                         if (used.has(`${otherRegion.x},${otherRegion.y}`)) return;
                         
                         const distance = Math.sqrt(
@@ -439,14 +390,17 @@
                             Math.pow(region.y - otherRegion.y, 2)
                         );
                         
-                        if (distance < 50) {
+                        if (distance < searchDistance) {
                             group.push(otherRegion);
                             used.add(`${otherRegion.x},${otherRegion.y}`);
                         }
                     });
                     
-                    if (group.length > 3) {
+                    // Require minimum regions based on confidence
+                    const minRegions = region.confidence > 0.7 ? 4 : 6;
+                    if (group.length >= minRegions) {
                         const bounds = this.getBounds(group);
+                        bounds.confidence = this.calculateGroupConfidence(group);
                         groups.push(bounds);
                     }
                 });
@@ -464,37 +418,78 @@
                     x: minX,
                     y: minY,
                     width: maxX - minX,
-                    height: maxY - minY
+                    height: maxY - minY,
+                    confidence: 0
                 };
             }
             
+            calculateGroupConfidence(group) {
+                const totalConfidence = group.reduce((sum, region) => sum + region.confidence, 0);
+                return totalConfidence / group.length;
+            }
+            
             isValidFace(region, data, width, height) {
+                // Enhanced face validation
                 const aspectRatio = region.width / region.height;
-                if (aspectRatio < 0.4 || aspectRatio > 2.5) return false;
+                if (aspectRatio < 0.5 || aspectRatio > 2.0) return false; // Face-like proportions
                 
-                if (region.width < 30 || region.height < 30) return false;
+                // Minimum size requirements
+                if (region.width < 25 || region.height < 25) return false;
                 
+                // Enhanced skin tone analysis
                 let skinPixels = 0;
                 let totalPixels = 0;
+                let highConfidencePixels = 0;
                 
-                for (let y = region.y; y < region.y + region.height; y += 6) {
-                    for (let x = region.x; x < region.x + region.width; x += 6) {
+                for (let y = region.y; y < region.y + region.height; y += 4) {
+                    for (let x = region.x; x < region.x + region.width; x += 4) {
                         if (x >= 0 && x < width && y >= 0 && y < height) {
                             totalPixels++;
                             if (this.isSkinTone(data, x, y, width)) {
                                 skinPixels++;
+                                const confidence = this.calculateSkinConfidence(data, x, y, width);
+                                if (confidence > 0.6) {
+                                    highConfidencePixels++;
+                                }
                             }
                         }
                     }
                 }
                 
-                return totalPixels > 0 && (skinPixels / totalPixels) > 0.2;
+                const skinPercentage = skinPixels / totalPixels;
+                const highConfidencePercentage = highConfidencePixels / totalPixels;
+                
+                // Require both skin tone presence and high confidence areas
+                return totalPixels > 0 && 
+                       skinPercentage > 0.15 && 
+                       highConfidencePercentage > 0.05;
+            }
+            
+            calculateHeadSize(region) {
+                // Calculate head size based on face region
+                const faceWidth = region.width;
+                const faceHeight = region.height;
+                
+                // Make head box bigger to encompass the full head
+                const headWidth = Math.round(faceWidth * 1.6);  // 1.6x wider
+                const headHeight = Math.round(faceHeight * 1.8); // 1.8x taller (for hair)
+                
+                // Center the head around the face, with more space above
+                const headX = Math.max(0, region.x - Math.round((headWidth - faceWidth) / 2));
+                const headY = Math.max(0, region.y - Math.round((headHeight - faceHeight) / 3));
+                
+                return {
+                    x: headX,
+                    y: headY,
+                    width: headWidth,
+                    height: headHeight
+                };
             }
         }
 
         // Initialize the face detector when the page loads
         document.addEventListener('DOMContentLoaded', () => {
-            new AdvancedFaceDetector();
+            new PureFaceDetector();
         });
     </script>
 </body>
