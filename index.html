@@ -164,9 +164,12 @@
         </div>
     </div>
 
+    <!-- OpenCV.js for professional face detection -->
+    <script async src="https://docs.opencv.org/4.8.0/opencv.js" onload="onOpenCvReady();" type="text/javascript"></script>
+    
     <script>
-        // Pure JavaScript face detection - no external libraries
-        class PureFaceDetector {
+        // Professional face detection using OpenCV.js
+        class OpenCVFaceDetector {
             constructor() {
                 this.video = document.getElementById('video');
                 this.canvas = document.getElementById('canvas');
@@ -177,6 +180,8 @@
                 this.stream = null;
                 this.isDetecting = false;
                 this.detectionInterval = null;
+                this.faceCascade = null;
+                this.opencvReady = false;
                 
                 this.initializeEventListeners();
             }
@@ -187,6 +192,11 @@
             }
             
             async startCamera() {
+                if (!this.opencvReady) {
+                    this.status.textContent = 'Please wait for OpenCV to load...';
+                    return;
+                }
+                
                 try {
                     this.status.textContent = 'Starting camera...';
                     
@@ -209,7 +219,7 @@
                     
                     this.startBtn.disabled = true;
                     this.stopBtn.disabled = false;
-                    this.status.textContent = 'Camera started - detecting faces...';
+                    this.status.textContent = 'Camera started - OpenCV face detection active!';
                     
                 } catch (error) {
                     console.error('Error accessing camera:', error);
@@ -245,7 +255,7 @@
                     if (this.isDetecting) {
                         this.detectFaces();
                     }
-                }, 100); // Check every 100ms
+                }, 150); // Check every 150ms for better performance
             }
             
             detectFaces() {
@@ -255,61 +265,107 @@
                 // Draw video frame
                 this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
                 
-                // Get image data for analysis
-                const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-                const faces = this.findFaces(imageData);
-                
-                // Draw rectangles around detected faces
-                faces.forEach((face, index) => {
-                    this.ctx.strokeStyle = '#00ff00';
-                    this.ctx.lineWidth = 3;
-                    this.ctx.strokeRect(face.x, face.y, face.width, face.height);
+                // Use OpenCV for professional face detection
+                this.detectFacesWithOpenCV();
+            }
+            
+            detectFacesWithOpenCV() {
+                try {
+                    // Create OpenCV Mat from video frame
+                    const src = cv.imread(this.video);
+                    const gray = new cv.Mat();
+                    const faces = new cv.RectVector();
+                    const faceCascade = new cv.CascadeClassifier();
                     
-                    // Add label with confidence
-                    this.ctx.fillStyle = '#00ff00';
-                    this.ctx.font = '16px Arial';
-                    this.ctx.fillText(`Face ${index + 1} (${face.confidence}%)`, face.x, face.y - 10);
-                });
-                
-                if (faces.length > 0) {
-                    this.status.textContent = `Detected ${faces.length} face(s)`;
-                } else {
-                    this.status.textContent = 'No faces detected';
+                    // Convert to grayscale
+                    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
+                    
+                    // Load Haar cascade for face detection
+                    faceCascade.load('haarcascade_frontalface_default.xml');
+                    
+                    // Detect faces
+                    const msize = new cv.Size(0, 0);
+                    faceCascade.detectMultiScale(gray, faces, 1.1, 3, 0, msize, msize);
+                    
+                    // Draw rectangles around detected faces
+                    for (let i = 0; i < faces.size(); i++) {
+                        const face = faces.get(i);
+                        const x = face.x;
+                        const y = face.y;
+                        const width = face.width;
+                        const height = face.height;
+                        
+                        // Draw face rectangle
+                        this.ctx.strokeStyle = '#00ff00';
+                        this.ctx.lineWidth = 3;
+                        this.ctx.strokeRect(x, y, width, height);
+                        
+                        // Add label
+                        this.ctx.fillStyle = '#00ff00';
+                        this.ctx.font = '16px Arial';
+                        this.ctx.fillText(`Face ${i + 1}`, x, y - 10);
+                    }
+                    
+                    if (faces.size() > 0) {
+                        this.status.textContent = `Detected ${faces.size()} face(s) with OpenCV`;
+                    } else {
+                        this.status.textContent = 'No faces detected';
+                    }
+                    
+                    // Clean up
+                    src.delete();
+                    gray.delete();
+                    faces.delete();
+                    faceCascade.delete();
+                    
+                } catch (error) {
+                    console.error('OpenCV detection error:', error);
+                    this.status.textContent = 'OpenCV detection error - using fallback';
+                    this.fallbackDetection();
                 }
             }
             
-            findFaces(imageData) {
+            fallbackDetection() {
+                // Fallback to basic detection if OpenCV fails
+                const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+                const faces = this.basicFaceDetection(imageData);
+                
+                faces.forEach((face, index) => {
+                    this.ctx.strokeStyle = '#ffff00';
+                    this.ctx.lineWidth = 3;
+                    this.ctx.strokeRect(face.x, face.y, face.width, face.height);
+                    this.ctx.fillStyle = '#ffff00';
+                    this.ctx.font = '16px Arial';
+                    this.ctx.fillText(`Face ${index + 1} (Fallback)`, face.x, face.y - 10);
+                });
+            }
+            
+            basicFaceDetection(imageData) {
                 const faces = [];
                 const data = imageData.data;
                 const width = imageData.width;
                 const height = imageData.height;
                 
-                // Focus ONLY on upper 60% of image where faces are (not hands)
-                const faceSearchHeight = Math.floor(height * 0.6);
-                
+                // Simple face detection fallback
                 const skinRegions = [];
                 
-                // Scan only upper portion for skin-tone pixels
-                for (let y = 0; y < faceSearchHeight - 60; y += 12) {
-                    for (let x = 0; x < width - 60; x += 12) {
+                for (let y = 0; y < height - 80; y += 15) {
+                    for (let x = 0; x < width - 80; x += 15) {
                         if (this.isSkinTone(data, x, y, width)) {
                             skinRegions.push({x, y});
                         }
                     }
                 }
                 
-                // Group nearby skin regions
                 const faceRegions = this.groupRegions(skinRegions);
                 
-                // Create face rectangles with face-specific validation
                 faceRegions.forEach(region => {
                     if (this.isValidFace(region, data, width, height)) {
                         faces.push({
-                            x: region.x - 25,
-                            y: region.y - 25,
-                            width: region.width + 50,
-                            height: region.height + 50,
-                            confidence: 90
+                            x: region.x - 20,
+                            y: region.y - 20,
+                            width: region.width + 40,
+                            height: region.height + 40
                         });
                     }
                 });
@@ -323,14 +379,13 @@
                 const g = data[index + 1];
                 const b = data[index + 2];
                 
-                // Simple but effective skin tone detection
                 return (
-                    r > 50 && g > 20 && b > 5 &&  // Basic color thresholds
-                    r > g && r > b &&  // Red should be dominant
-                    (r + g + b) > 80 &&  // Minimum brightness
-                    (r + g + b) < 700 &&  // Maximum brightness
-                    Math.abs(r - g) > 5 &&  // Some color variation
-                    Math.max(r, g, b) - Math.min(r, g, b) > 5  // Color difference
+                    r > 50 && g > 20 && b > 5 &&
+                    r > g && r > b &&
+                    (r + g + b) > 80 &&
+                    (r + g + b) < 700 &&
+                    Math.abs(r - g) > 5 &&
+                    Math.max(r, g, b) - Math.min(r, g, b) > 5
                 );
             }
             
@@ -338,16 +393,12 @@
                 const groups = [];
                 const used = new Set();
                 
-                // Sort regions by Y position (top to bottom) to prioritize upper regions
-                const sortedRegions = regions.sort((a, b) => a.y - b.y);
-                
-                sortedRegions.forEach(region => {
+                regions.forEach(region => {
                     if (used.has(`${region.x},${region.y}`)) return;
                     
                     const group = [region];
                     used.add(`${region.x},${region.y}`);
                     
-                    // Find nearby regions with larger distance for better grouping
                     regions.forEach(otherRegion => {
                         if (used.has(`${otherRegion.x},${otherRegion.y}`)) return;
                         
@@ -356,22 +407,19 @@
                             Math.pow(region.y - otherRegion.y, 2)
                         );
                         
-                        if (distance < 60) { // Larger distance for better grouping
+                        if (distance < 40) {
                             group.push(otherRegion);
                             used.add(`${otherRegion.x},${otherRegion.y}`);
                         }
                     });
                     
-                    // Require more regions for a valid face group
-                    if (group.length > 8) { // Higher threshold for better grouping
+                    if (group.length > 3) {
                         const bounds = this.getBounds(group);
                         groups.push(bounds);
                     }
                 });
                 
-                // Sort groups by size (largest first) and return only the biggest ones
-                groups.sort((a, b) => (b.width * b.height) - (a.width * a.height));
-                return groups.slice(0, 3); // Return max 3 faces
+                return groups;
             }
             
             getBounds(regions) {
@@ -384,29 +432,18 @@
                     x: minX,
                     y: minY,
                     width: maxX - minX,
-                    height: maxY - minY,
-                    confidence: 0
+                    height: maxY - minY
                 };
             }
             
-            
             isValidFace(region, data, width, height) {
-                // Very strict face validation to avoid multiple small detections
                 const aspectRatio = region.width / region.height;
+                if (aspectRatio < 0.5 || aspectRatio > 2.0) return false;
+                if (region.width < 30 || region.height < 30) return false;
+                if (region.y > height * 0.5) return false;
                 
-                // Face-like proportions (more restrictive)
-                if (aspectRatio < 0.7 || aspectRatio > 1.5) return false;
-                
-                // Larger minimum size for a face (avoids small fragments)
-                if (region.width < 60 || region.height < 60) return false;
-                
-                // Check if region is in upper portion (faces are typically in top half)
-                if (region.y > height * 0.4) return false;
-                
-                // Enhanced skin tone analysis for face detection
                 let skinPixels = 0;
                 let totalPixels = 0;
-                let faceLikePixels = 0;
                 
                 for (let y = region.y; y < region.y + region.height; y += 8) {
                     for (let x = region.x; x < region.x + region.width; x += 8) {
@@ -414,41 +451,28 @@
                             totalPixels++;
                             if (this.isSkinTone(data, x, y, width)) {
                                 skinPixels++;
-                                
-                                // Check for face-like features (eyes, nose area)
-                                if (this.isFaceLikeFeature(data, x, y, width, region)) {
-                                    faceLikePixels++;
-                                }
                             }
                         }
                     }
                 }
                 
-                const skinPercentage = skinPixels / totalPixels;
-                const faceLikePercentage = faceLikePixels / totalPixels;
-                
-                // Much stricter requirements
-                return totalPixels > 0 && 
-                       skinPercentage > 0.4 && 
-                       faceLikePercentage > 0.15;
+                return totalPixels > 0 && (skinPixels / totalPixels) > 0.2;
             }
-            
-            isFaceLikeFeature(data, x, y, width, region) {
-                // Check for darker areas that might be eyes, nose, mouth
-                const index = (y * width + x) * 4;
-                const r = data[index];
-                const g = data[index + 1];
-                const b = data[index + 2];
-                const brightness = (r + g + b) / 3;
-                
-                // Look for darker areas in the face region (eyes, nose, mouth)
-                return brightness < 100 && brightness > 30;
+        }
+        
+        // OpenCV ready callback
+        function onOpenCvReady() {
+            console.log('OpenCV.js is ready');
+            window.opencvReady = true;
+            if (window.faceDetector) {
+                window.faceDetector.opencvReady = true;
+                window.faceDetector.status.textContent = 'OpenCV loaded! Ready to start.';
             }
         }
 
         // Initialize the face detector when the page loads
         document.addEventListener('DOMContentLoaded', () => {
-            new PureFaceDetector();
+            window.faceDetector = new OpenCVFaceDetector();
         });
     </script>
 </body>
