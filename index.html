@@ -278,42 +278,29 @@
                 const width = imageData.width;
                 const height = imageData.height;
                 
-                // Enhanced skin tone detection with multiple passes
+                // Focus on upper portion of image where faces typically appear
+                const faceSearchHeight = Math.floor(height * 0.7); // Only search top 70% of image
+                
+                // Simple but effective face detection
                 const skinRegions = [];
                 
-                // First pass: Coarse scan for potential face areas
-                for (let y = 0; y < height - 100; y += 20) {
-                    for (let x = 0; x < width - 100; x += 20) {
+                // Scan with reasonable step size
+                for (let y = 0; y < faceSearchHeight - 60; y += 12) {
+                    for (let x = 0; x < width - 60; x += 12) {
                         if (this.isSkinTone(data, x, y, width)) {
-                            skinRegions.push({x, y, confidence: this.getSkinConfidence(data, x, y, width)});
+                            skinRegions.push({x, y});
                         }
                     }
                 }
                 
-                // Second pass: Fine scan around high-confidence areas
-                const highConfidenceRegions = skinRegions.filter(region => region.confidence > 0.7);
-                highConfidenceRegions.forEach(region => {
-                    for (let dy = -10; dy <= 10; dy += 5) {
-                        for (let dx = -10; dx <= 10; dx += 5) {
-                            const newX = region.x + dx;
-                            const newY = region.y + dy;
-                            if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
-                                if (this.isSkinTone(data, newX, newY, width)) {
-                                    skinRegions.push({x: newX, y: newY, confidence: this.getSkinConfidence(data, newX, newY, width)});
-                                }
-                            }
-                        }
-                    }
-                });
+                // Group nearby skin regions
+                const faceRegions = this.groupRegions(skinRegions);
                 
-                // Group nearby regions with improved clustering
-                const faceRegions = this.groupRegionsAdvanced(skinRegions);
-                
-                // Enhanced face validation and sizing
+                // Validate and size each potential face
                 faceRegions.forEach(region => {
                     if (this.isValidFace(region, data, width, height)) {
-                        // Calculate proper head size based on face region
-                        const headSize = this.calculateHeadSize(region, data, width, height);
+                        // Calculate head size - make it bigger to encompass the head
+                        const headSize = this.calculateHeadSize(region);
                         faces.push({
                             x: Math.max(0, headSize.x),
                             y: Math.max(0, headSize.y),
@@ -332,21 +319,14 @@
                 const g = data[index + 1];
                 const b = data[index + 2];
                 
-                // Enhanced skin tone detection with multiple criteria
-                const brightness = (r + g + b) / 3;
-                const colorDifference = Math.max(r, g, b) - Math.min(r, g, b);
-                const redGreenDiff = Math.abs(r - g);
-                
+                // Simplified but effective skin tone detection
                 return (
-                    r > 70 && g > 25 && b > 8 &&  // Basic color thresholds
-                    colorDifference > 8 &&  // Color variation
-                    redGreenDiff > 8 &&  // Red-green difference
-                    r > g && r > b &&  // Red dominance
-                    brightness > 100 &&  // Minimum brightness
-                    brightness < 650 &&  // Maximum brightness
-                    // Additional skin tone checks
-                    (r / (g + 1)) > 1.1 &&  // Red should be significantly higher than green
-                    (r / (b + 1)) > 1.2    // Red should be significantly higher than blue
+                    r > 60 && g > 20 && b > 5 &&  // Basic color thresholds
+                    r > g && r > b &&  // Red should be dominant
+                    (r + g + b) > 100 &&  // Minimum brightness
+                    (r + g + b) < 700 &&  // Maximum brightness
+                    Math.abs(r - g) > 5 &&  // Some color variation
+                    Math.max(r, g, b) - Math.min(r, g, b) > 5  // Color difference
                 );
             }
             
@@ -370,25 +350,18 @@
                 return confidence / ((sampleSize * 2 + 1) * (sampleSize * 2 + 1));
             }
             
-            groupRegionsAdvanced(regions) {
+            groupRegions(regions) {
                 const groups = [];
                 const used = new Set();
                 
-                // Sort regions by confidence (highest first)
-                const sortedRegions = regions.sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
-                
-                sortedRegions.forEach(region => {
+                regions.forEach(region => {
                     if (used.has(`${region.x},${region.y}`)) return;
                     
                     const group = [region];
                     used.add(`${region.x},${region.y}`);
                     
-                    // Find nearby regions with adaptive distance based on confidence
-                    const baseDistance = 60;
-                    const confidenceMultiplier = region.confidence || 0.5;
-                    const searchDistance = baseDistance * (1 + confidenceMultiplier);
-                    
-                    sortedRegions.forEach(otherRegion => {
+                    // Find nearby regions
+                    regions.forEach(otherRegion => {
                         if (used.has(`${otherRegion.x},${otherRegion.y}`)) return;
                         
                         const distance = Math.sqrt(
@@ -396,27 +369,19 @@
                             Math.pow(region.y - otherRegion.y, 2)
                         );
                         
-                        if (distance < searchDistance) {
+                        if (distance < 40) { // Reasonable grouping distance
                             group.push(otherRegion);
                             used.add(`${otherRegion.x},${otherRegion.y}`);
                         }
                     });
                     
-                    // Require more regions for high-confidence groups
-                    const minRegions = region.confidence > 0.8 ? 5 : 3;
-                    if (group.length >= minRegions) {
+                    if (group.length > 2) { // Minimum regions for a face
                         const bounds = this.getBounds(group);
-                        bounds.confidence = this.calculateGroupConfidence(group);
                         groups.push(bounds);
                     }
                 });
                 
                 return groups;
-            }
-            
-            calculateGroupConfidence(group) {
-                const totalConfidence = group.reduce((sum, region) => sum + (region.confidence || 0), 0);
-                return totalConfidence / group.length;
             }
             
             getBounds(regions) {
@@ -434,64 +399,50 @@
             }
             
             isValidFace(region, data, width, height) {
-                // Enhanced face validation
+                // Simple but effective face validation
                 const aspectRatio = region.width / region.height;
-                if (aspectRatio < 0.4 || aspectRatio > 2.5) return false;
+                if (aspectRatio < 0.5 || aspectRatio > 2.0) return false; // Face-like proportions
                 
                 // Minimum size requirements
-                if (region.width < 30 || region.height < 30) return false;
+                if (region.width < 25 || region.height < 25) return false;
                 
-                // Enhanced skin tone analysis
+                // Check for skin tone presence
                 let skinPixels = 0;
                 let totalPixels = 0;
-                let highConfidencePixels = 0;
                 
-                for (let y = region.y; y < region.y + region.height; y += 6) {
-                    for (let x = region.x; x < region.x + region.width; x += 6) {
+                for (let y = region.y; y < region.y + region.height; y += 8) {
+                    for (let x = region.x; x < region.x + region.width; x += 8) {
                         if (x >= 0 && x < width && y >= 0 && y < height) {
                             totalPixels++;
                             if (this.isSkinTone(data, x, y, width)) {
                                 skinPixels++;
-                                const confidence = this.getSkinConfidence(data, x, y, width);
-                                if (confidence > 0.6) {
-                                    highConfidencePixels++;
-                                }
                             }
                         }
                     }
                 }
                 
-                const skinPercentage = skinPixels / totalPixels;
-                const highConfidencePercentage = highConfidencePixels / totalPixels;
-                
-                // Require both skin tone presence and high confidence areas
-                return totalPixels > 0 && 
-                       skinPercentage > 0.2 && 
-                       highConfidencePercentage > 0.1;
+                // Require at least 15% skin tone
+                return totalPixels > 0 && (skinPixels / totalPixels) > 0.15;
             }
             
-            calculateHeadSize(region, data, width, height) {
-                // Calculate the full head size based on face region
+            calculateHeadSize(region) {
+                // Calculate head size based on face region
                 const faceWidth = region.width;
                 const faceHeight = region.height;
                 
-                // Head is typically 1.3-1.5 times the face size
-                const headWidth = Math.round(faceWidth * 1.4);
-                const headHeight = Math.round(faceHeight * 1.4);
+                // Make head box bigger to encompass the full head
+                const headWidth = Math.round(faceWidth * 1.5);  // 1.5x wider
+                const headHeight = Math.round(faceHeight * 1.6); // 1.6x taller (for hair)
                 
-                // Center the head around the face
-                const headX = Math.max(0, region.x - Math.round((headWidth - faceWidth) / 2));
-                const headY = Math.max(0, region.y - Math.round((headHeight - faceHeight) / 3)); // More space above
-                
-                // Ensure the head box doesn't exceed canvas bounds
-                const finalWidth = Math.min(headWidth, width - headX);
-                const finalHeight = Math.min(headHeight, height - headY);
+                // Center the head around the face, with more space above
+                const headX = region.x - Math.round((headWidth - faceWidth) / 2);
+                const headY = region.y - Math.round((headHeight - faceHeight) / 3);
                 
                 return {
                     x: headX,
                     y: headY,
-                    width: finalWidth,
-                    height: finalHeight
+                    width: headWidth,
+                    height: headHeight
                 };
             }
         }
