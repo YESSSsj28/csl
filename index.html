@@ -1,243 +1,358 @@
+<!-- Complete face detection website - UI, styling, and face detection logic all in one file -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vocab Study — Flashcards & Quiz</title>
-<style>
-  :root{
-    --bg:#071021; --card:#0b1220; --muted:#9aa4b2; --accent:#6ee7b7; --good:#1f7a3a; --bad:#7a1f1f;
-  }
-  *{box-sizing:border-box;margin:0;padding:0;}
-  html,body{height:100%;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:#e6eef6;overflow:hidden;}
-  body{display:flex;justify-content:center;align-items:center;}
-  .app{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;}
-  button{background:var(--card);border:none;color:inherit;padding:10px 16px;border-radius:12px;cursor:pointer;transition:0.2s;}
-  button:hover{background:rgba(30,40,60,0.6);}
-  .centered{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
-  h1{color:var(--accent);margin-bottom:8px;}
-  .mode-select{display:flex;gap:16px;}
-  .full-screen{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-  .card{width:400px;height:250px;background:var(--card);border-radius:20px;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:28px;font-weight:700;perspective:1000px;position:relative;}
-  .card-inner{width:100%;height:100%;transition:transform 0.6s;transform-style:preserve-3d;position:absolute;top:0;left:0;}
-  .card.flipped .card-inner{transform:rotateY(180deg);}
-  .card-front,.card-back{width:100%;height:100%;position:absolute;backface-visibility:hidden;display:flex;align-items:center;justify-content:center;padding:16px;text-align:center;}
-  .card-back{transform:rotateY(180deg);color:var(--accent);}
-  .controls{display:flex;gap:12px;margin-top:16px;}
-  .progress-container{width:80%;height:12px;background:rgba(255,255,255,0.1);border-radius:8px;margin-top:16px;}
-  .progress-fill{height:100%;background:var(--accent);width:0%;border-radius:8px;transition:0.3s;}
-  .quiz-options{display:flex;flex-direction:column;gap:12px;margin-top:16px;}
-  .quiz-btn{padding:10px 14px;border-radius:10px;background:var(--card);cursor:pointer;transition:0.2s;}
-  .quiz-btn.correct{background:var(--good);}
-  .quiz-btn.wrong{background:var(--bad);}
-  .fade-slide{transition:all 0.5s ease;}
-  .confetti{position:absolute;width:100%;height:100%;pointer-events:none;overflow:hidden;}
-  .confetti-piece{position:absolute;width:8px;height:8px;background:var(--accent);animation:fall 1s linear forwards;}
-  @keyframes fall{0%{transform:translateY(0) rotate(0deg);}100%{transform:translateY(100vh) rotate(360deg);}}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Detection App</title>
+    <style>
+        /* Styling for the face detection website */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 800px;
+            width: 90%;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .camera-container {
+            position: relative;
+            margin: 2rem 0;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            background: #000;
+        }
+
+        #video {
+            width: 100%;
+            max-width: 640px;
+            height: auto;
+            display: block;
+        }
+
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .controls {
+            margin: 2rem 0;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        #status {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+                margin: 1rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .btn {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+                margin: 5px;
+            }
+        }
+
+        /* Animation for face detection */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .face-detected {
+            animation: pulse 0.5s ease-in-out;
+        }
+    </style>
 </head>
 <body>
-<div class="app" id="app">
-  <div class="centered" id="modeSelectScreen">
-    <h1>Vocab Study</h1>
-    <div class="mode-select">
-      <button id="flashcardsBtn">Flashcards</button>
-      <button id="allWordsBtn">All Words</button>
-      <button id="quizBtn">Quiz Mode</button>
+    <div class="container">
+        <h1>Face Detection App</h1>
+        <p>Click the button below to start face detection</p>
+        
+        <div class="camera-container">
+            <video id="video" autoplay muted></video>
+            <canvas id="canvas"></canvas>
+        </div>
+        
+        <div class="controls">
+            <button id="startBtn" class="btn">Start Camera</button>
+            <button id="stopBtn" class="btn" disabled>Stop Camera</button>
+        </div>
+        
+        <div class="status">
+            <p id="status">Ready to start</p>
+        </div>
     </div>
-  </div>
 
-  <div class="full-screen" id="flashcardsScreen" style="display:none;">
-    <div class="card fade-slide" id="card">
-      <div class="card-inner">
-        <div class="card-front" id="cardFront">Word</div>
-        <div class="card-back" id="cardBack">Definition</div>
-      </div>
-    </div>
-    <div class="controls">
-      <button id="prevCard">◀ Prev</button>
-      <button id="flipCard">Flip</button>
-      <button id="nextCard">Next ▶</button>
-    </div>
-    <div class="progress-container">
-      <div class="progress-fill" id="flashcardProgress"></div>
-    </div>
-    <div class="controls">
-      <button id="restartFlashcards" style="display:none;">Do Again</button>
-      <button id="backToMode1">Back</button>
-    </div>
-  </div>
+    <script>
+        // Face detection logic and camera handling using MediaDevices API and basic face detection
+        class FaceDetector {
+            constructor() {
+                this.video = document.getElementById('video');
+                this.canvas = document.getElementById('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.startBtn = document.getElementById('startBtn');
+                this.stopBtn = document.getElementById('stopBtn');
+                this.status = document.getElementById('status');
+                this.stream = null;
+                this.isDetecting = false;
+                
+                this.initializeEventListeners();
+            }
+            
+            initializeEventListeners() {
+                this.startBtn.addEventListener('click', () => this.startCamera());
+                this.stopBtn.addEventListener('click', () => this.stopCamera());
+            }
+            
+            async startCamera() {
+                try {
+                    this.status.textContent = 'Starting camera...';
+                    this.stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { 
+                            width: 640, 
+                            height: 480,
+                            facingMode: 'user'
+                        } 
+                    });
+                    
+                    this.video.srcObject = this.stream;
+                    this.video.play();
+                    
+                    this.video.addEventListener('loadedmetadata', () => {
+                        this.canvas.width = this.video.videoWidth;
+                        this.canvas.height = this.video.videoHeight;
+                        this.startDetection();
+                    });
+                    
+                    this.startBtn.disabled = true;
+                    this.stopBtn.disabled = false;
+                    this.status.textContent = 'Camera started - detecting faces...';
+                    
+                } catch (error) {
+                    console.error('Error accessing camera:', error);
+                    this.status.textContent = 'Error: Could not access camera. Please allow camera permissions.';
+                }
+            }
+            
+            stopCamera() {
+                if (this.stream) {
+                    this.stream.getTracks().forEach(track => track.stop());
+                    this.stream = null;
+                }
+                
+                this.video.srcObject = null;
+                this.isDetecting = false;
+                
+                this.startBtn.disabled = false;
+                this.stopBtn.disabled = true;
+                this.status.textContent = 'Camera stopped';
+                
+                // Clear canvas
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            }
+            
+            startDetection() {
+                this.isDetecting = true;
+                this.detectFaces();
+            }
+            
+            detectFaces() {
+                if (!this.isDetecting) return;
+                
+                // Clear previous drawings
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw video frame to canvas
+                this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
+                
+                // Simple face detection simulation
+                // In a real implementation, you would use a face detection library like face-api.js
+                this.simulateFaceDetection();
+                
+                // Continue detection
+                requestAnimationFrame(() => this.detectFaces());
+            }
+            
+            simulateFaceDetection() {
+                // This is a simplified face detection simulation
+                // For a real implementation, you would use libraries like:
+                // - face-api.js
+                // - MediaPipe Face Detection
+                // - OpenCV.js
+                
+                const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+                const faces = this.detectFacesInImage(imageData);
+                
+                // Draw rectangles around detected faces
+                faces.forEach(face => {
+                    this.ctx.strokeStyle = '#00ff00';
+                    this.ctx.lineWidth = 3;
+                    this.ctx.strokeRect(face.x, face.y, face.width, face.height);
+                    
+                    // Add label
+                    this.ctx.fillStyle = '#00ff00';
+                    this.ctx.font = '16px Arial';
+                    this.ctx.fillText('Face Detected', face.x, face.y - 10);
+                });
+            }
+            
+            detectFacesInImage(imageData) {
+                // This is a very basic simulation of face detection
+                // In reality, you would use proper face detection algorithms
+                const faces = [];
+                
+                // Simulate face detection by looking for skin-tone pixels
+                // This is just for demonstration - real face detection is much more complex
+                const data = imageData.data;
+                const width = imageData.width;
+                const height = imageData.height;
+                
+                // Simple skin tone detection (very basic)
+                for (let y = 0; y < height - 100; y += 50) {
+                    for (let x = 0; x < width - 100; x += 50) {
+                        const index = (y * width + x) * 4;
+                        const r = data[index];
+                        const g = data[index + 1];
+                        const b = data[index + 2];
+                        
+                        // Basic skin tone detection
+                        if (r > 95 && g > 40 && b > 20 && 
+                            Math.max(r, g, b) - Math.min(r, g, b) > 15 &&
+                            Math.abs(r - g) > 15 && r > g && r > b) {
+                            
+                            // Check if this area looks like a face (very basic)
+                            if (this.isLikelyFace(x, y, data, width, height)) {
+                                faces.push({
+                                    x: x - 25,
+                                    y: y - 25,
+                                    width: 100,
+                                    height: 100
+                                });
+                            }
+                        }
+                    }
+                }
+                
+                return faces;
+            }
+            
+            isLikelyFace(x, y, data, width, height) {
+                // Very basic face-like shape detection
+                // In reality, this would be much more sophisticated
+                let faceScore = 0;
+                const sampleSize = 20;
+                
+                for (let dy = -sampleSize; dy < sampleSize; dy += 5) {
+                    for (let dx = -sampleSize; dx < sampleSize; dx += 5) {
+                        const checkX = x + dx;
+                        const checkY = y + dy;
+                        
+                        if (checkX >= 0 && checkX < width && checkY >= 0 && checkY < height) {
+                            const index = (checkY * width + checkX) * 4;
+                            const r = data[index];
+                            const g = data[index + 1];
+                            const b = data[index + 2];
+                            
+                            // Check for skin-like colors in a face-like pattern
+                            if (r > 80 && g > 30 && b > 10) {
+                                faceScore++;
+                            }
+                        }
+                    }
+                }
+                
+                return faceScore > 10; // Threshold for face detection
+            }
+        }
 
-  <div class="full-screen" id="allWordsScreen" style="display:none;overflow:auto;padding:24px;">
-    <button id="backToMode2">Back</button>
-    <table style="width:100%;border-collapse:collapse;margin-top:16px;">
-      <thead><tr><th style="text-align:left;padding:8px;border-bottom:1px solid #333">Word</th><th style="text-align:left;padding:8px;border-bottom:1px solid #333">Definition</th></tr></thead>
-      <tbody id="allWordsTable"></tbody>
-    </table>
-  </div>
-
-  <div class="full-screen" id="quizScreen" style="display:none;">
-    <div id="quizQuestion" style="font-size:24px;text-align:center;"></div>
-    <div class="quiz-options" id="quizOptions"></div>
-    <div class="progress-container">
-      <div class="progress-fill" id="quizProgress"></div>
-    </div>
-    <div class="controls">
-      <button id="backToMode3">Back</button>
-    </div>
-  </div>
-
-  <div class="confetti" id="confettiContainer"></div>
-</div>
-
-<script>
-const vocab = [
-  {word:"suspend", definition:"set aside or temporarily stop"},
-  {word:"adapt", definition:"change in response to a new set of conditions"},
-  {word:"convert", definition:"change the religious beliefs of"},
-  {word:"principals", definition:"most important"},
-  {word:"emphasis", definition:"special stress"},
-  {word:"impose", definition:"force on others"},
-  {word:"relied", definition:"depended on"},
-  {word:"export", definition:"to sell abroad"},
-  {word:"diversity", definition:"variety"},
-  {word:"import", definition:"to bring in from foreign markets"},
-  {word:"militia", definition:"a military force made up of ordinary citizens"},
-  {word:"mercantilism", definition:"economic theory to build wealth by controlling trade"},
-  {word:"subsistence farming", definition:"producing just enough to meet needs"},
-  {word:"epidemic", definition:"illness affecting many people"},
-  {word:"immigration", definition:"permanent movement of people to a new country"},
-  {word:"apprentice", definition:"works for another to learn a trade"},
-  {word:"alliance", definition:"agreement between two or more parties"},
-  {word:"civic virtue", definition:"actions supporting the community"},
-  {word:"triangular trade", definition:"trade route connecting three destinations"},
-  {word:"cash crop", definition:"crop grown to be sold for profit"},
-  {word:"neutral", definition:"not favoring either side"},
-  {word:"Iroquois Confederacy", definition:"a confederation of Native American nations"}
-];
-
-let currentIndex = 0;
-let knownSet = new Set();
-let flashcardsScreen = document.getElementById('flashcardsScreen');
-let allWordsScreen = document.getElementById('allWordsScreen');
-let quizScreen = document.getElementById('quizScreen');
-let modeSelectScreen = document.getElementById('modeSelectScreen');
-let card = document.getElementById('card');
-let cardFront = document.getElementById('cardFront');
-let cardBack = document.getElementById('cardBack');
-let flashProgress = document.getElementById('flashcardProgress');
-let restartBtn = document.getElementById('restartFlashcards');
-
-function shuffleArray(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
-
-function showCard(){
-  const item = vocab[currentIndex];
-  cardFront.textContent = item.word;
-  cardBack.textContent = item.definition;
-  card.classList.remove('flipped');
-  flashProgress.style.width = ((currentIndex+1)/vocab.length*100)+'%';
-}
-
-document.getElementById('flipCard').onclick = ()=>{card.classList.toggle('flipped');};
-document.getElementById('nextCard').onclick = ()=>{
-  currentIndex++;
-  if(currentIndex>=vocab.length){flashcardsScreen.querySelector('#restartFlashcards').style.display='inline-block';return;}
-  showCard();
-};
-document.getElementById('prevCard').onclick = ()=>{
-  if(currentIndex>0){currentIndex--;showCard();}
-};
-restartBtn.onclick = ()=>{
-  currentIndex=0;
-  showCard();
-  restartBtn.style.display='none';
-};
-
-document.getElementById('flashcardsBtn').onclick = ()=>{
-  modeSelectScreen.style.display='none';
-  flashcardsScreen.style.display='flex';
-  currentIndex=0; showCard();
-};
-document.getElementById('allWordsBtn').onclick = ()=>{
-  modeSelectScreen.style.display='none';
-  allWordsScreen.style.display='flex';
-  populateAllWords();
-};
-document.getElementById('backToMode1').onclick = ()=>{flashcardsScreen.style.display='none';modeSelectScreen.style.display='flex';};
-document.getElementById('backToMode2').onclick = ()=>{allWordsScreen.style.display='none';modeSelectScreen.style.display='flex';};
-document.getElementById('backToMode3').onclick = ()=>{quizScreen.style.display='none';modeSelectScreen.style.display='flex';};
-
-function populateAllWords(){
-  const tbody = document.getElementById('allWordsTable');
-  tbody.innerHTML='';
-  vocab.forEach(v=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML=`<td style="padding:6px;border-bottom:1px solid #333">${v.word}</td><td style="padding:6px;border-bottom:1px solid #333">${v.definition}</td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-// --- QUIZ MODE ---
-let quizState = null;
-let quizOptionsEl = document.getElementById('quizOptions');
-let quizQuestionEl = document.getElementById('quizQuestion');
-let quizProgressEl = document.getElementById('quizProgress');
-
-document.getElementById('quizBtn').onclick = ()=>{startQuiz();};
-
-function startQuiz(){
-  modeSelectScreen.style.display='none';
-  quizScreen.style.display='flex';
-  quizState = {pool:[...vocab], index:0, correct:0, wrong:[], shuffledPool:[]};
-  shuffleArray(quizState.pool);
-  renderQuizQuestion();
-}
-
-function renderQuizQuestion(){
-  quizOptionsEl.innerHTML='';
-  if(quizState.index>=quizState.pool.length){
-    quizQuestionEl.textContent = `Quiz Complete! Score: ${quizState.correct}/${quizState.pool.length}`;
-    if(quizState.wrong.length) alert('Words you missed:\n'+quizState.wrong.map(w=>w.word+' → '+w.definition).join('\n'));
-    quizProgressEl.style.width='100%';
-    return;
-  }
-  const item = quizState.pool[quizState.index];
-  let choices = [item.word];
-  const others = vocab.filter(v=>v.word!==item.word).map(v=>v.word);
-  shuffleArray(others);
-  for(let i=0;i<3 && i<others.length;i++) choices.push(others[i]);
-  shuffleArray(choices);
-  quizQuestionEl.textContent = item.definition;
-  choices.forEach(c=>{
-    const btn = document.createElement('button');
-    btn.className='quiz-btn';
-    btn.textContent=c;
-    btn.onclick = ()=>{
-      if(c===item.word){btn.classList.add('correct');quizState.correct++;} 
-      else{btn.classList.add('wrong');quizState.wrong.push(item);}
-      Array.from(quizOptionsEl.children).forEach(b=>b.disabled=true);
-      setTimeout(()=>{
-        quizState.index++;
-        renderQuizQuestion();
-      },600);
-    };
-    quizOptionsEl.appendChild(btn);
-  });
-  quizProgressEl.style.width=((quizState.index)/quizState.pool.length*100)+'%';
-}
-
-// --- Confetti Effect ---
-function confetti(){
-  const container = document.getElementById('confettiContainer');
-  for(let i=0;i<50;i++){
-    const piece=document.createElement('div');
-    piece.className='confetti-piece';
-    piece.style.left=Math.random()*100+'%';
-    piece.style.background=`hsl(${Math.random()*360},70%,60%)`;
-    container.appendChild(piece);
-    setTimeout(()=>piece.remove(),1000);
-  }
-}
-</script>
+        // Initialize the face detector when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new FaceDetector();
+        });
+    </script>
 </body>
 </html>
