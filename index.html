@@ -1,634 +1,826 @@
-<!-- Simple and accurate face detection website - UI, styling, and face detection logic all in one file -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Face Detection App</title>
-    <style>
-        /* Styling for the face detection website */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-        }
-
-        .container {
-            text-align: center;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 2rem;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            max-width: 800px;
-            width: 90%;
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        p {
-            font-size: 1.1rem;
-            margin-bottom: 2rem;
-            opacity: 0.9;
-        }
-
-        .camera-container {
-            position: relative;
-            margin: 2rem 0;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            background: #000;
-            width: 640px;
-            height: 480px;
-            margin: 2rem auto;
-        }
-
-        #video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-
-        #canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-        }
-
-        .controls {
-            margin: 2rem 0;
-        }
-
-        .btn {
-            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
-            border: none;
-            color: white;
-            padding: 12px 30px;
-            font-size: 1rem;
-            font-weight: 600;
-            border-radius: 25px;
-            cursor: pointer;
-            margin: 0 10px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .status {
-            margin-top: 1rem;
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        #status {
-            font-size: 1rem;
-            font-weight: 500;
-        }
-
-        /* Responsive design */
-        @media (max-width: 768px) {
-            .container {
-                padding: 1.5rem;
-                margin: 1rem;
-            }
-            
-            h1 {
-                font-size: 2rem;
-            }
-            
-            .btn {
-                padding: 10px 20px;
-                font-size: 0.9rem;
-                margin: 5px;
-            }
-
-            .camera-container {
-                width: 100%;
-                height: 300px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mihailo & Bryce Clicker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #1a1a1a; /* Start in night mode */
+      color: #ffffff; /* White text for night mode */
+      margin: 0;
+      padding: 0;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    body.night-mode {
+      background-color: #1a1a1a;
+      color: #ffffff;
+    }
+    .container {
+      margin-top: 50px;
+    }
+    h1 {
+      color: #ffffff; /* White text for night mode */
+    }
+    .night-mode h1 {
+      color: #ffffff;
+    }
+    #clicker-img {
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 5px solid #ffffff; /* White border for night mode */
+      margin: 20px 0;
+      transition: transform 0.1s;
+    }
+    .night-mode #clicker-img {
+      border-color: #ffffff;
+    }
+    #clicker-img:active {
+      transform: scale(0.95);
+    }
+    #clicker-count {
+      font-size: 24px;
+      font-weight: bold;
+    }
+    #currency-count {
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    .upgrades {
+      margin-top: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 5px;
+      cursor: pointer;
+      background-color: #555; /* Darker button for night mode */
+      color: #ffffff;
+      border: none;
+      border-radius: 5px;
+      transition: background-color 0.3s;
+    }
+    .night-mode button {
+      background-color: #555;
+    }
+    button:disabled {
+      background-color: #888;
+      cursor: not-allowed;
+    }
+    .upgrade-info {
+      font-size: 14px;
+      color: #bbb; /* Light gray for night mode */
+    }
+    .night-mode .upgrade-info {
+      color: #bbb;
+    }
+    .floating-text {
+      position: absolute;
+      font-size: 20px;
+      font-weight: bold;
+      color: #ffffff; /* White text for night mode */
+      animation: floatDown 1s ease-out;
+    }
+    .night-mode .floating-text {
+      color: #ffffff;
+    }
+    @keyframes floatDown {
+      0% { top: 0; opacity: 1; }
+      100% { top: 100%; opacity: 0; }
+    }
+    #mode-toggle {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+    }
+    .error-message {
+      color: red;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    #password-input {
+      position: fixed;
+      top: 90px;
+      right: 10px;
+      width: 100px;
+      padding: 5px;
+      font-size: 12px;
+    }
+    #free-coins-text {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      color: white;
+      font-size: 14px;
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 5px;
+      border-radius: 5px;
+    }
+    #update-text {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 32px;
+      font-weight: bold;
+      color: red;
+      background-color: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      border-radius: 10px;
+      z-index: 1000;
+      animation: fadeOut 5s forwards;
+    }
+    @keyframes fadeOut {
+      0% { opacity: 1; }
+      100% { opacity: 0; display: none; }
+    }
+    #website-link {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      color: white;
+      font-size: 14px;
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #username-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(0, 0, 0, 0.9);
+      padding: 20px;
+      border-radius: 10px;
+      z-index: 10000;
+      text-align: center;
+    }
+    #username-modal input {
+      padding: 10px;
+      font-size: 16px;
+      margin-top: 10px;
+      border-radius: 5px;
+      border: none;
+    }
+    #username-modal button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-top: 10px;
+      background-color: #00aaff;
+      color: black;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #username-modal button:hover {
+      background-color: #0088cc;
+    }
+    #username-display {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      color: white;
+      font-size: 14px;
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 5px;
+      border-radius: 5px;
+    }
+    /* Leaderboard styles */
+    #leaderboard {
+      position: fixed;
+      top: 150px; /* Adjusted to avoid overlapping with other elements */
+      right: 20px;
+      background-color: rgba(0, 0, 0, 0.8);
+      padding: 15px;
+      border-radius: 10px;
+      color: white;
+      width: 250px;
+      max-height: calc(100vh - 200px); /* Prevent overflow */
+      overflow-y: auto;
+      border: 2px solid #ffffff;
+    }
+    #leaderboard h3 {
+      margin-top: 0;
+      text-align: center;
+      color: #00aaff;
+    }
+    .leaderboard-entry {
+      display: flex;
+      justify-content: space-between;
+      margin: 5px 0;
+      padding: 5px;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 5px;
+    }
+    .leaderboard-rank {
+      color: #00aaff;
+      font-weight: bold;
+    }
+    /* Pencil icon styles */
+    #username-edit {
+      cursor: pointer;
+      margin-left: 5px;
+      font-size: 14px;
+      color: #00aaff;
+    }
+    #username-edit.disabled {
+      color: #666;
+      cursor: not-allowed;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Face Detection App</h1>
-        <p>Click the button below to start face detection</p>
-        
-        <div class="camera-container">
-            <video id="video" autoplay muted playsinline></video>
-            <canvas id="canvas"></canvas>
-        </div>
-        
-        <div class="controls">
-            <button id="startBtn" class="btn">Start Camera</button>
-            <button id="stopBtn" class="btn" disabled>Stop Camera</button>
-        </div>
-        
-        <div class="status">
-            <p id="status">Ready to start</p>
-        </div>
+  <!-- Username Modal -->
+  <div id="username-modal">
+    <h2>Enter Your Username</h2>
+    <input type="text" id="username-input" placeholder="Username" maxlength="20">
+    <button id="username-submit">Submit</button>
+    <p id="username-error" style="color: red; margin-top: 10px;"></p>
+  </div>
+
+  <!-- Username Display -->
+  <div id="username-display"></div>
+
+  <!-- Leaderboard -->
+  <div id="leaderboard">
+    <h3>Leaderboard</h3>
+    <div id="leaderboard-entries">Loading...</div>
+  </div>
+
+  <!-- Rest of the HTML remains unchanged -->
+  <div id="update-text">I know there might be bugs with the new updates like the leaderboard and the space bar working as a clicker also make sure to refreah every 10 minutes to see a new update. -Yug</div>
+  <div id="website-link" onclick="window.location.href='https://clickerfromyug.netlify.app'">Go to https://clickerfromyug.netlify.app</div>
+  <div class="container">
+    <h1 id="game-title">Mihailo Clicker</h1>
+    <p id="clicker-count">Mihailos: 0</p>
+    <p id="currency-count">Diamonds: 0</p>
+    <img id="clicker-img" src="https://github.com/YESSSsj28/yug-proxy/blob/main/Mihailo_Konjevic_0bb83a942afa46b5b1c773e59a1ac7fd.jpg?raw=true" alt="Clicker Face">
+    <div class="upgrades">
+      <button id="upgrade1-btn" disabled>Buy Farm (Cost: 10 Mihailos, 1 Diamonds)</button>
+      <p class="upgrade-info" id="upgrade1-info">Generates 1 per second and 1 extra per click.</p>
+      <button id="upgrade2-btn" disabled>Buy Factory (Cost: 100 Mihailos, 2 Diamonds)</button>
+      <p class="upgrade-info" id="upgrade2-info">Generates 5 per second and 2 extra per click.</p>
+      <button id="upgrade3-btn" disabled>Buy Mine (Cost: 500 Mihailos, 3 Diamonds)</button>
+      <p class="upgrade-info" id="upgrade3-info">Generates 10 per second and 5 extra per click.</p>
+      <button id="upgrade4-btn" disabled>Buy Temple (Cost: 1000 Mihailos, 4 Diamonds)</button>
+      <p class="upgrade-info" id="upgrade4-info">Generates 20 per second and 10 extra per click.</p>
+      <button id="upgrade5-btn" disabled>Buy Kingdom (Cost: 5000 Mihailos, 5 Diamonds)</button>
+      <p class="upgrade-info" id="upgrade5-info">Generates 50 per second and 25 extra per click.</p>
+      <button id="upgrade6-btn" disabled>Buy Empire (Cost: 10000 Mihailos, 6 Diamonds)</button>
+      <p class="upgrade-info" id="upgrade6-info">Generates 100 per second and 50 extra per click.</p>
+      <button id="upgrade7-btn" disabled>Buy MegaCorp (Cost: 50000 Mihailos, 7 Diamonds)</button>
+      <p class="upgrade-info" id="upgrade7-info">Generates 200 per second and 100 extra per click.</p>
+      <button id="upgrade8-btn" disabled>Buy Galaxy (Cost: 100000 Mihailos, 8 Diamonds)</button>
+      <p class="upgrade-info" id="upgrade8-info">Generates 500 per second and 250 extra per click.</p>
+      <button id="upgrade9-btn" disabled>Buy Universe (Cost: 500000 Mihailos, 9 Diamonds)</button>
+      <p class="upgrade-info" id="upgrade9-info">Generates 1000 per second and 500 extra per click.</p>
+      <button id="bryce-clicker-btn" disabled>Unlock Bryce Clicker (Cost: 1000000 Mihailos)</button>
+      <p class="upgrade-info" id="bryce-clicker-info">Unlocks Bryce Clicker mode. This is a rebirth.</p>
+      <button id="mason-clicker-btn" disabled style="display: none;">Unlock Mason Clicker (Cost: 5000000 Bryces)</button>
+      <p class="upgrade-info" id="mason-clicker-info" style="display: none;">Unlocks Mason Clicker mode. This is a rebirth.</p>
+      <button id="isaac-clicker-btn" disabled style="display: none;">Unlock Isaac Clicker (Cost: 10000000 Masons)</button>
+      <p class="upgrade-info" id="isaac-clicker-info" style="display: none;">Unlocks Isaac Clicker mode. This is a rebirth.</p>
+      <button id="gunner-clicker-btn" disabled style="display: none;">Unlock Gunner Clicker (Cost: 20000000 Isaacs)</button>
+      <p class="upgrade-info" id="gunner-clicker-info" style="display: none;">Unlocks Gunner Clicker mode. This is a rebirth.</p>
     </div>
+    <p id="error-message" class="error-message"></p>
+  </div>
 
-    <!-- OpenCV.js for professional face detection -->
-    <script async src="https://docs.opencv.org/4.8.0/opencv.js" onload="onOpenCvReady();" type="text/javascript"></script>
-    
-    <script>
-        // Professional face detection using OpenCV.js
-        class OpenCVFaceDetector {
-            constructor() {
-                this.video = document.getElementById('video');
-                this.canvas = document.getElementById('canvas');
-                this.ctx = this.canvas.getContext('2d');
-                this.startBtn = document.getElementById('startBtn');
-                this.stopBtn = document.getElementById('stopBtn');
-                this.status = document.getElementById('status');
-                this.stream = null;
-                this.isDetecting = false;
-                this.detectionInterval = null;
-                this.faceCascade = null;
-                this.opencvReady = false;
-                
-                this.initializeEventListeners();
-            }
-            
-            initializeEventListeners() {
-                this.startBtn.addEventListener('click', () => this.startCamera());
-                this.stopBtn.addEventListener('click', () => this.stopCamera());
-            }
-            
-            async startCamera() {
-                if (!this.opencvReady) {
-                    this.status.textContent = 'Please wait for OpenCV to load...';
-                    return;
-                }
-                
-                try {
-                    this.status.textContent = 'Starting camera...';
-                    
-                    this.stream = await navigator.mediaDevices.getUserMedia({ 
-                        video: { 
-                            width: 640, 
-                            height: 480,
-                            facingMode: 'user'
-                        } 
-                    });
-                    
-                    this.video.srcObject = this.stream;
-                    this.video.play();
-                    
-                    this.video.addEventListener('loadedmetadata', () => {
-                        this.canvas.width = this.video.videoWidth;
-                        this.canvas.height = this.video.videoHeight;
-                        this.startDetection();
-                    }, { once: true });
-                    
-                    this.startBtn.disabled = true;
-                    this.stopBtn.disabled = false;
-                    this.status.textContent = 'Camera started - OpenCV face detection active!';
-                    
-                } catch (error) {
-                    console.error('Error accessing camera:', error);
-                    this.status.textContent = 'Error: Could not access camera. Please allow camera permissions.';
-                }
-            }
-            
-            stopCamera() {
-                if (this.stream) {
-                    this.stream.getTracks().forEach(track => track.stop());
-                    this.stream = null;
-                }
-                
-                if (this.detectionInterval) {
-                    clearInterval(this.detectionInterval);
-                    this.detectionInterval = null;
-                }
-                
-                this.video.srcObject = null;
-                this.isDetecting = false;
-                
-                this.startBtn.disabled = false;
-                this.stopBtn.disabled = true;
-                this.status.textContent = 'Camera stopped';
-                
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-            }
-            
-            startDetection() {
-                this.isDetecting = true;
-                
-                this.detectionInterval = setInterval(() => {
-                    if (this.isDetecting) {
-                        this.detectFaces();
-                    }
-                }, 150); // Check every 150ms for better performance
-            }
-            
-            detectFaces() {
-                // Clear previous drawings
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                
-                // Draw video frame
-                this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
-                
-                // Use OpenCV for professional face detection
-                this.detectFacesWithOpenCV();
-            }
-            
-            detectFacesWithOpenCV() {
-                try {
-                    // Use OpenCV for image processing but with improved basic detection
-                    const src = cv.imread(this.video);
-                    const gray = new cv.Mat();
-                    
-                    // Convert to grayscale for better processing
-                    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
-                    
-                    // Get image data for enhanced detection
-                    const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-                    const faces = this.enhancedFaceDetection(imageData);
-                    
-                    // Draw rectangles around detected faces
-                    faces.forEach((face, index) => {
-                        this.ctx.strokeStyle = '#00ff00';
-                        this.ctx.lineWidth = 3;
-                        this.ctx.strokeRect(face.x, face.y, face.width, face.height);
-                        
-                        // Add label
-                        this.ctx.fillStyle = '#00ff00';
-                        this.ctx.font = '16px Arial';
-                        this.ctx.fillText(`Face ${index + 1} (OpenCV Enhanced)`, face.x, face.y - 10);
-                    });
-                    
-                    if (faces.length > 0) {
-                        this.status.textContent = `Detected ${faces.length} face(s) with OpenCV Enhanced`;
-                    } else {
-                        this.status.textContent = 'No faces detected';
-                    }
-                    
-                    // Clean up
-                    src.delete();
-                    gray.delete();
-                    
-                } catch (error) {
-                    console.error('OpenCV processing error:', error);
-                    this.status.textContent = 'Using enhanced fallback detection';
-                    this.fallbackDetection();
-                }
-            }
-            
-            enhancedFaceDetection(imageData) {
-                const faces = [];
-                const data = imageData.data;
-                const width = imageData.width;
-                const height = imageData.height;
-                
-                // Enhanced face detection with better algorithms
-                const skinRegions = [];
-                
-                // Focus on upper 70% of image where faces are
-                const faceSearchHeight = Math.floor(height * 0.7);
-                
-                // Scan for skin-tone pixels with better detection
-                for (let y = 0; y < faceSearchHeight - 80; y += 10) {
-                    for (let x = 0; x < width - 80; x += 10) {
-                        if (this.isEnhancedSkinTone(data, x, y, width)) {
-                            skinRegions.push({x, y, confidence: this.calculateSkinConfidence(data, x, y, width)});
-                        }
-                    }
-                }
-                
-                // Group nearby skin regions with improved algorithm
-                const faceRegions = this.enhancedGroupRegions(skinRegions);
-                
-                // Create face rectangles with better validation
-                faceRegions.forEach(region => {
-                    if (this.isValidFaceEnhanced(region, data, width, height)) {
-                        faces.push({
-                            x: region.x - 30,
-                            y: region.y - 30,
-                            width: region.width + 60,
-                            height: region.height + 60
-                        });
-                    }
-                });
-                
-                return faces;
-            }
-            
-            isEnhancedSkinTone(data, x, y, width) {
-                const index = (y * width + x) * 4;
-                const r = data[index];
-                const g = data[index + 1];
-                const b = data[index + 2];
-                
-                // Enhanced skin tone detection with better criteria
-                const brightness = (r + g + b) / 3;
-                const colorDifference = Math.max(r, g, b) - Math.min(r, g, b);
-                const redGreenDiff = Math.abs(r - g);
-                
-                return (
-                    r > 60 && g > 25 && b > 8 &&  // Basic color thresholds
-                    r > g && r > b &&  // Red dominance
-                    brightness > 90 &&  // Minimum brightness
-                    brightness < 650 &&  // Maximum brightness
-                    colorDifference > 8 &&  // Color variation
-                    redGreenDiff > 8 &&  // Red-green difference
-                    // Additional skin tone checks
-                    (r / (g + 1)) > 1.1 &&  // Red vs green ratio
-                    (r / (b + 1)) > 1.2    // Red vs blue ratio
-                );
-            }
-            
-            calculateSkinConfidence(data, x, y, width) {
-                let confidence = 0;
-                const sampleSize = 4;
-                let totalSamples = 0;
-                
-                // Check surrounding pixels for skin tone consistency
-                for (let dy = -sampleSize; dy <= sampleSize; dy += 2) {
-                    for (let dx = -sampleSize; dx <= sampleSize; dx += 2) {
-                        const checkX = x + dx;
-                        const checkY = y + dy;
-                        if (checkX >= 0 && checkX < width && checkY >= 0 && checkY < width) {
-                            totalSamples++;
-                            if (this.isEnhancedSkinTone(data, checkX, checkY, width)) {
-                                confidence += 1;
-                            }
-                        }
-                    }
-                }
-                
-                return totalSamples > 0 ? confidence / totalSamples : 0;
-            }
-            
-            enhancedGroupRegions(regions) {
-                const groups = [];
-                const used = new Set();
-                
-                // Sort regions by confidence (highest first)
-                const sortedRegions = regions.sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
-                
-                sortedRegions.forEach(region => {
-                    if (used.has(`${region.x},${region.y}`)) return;
-                    
-                    const group = [region];
-                    used.add(`${region.x},${region.y}`);
-                    
-                    // Find nearby regions with adaptive distance
-                    const searchDistance = 50 + (region.confidence * 30);
-                    
-                    sortedRegions.forEach(otherRegion => {
-                        if (used.has(`${otherRegion.x},${otherRegion.y}`)) return;
-                        
-                        const distance = Math.sqrt(
-                            Math.pow(region.x - otherRegion.x, 2) + 
-                            Math.pow(region.y - otherRegion.y, 2)
-                        );
-                        
-                        if (distance < searchDistance) {
-                            group.push(otherRegion);
-                            used.add(`${otherRegion.x},${otherRegion.y}`);
-                        }
-                    });
-                    
-                    // Require more regions for high-confidence groups
-                    const minRegions = region.confidence > 0.7 ? 6 : 8;
-                    if (group.length >= minRegions) {
-                        const bounds = this.getBounds(group);
-                        bounds.confidence = this.calculateGroupConfidence(group);
-                        groups.push(bounds);
-                    }
-                });
-                
-                // Sort by confidence and return top faces
-                groups.sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
-                return groups.slice(0, 3);
-            }
-            
-            calculateGroupConfidence(group) {
-                const totalConfidence = group.reduce((sum, region) => sum + (region.confidence || 0), 0);
-                return totalConfidence / group.length;
-            }
-            
-            isValidFaceEnhanced(region, data, width, height) {
-                // Enhanced face validation
-                const aspectRatio = region.width / region.height;
-                if (aspectRatio < 0.6 || aspectRatio > 1.8) return false;
-                
-                if (region.width < 50 || region.height < 50) return false;
-                if (region.y > height * 0.5) return false;
-                
-                let skinPixels = 0;
-                let totalPixels = 0;
-                let highConfidencePixels = 0;
-                
-                for (let y = region.y; y < region.y + region.height; y += 6) {
-                    for (let x = region.x; x < region.x + region.width; x += 6) {
-                        if (x >= 0 && x < width && y >= 0 && y < height) {
-                            totalPixels++;
-                            if (this.isEnhancedSkinTone(data, x, y, width)) {
-                                skinPixels++;
-                                const confidence = this.calculateSkinConfidence(data, x, y, width);
-                                if (confidence > 0.6) {
-                                    highConfidencePixels++;
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                const skinPercentage = skinPixels / totalPixels;
-                const highConfidencePercentage = highConfidencePixels / totalPixels;
-                
-                return totalPixels > 0 && 
-                       skinPercentage > 0.3 && 
-                       highConfidencePercentage > 0.1;
-            }
-            
-            fallbackDetection() {
-                // Fallback to basic detection if OpenCV fails
-                const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-                const faces = this.basicFaceDetection(imageData);
-                
-                faces.forEach((face, index) => {
-                    this.ctx.strokeStyle = '#ffff00';
-                    this.ctx.lineWidth = 3;
-                    this.ctx.strokeRect(face.x, face.y, face.width, face.height);
-                    this.ctx.fillStyle = '#ffff00';
-                    this.ctx.font = '16px Arial';
-                    this.ctx.fillText(`Face ${index + 1} (Fallback)`, face.x, face.y - 10);
-                });
-            }
-            
-            basicFaceDetection(imageData) {
-                const faces = [];
-                const data = imageData.data;
-                const width = imageData.width;
-                const height = imageData.height;
-                
-                // Simple face detection fallback
-                const skinRegions = [];
-                
-                for (let y = 0; y < height - 80; y += 15) {
-                    for (let x = 0; x < width - 80; x += 15) {
-                        if (this.isSkinTone(data, x, y, width)) {
-                            skinRegions.push({x, y});
-                        }
-                    }
-                }
-                
-                const faceRegions = this.groupRegions(skinRegions);
-                
-                faceRegions.forEach(region => {
-                    if (this.isValidFace(region, data, width, height)) {
-                        faces.push({
-                            x: region.x - 20,
-                            y: region.y - 20,
-                            width: region.width + 40,
-                            height: region.height + 40
-                        });
-                    }
-                });
-                
-                return faces;
-            }
-            
-            isSkinTone(data, x, y, width) {
-                const index = (y * width + x) * 4;
-                const r = data[index];
-                const g = data[index + 1];
-                const b = data[index + 2];
-                
-                return (
-                    r > 50 && g > 20 && b > 5 &&
-                    r > g && r > b &&
-                    (r + g + b) > 80 &&
-                    (r + g + b) < 700 &&
-                    Math.abs(r - g) > 5 &&
-                    Math.max(r, g, b) - Math.min(r, g, b) > 5
-                );
-            }
-            
-            groupRegions(regions) {
-                const groups = [];
-                const used = new Set();
-                
-                regions.forEach(region => {
-                    if (used.has(`${region.x},${region.y}`)) return;
-                    
-                    const group = [region];
-                    used.add(`${region.x},${region.y}`);
-                    
-                    regions.forEach(otherRegion => {
-                        if (used.has(`${otherRegion.x},${otherRegion.y}`)) return;
-                        
-                        const distance = Math.sqrt(
-                            Math.pow(region.x - otherRegion.x, 2) + 
-                            Math.pow(region.y - otherRegion.y, 2)
-                        );
-                        
-                        if (distance < 40) {
-                            group.push(otherRegion);
-                            used.add(`${otherRegion.x},${otherRegion.y}`);
-                        }
-                    });
-                    
-                    if (group.length > 3) {
-                        const bounds = this.getBounds(group);
-                        groups.push(bounds);
-                    }
-                });
-                
-                return groups;
-            }
-            
-            getBounds(regions) {
-                let minX = Math.min(...regions.map(r => r.x));
-                let maxX = Math.max(...regions.map(r => r.x));
-                let minY = Math.min(...regions.map(r => r.y));
-                let maxY = Math.max(...regions.map(r => r.y));
-                
-                return {
-                    x: minX,
-                    y: minY,
-                    width: maxX - minX,
-                    height: maxY - minY
-                };
-            }
-            
-            isValidFace(region, data, width, height) {
-                const aspectRatio = region.width / region.height;
-                if (aspectRatio < 0.5 || aspectRatio > 2.0) return false;
-                if (region.width < 30 || region.height < 30) return false;
-                if (region.y > height * 0.5) return false;
-                
-                let skinPixels = 0;
-                let totalPixels = 0;
-                
-                for (let y = region.y; y < region.y + region.height; y += 8) {
-                    for (let x = region.x; x < region.x + region.width; x += 8) {
-                        if (x >= 0 && x < width && y >= 0 && y < height) {
-                            totalPixels++;
-                            if (this.isSkinTone(data, x, y, width)) {
-                                skinPixels++;
-                            }
-                        }
-                    }
-                }
-                
-                return totalPixels > 0 && (skinPixels / totalPixels) > 0.2;
-            }
-        }
-        
-        // OpenCV ready callback
-        function onOpenCvReady() {
-            console.log('OpenCV.js is ready');
-            window.opencvReady = true;
-            if (window.faceDetector) {
-                window.faceDetector.opencvReady = true;
-                window.faceDetector.status.textContent = 'OpenCV loaded! Ready to start.';
-            }
-        }
+  <button id="mode-toggle">Toggle Night Mode</button>
+  <input id="password-input" type="text" placeholder="Enter Password">
+  <div id="free-coins-text">See Yug for 10k free coins</div>
 
-        // Initialize the face detector when the page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            window.faceDetector = new OpenCVFaceDetector();
+  <script>
+    // Game variables
+    let clickerCount = 0;
+    let currencyCount = 0; // New currency (Diamonds, Pasta, Chicken, Taco)
+    let upgrades = Array(9).fill(0); // Tracks the number of each upgrade
+    let isBryceMode = false;
+    let isMasonMode = false;
+    let isIsaacMode = false;
+    let isGunnerMode = false;
+    let mihailoPasswordUsed = false;
+    let brycePasswordUsed = false;
+    let clickCounter = 0; // Track total clicks for currency spawn
+    let username = ""; // Track the current username
+    let usernameChanged = false; // Track if username has been changed
+
+    // Base upgrade costs
+    let upgradeCosts = [10, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000];
+    let upgradeCurrencyCosts = [1, 2, 3, 4, 5, 6, 7, 8, 9]; // New currency costs
+    let bryceClickerCost = 1000000;
+    let masonClickerCost = 5000000;
+    let isaacClickerCost = 10000000;
+    let gunnerClickerCost = 20000000;
+
+    // Upgrade cost multipliers
+    const costMultiplier = 1.5; // Price increases by 1.5x after each purchase
+
+    // Upgrade effects
+    const upgradePerSecond = [1, 5, 10, 20, 50, 100, 200, 500, 1000];
+    const upgradePerClick = [1, 2, 5, 10, 25, 50, 100, 250, 500];
+
+    // DOM elements
+    const clickerCountElement = document.getElementById("clicker-count");
+    const currencyCountElement = document.getElementById("currency-count");
+    const clickerImgElement = document.getElementById("clicker-img");
+    const upgradeBtns = Array.from({ length: 9 }, (_, i) => document.getElementById(`upgrade${i + 1}-btn`));
+    const upgradeInfos = Array.from({ length: 9 }, (_, i) => document.getElementById(`upgrade${i + 1}-info`));
+    const bryceClickerBtn = document.getElementById("bryce-clicker-btn");
+    const masonClickerBtn = document.getElementById("mason-clicker-btn");
+    const isaacClickerBtn = document.getElementById("isaac-clicker-btn");
+    const gunnerClickerBtn = document.getElementById("gunner-clicker-btn");
+    const masonClickerInfo = document.getElementById("mason-clicker-info");
+    const isaacClickerInfo = document.getElementById("isaac-clicker-info");
+    const gunnerClickerInfo = document.getElementById("gunner-clicker-info");
+    const modeToggle = document.getElementById("mode-toggle");
+    const passwordInput = document.getElementById("password-input");
+    const errorMessage = document.getElementById("error-message");
+    const gameTitle = document.getElementById("game-title");
+    const updateText = document.getElementById("update-text");
+    const usernameModal = document.getElementById("username-modal");
+    const usernameInput = document.getElementById("username-input");
+    const usernameSubmit = document.getElementById("username-submit");
+    const usernameError = document.getElementById("username-error");
+    const usernameDisplay = document.getElementById("username-display");
+    const leaderboardEntries = document.getElementById("leaderboard-entries");
+
+    // Clicker mode (Mihailo, Bryce, Mason, Isaac, or Gunner)
+    const mihailoFace = "https://github.com/YESSSsj28/yug-proxy/blob/main/Mihailo_Konjevic_0bb83a942afa46b5b1c773e59a1ac7fd.jpg?raw=true";
+    const bryceFace = "https://github.com/YESSSsj28/yug-proxy/blob/main/IMG_20250307_094354.jpg?raw=true";
+    const masonFace = "https://github.com/YESSSsj28/yug-proxy/blob/main/Screenshot%202025-03-07%2012.43.41%20PM.png?raw=true";
+    const isaacFace = "https://github.com/YESSSsj28/yug-proxy/blob/main/Screenshot%202025-03-08%202.57.21%20PM.png?raw=true";
+    const gunnerFace = "https://github.com/YESSSsj28/yug-proxy/blob/main/Screenshot%202025-03-08%202.49.39%20PM.png?raw=true";
+
+    // Upgrade names for each mode
+    const upgradeNames = {
+      mihailo: ["Farm", "Factory", "Mine", "Temple", "Kingdom", "Empire", "MegaCorp", "Galaxy", "Universe"],
+      bryce: ["Bryce Farm", "Bryce Factory", "Bryce Mine", "Bryce Temple", "Bryce Kingdom", "Bryce Empire", "Bryce MegaCorp", "Bryce Galaxy", "Bryce Universe"],
+      mason: ["Mason Farm", "Mason Factory", "Mason Mine", "Mason Temple", "Mason Kingdom", "Mason Empire", "Mason MegaCorp", "Mason Galaxy", "Mason Universe"],
+      isaac: ["Isaac Farm", "Isaac Factory", "Isaac Mine", "Isaac Temple", "Isaac Kingdom", "Isaac Empire", "Isaac MegaCorp", "Isaac Galaxy", "Isaac Universe"],
+      gunner: ["Gunner Farm", "Gunner Factory", "Gunner Mine", "Gunner Temple", "Gunner Kingdom", "Gunner Empire", "Gunner MegaCorp", "Gunner Galaxy", "Gunner Universe"]
+    };
+
+    // New currency names for each mode
+    const currencyNames = {
+      mihailo: "Diamonds",
+      bryce: "Pasta",
+      mason: "Chicken",
+      isaac: "Taco",
+      gunner: "Chicken"
+    };
+
+    // Click delay to prevent spam
+    let canClick = true;
+    const clickDelay = 100; // 100ms delay between clicks
+
+    // Save game state to localStorage
+    function saveGame() {
+      const gameState = {
+        clickerCount,
+        currencyCount,
+        upgrades,
+        isBryceMode,
+        isMasonMode,
+        isIsaacMode,
+        isGunnerMode,
+        mihailoPasswordUsed,
+        brycePasswordUsed,
+        upgradeCosts,
+        upgradeCurrencyCosts,
+        clickCounter,
+      };
+      localStorage.setItem(`clickerGameState_${username}`, JSON.stringify(gameState));
+    }
+
+    // Load game state from localStorage
+    function loadGame() {
+      const savedState = localStorage.getItem(`clickerGameState_${username}`);
+      if (savedState) {
+        const gameState = JSON.parse(savedState);
+        clickerCount = gameState.clickerCount || 0;
+        currencyCount = gameState.currencyCount || 0;
+        upgrades = gameState.upgrades || Array(9).fill(0);
+        isBryceMode = gameState.isBryceMode || false;
+        isMasonMode = gameState.isMasonMode || false;
+        isIsaacMode = gameState.isIsaacMode || false;
+        isGunnerMode = gameState.isGunnerMode || false;
+        mihailoPasswordUsed = gameState.mihailoPasswordUsed || false;
+        brycePasswordUsed = gameState.brycePasswordUsed || false;
+        upgradeCosts = gameState.upgradeCosts || [10, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000];
+        upgradeCurrencyCosts = gameState.upgradeCurrencyCosts || [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        clickCounter = gameState.clickCounter || 0;
+        updateClickerMode();
+        updateClickerCount();
+        updateUpgradeButtons();
+      }
+    }
+
+    // Update the clicker count display
+    function updateClickerCount() {
+      let clickerName = "Mihailos";
+      if (isBryceMode) clickerName = "Bryces";
+      if (isMasonMode) clickerName = "Masons";
+      if (isIsaacMode) clickerName = "Isaacs";
+      if (isGunnerMode) clickerName = "Gunners";
+      clickerCountElement.textContent = `${clickerName}: ${clickerCount}`;
+      currencyCountElement.textContent = `${currencyNames[getCurrentMode()]}: ${currencyCount}`;
+      checkUpgradeAvailability();
+      saveGame(); // Save game state after every update
+    }
+
+    // Get current mode
+    function getCurrentMode() {
+      if (isGunnerMode) return "gunner";
+      if (isIsaacMode) return "isaac";
+      if (isMasonMode) return "mason";
+      if (isBryceMode) return "bryce";
+      return "mihailo";
+    }
+
+    // Handle clicking the face
+    function clickFace() {
+      if (!canClick) return;
+      canClick = false;
+
+      let clickerPerClick = 1;
+      upgrades.forEach((count, i) => {
+        clickerPerClick += count * upgradePerClick[i];
+      });
+      clickerCount += clickerPerClick;
+      clickCounter++; // Increment click counter
+
+      // Spawn currency every 35 clicks
+      if (clickCounter % 35 === 0) {
+        currencyCount++;
+        showFloatingText(`+1 ${currencyNames[getCurrentMode()]}`);
+      }
+
+      updateClickerCount();
+      showFloatingText(`+${clickerPerClick}`);
+
+      setTimeout(() => {
+        canClick = true;
+      }, clickDelay);
+    }
+
+    // Show floating text animation
+    function showFloatingText(text) {
+      const floatingText = document.createElement("div");
+      floatingText.className = "floating-text";
+      floatingText.textContent = text;
+      floatingText.style.left = `${Math.random() * 80 + 10}%`;
+      document.body.appendChild(floatingText);
+      setTimeout(() => {
+        floatingText.remove();
+      }, 1000);
+    }
+
+    // Buy upgrades
+    function buyUpgrade(index) {
+      if (clickerCount >= upgradeCosts[index] && currencyCount >= upgradeCurrencyCosts[index]) {
+        clickerCount -= upgradeCosts[index];
+        currencyCount -= upgradeCurrencyCosts[index];
+        upgrades[index]++;
+        upgradeCosts[index] = Math.floor(upgradeCosts[index] * costMultiplier);
+        upgradeCurrencyCosts[index] = Math.floor(upgradeCurrencyCosts[index] * costMultiplier);
+        updateUpgradeButtons();
+        updateClickerCount();
+      }
+    }
+
+    // Update upgrade buttons and info
+    function updateUpgradeButtons() {
+      const mode = getCurrentMode();
+      upgradeBtns.forEach((btn, i) => {
+        btn.textContent = `Buy ${upgradeNames[mode][i]} (Cost: ${upgradeCosts[i]} ${mode === "mihailo" ? "Mihailos" : mode === "bryce" ? "Bryces" : mode === "mason" ? "Masons" : mode === "isaac" ? "Isaacs" : "Gunners"}, ${upgradeCurrencyCosts[i]} ${currencyNames[mode]})`;
+        btn.disabled = clickerCount < upgradeCosts[i] || currencyCount < upgradeCurrencyCosts[i];
+      });
+    }
+
+    // Reset game for Bryce, Mason, Isaac, or Gunner Clicker
+    function resetGame() {
+      clickerCount = 0;
+      currencyCount = 0;
+      upgrades = Array(9).fill(0);
+      upgradeCosts = [10, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000];
+      upgradeCurrencyCosts = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+      updateUpgradeButtons();
+      updateClickerCount();
+    }
+
+    // Update clicker mode (Mihailo, Bryce, Mason, Isaac, or Gunner)
+    function updateClickerMode() {
+      if (isGunnerMode) {
+        clickerImgElement.src = gunnerFace;
+        gameTitle.textContent = "Gunner Clicker";
+      } else if (isIsaacMode) {
+        clickerImgElement.src = isaacFace;
+        gameTitle.textContent = "Isaac Clicker";
+      } else if (isMasonMode) {
+        clickerImgElement.src = masonFace;
+        gameTitle.textContent = "Mason Clicker";
+      } else if (isBryceMode) {
+        clickerImgElement.src = bryceFace;
+        gameTitle.textContent = "Bryce Clicker";
+      } else {
+        clickerImgElement.src = mihailoFace;
+        gameTitle.textContent = "Mihailo Clicker";
+      }
+      updateUpgradeButtons();
+    }
+
+    // Check if upgrades are affordable
+    function checkUpgradeAvailability() {
+      upgradeBtns.forEach((btn, i) => {
+        btn.disabled = clickerCount < upgradeCosts[i] || currencyCount < upgradeCurrencyCosts[i];
+      });
+      bryceClickerBtn.disabled = clickerCount < bryceClickerCost || isBryceMode;
+      masonClickerBtn.disabled = clickerCount < masonClickerCost || !isBryceMode;
+      isaacClickerBtn.disabled = clickerCount < isaacClickerCost || !isMasonMode;
+      gunnerClickerBtn.disabled = clickerCount < gunnerClickerCost || !isIsaacMode;
+    }
+
+    // Generate clickers per second
+    function generatePerSecond() {
+      let clickerPerSecond = 0;
+      upgrades.forEach((count, i) => {
+        clickerPerSecond += count * upgradePerSecond[i];
+      });
+      clickerCount += clickerPerSecond;
+      updateClickerCount();
+    }
+
+    // Password system
+    passwordInput.addEventListener("keyup", (e) => {
+      if (e.key === "Enter") {
+        if (passwordInput.value === "10k") {
+          if (isBryceMode) {
+            if (!brycePasswordUsed) {
+              clickerCount += 10000;
+              brycePasswordUsed = true;
+              alert("You received 10,000 Bryces!");
+            } else {
+              alert("You've already used the password in Bryce Clicker.");
+            }
+          } else if (isMasonMode) {
+            if (!mihailoPasswordUsed) {
+              clickerCount += 10000;
+              mihailoPasswordUsed = true;
+              alert("You received 10,000 Masons!");
+            } else {
+              alert("You've already used the password in Mason Clicker.");
+            }
+          } else if (isIsaacMode) {
+            if (!mihailoPasswordUsed) {
+              clickerCount += 10000;
+              mihailoPasswordUsed = true;
+              alert("You received 10,000 Isaacs!");
+            } else {
+              alert("You've already used the password in Isaac Clicker.");
+            }
+          } else if (isGunnerMode) {
+            if (!mihailoPasswordUsed) {
+              clickerCount += 10000;
+              mihailoPasswordUsed = true;
+              alert("You received 10,000 Gunners!");
+            } else {
+              alert("You've already used the password in Gunner Clicker.");
+            }
+          } else {
+            if (!mihailoPasswordUsed) {
+              clickerCount += 10000;
+              mihailoPasswordUsed = true;
+              alert("You received 10,000 Mihailos!");
+            } else {
+              alert("You've already used the password in Mihailo Clicker.");
+            }
+          }
+          updateClickerCount();
+          passwordInput.value = "";
+        } else if (passwordInput.value === "HIHIHI897") {
+          clickerCount += 101901901;
+          alert("You received 101,901,901 coins!");
+          updateClickerCount();
+          passwordInput.value = "";
+        }
+      }
+    });
+
+    // Toggle night mode
+    modeToggle.addEventListener("click", () => {
+      document.body.classList.toggle("night-mode");
+    });
+
+    // Event listeners
+    clickerImgElement.addEventListener("click", clickFace);
+    upgradeBtns.forEach((btn, i) => {
+      btn.addEventListener("click", () => buyUpgrade(i));
+    });
+    bryceClickerBtn.addEventListener("click", () => {
+      if (clickerCount >= bryceClickerCost) {
+        isBryceMode = true;
+        bryceClickerBtn.style.display = "none";
+        masonClickerBtn.style.display = "block";
+        masonClickerInfo.style.display = "block";
+        updateClickerMode();
+        resetGame();
+        alert("You have unlocked Bryce Clicker! This is a rebirth. All progress has been reset.");
+      }
+    });
+    masonClickerBtn.addEventListener("click", () => {
+      if (clickerCount >= masonClickerCost) {
+        isMasonMode = true;
+        masonClickerBtn.style.display = "none";
+        masonClickerInfo.style.display = "none";
+        isaacClickerBtn.style.display = "block";
+        isaacClickerInfo.style.display = "block";
+        updateClickerMode();
+        resetGame();
+        alert("You have unlocked Mason Clicker! This is a rebirth. All progress has been reset.");
+      }
+    });
+    isaacClickerBtn.addEventListener("click", () => {
+      if (clickerCount >= isaacClickerCost) {
+        isIsaacMode = true;
+        isaacClickerBtn.style.display = "none";
+        isaacClickerInfo.style.display = "none";
+        gunnerClickerBtn.style.display = "block";
+        gunnerClickerInfo.style.display = "block";
+        updateClickerMode();
+        resetGame();
+        alert("You have unlocked Isaac Clicker! This is a rebirth. All progress has been reset.");
+      }
+    });
+    gunnerClickerBtn.addEventListener("click", () => {
+      if (clickerCount >= gunnerClickerCost) {
+        isGunnerMode = true;
+        gunnerClickerBtn.style.display = "none";
+        gunnerClickerInfo.style.display = "none";
+        updateClickerMode();
+        resetGame();
+        alert("You have unlocked Gunner Clicker! This is a rebirth. All progress has been reset.");
+      }
+    });
+
+    // Game loop
+    setInterval(generatePerSecond, 1000);
+
+    // Show update text once
+    setTimeout(() => {
+      updateText.style.display = "none";
+    }, 5000); // Hide after 5 seconds
+
+    // Username system
+    usernameSubmit.addEventListener("click", () => {
+      const inputUsername = usernameInput.value.trim();
+      if (!inputUsername) {
+        usernameError.textContent = "Username cannot be empty!";
+        return;
+      }
+
+      // Check if the username is already in use
+      const activeUsers = JSON.parse(localStorage.getItem("activeUsers")) || [];
+      if (activeUsers.includes(inputUsername)) {
+        usernameError.textContent = "Username is already in use!";
+        return;
+      }
+
+      // Add the username to active users
+      activeUsers.push(inputUsername);
+      localStorage.setItem("activeUsers", JSON.stringify(activeUsers));
+
+      // Set the username and hide the modal
+      username = inputUsername;
+      localStorage.setItem("currentUsername", username); // Save username to localStorage
+      usernameModal.style.display = "none";
+      usernameDisplay.textContent = `Username: ${username}`; // Update username display
+      loadGame(); // Load the game state for this user
+    });
+
+    // Load saved game state on page load
+    window.addEventListener("load", () => {
+      const savedUsername = localStorage.getItem("currentUsername");
+      if (savedUsername) {
+        username = savedUsername;
+        usernameModal.style.display = "none";
+        usernameDisplay.textContent = `Username: ${username}`; // Update username display
+        loadGame();
+      } else {
+        usernameModal.style.display = "block";
+      }
+    });
+
+    // Save game state periodically (every 10 seconds)
+    setInterval(saveGame, 10000);
+
+    // Leaderboard functionality
+    function updateLeaderboard() {
+      const allUsers = JSON.parse(localStorage.getItem("activeUsers")) || [];
+      const scores = allUsers.map(user => {
+        const state = JSON.parse(localStorage.getItem(`clickerGameState_${user}`)) || {};
+        return {
+          username: user,
+          score: state.clickerCount || 0,
+          mode: getModeFromState(state)
+        };
+      });
+
+      // Sort by score descending
+      scores.sort((a, b) => b.score - a.score);
+
+      // Only show top 5
+      const topScores = scores.slice(0, 5);
+
+      // Update leaderboard display
+      leaderboardEntries.innerHTML = topScores
+        .map((entry, index) => `
+          <div class="leaderboard-entry">
+            <span class="leaderboard-rank">${index + 1}.</span>
+            <span>${entry.username}</span>
+            <span>${entry.mode}</span>
+          </div>
+        `)
+        .join('');
+
+      // If there are less than 5 players, fill remaining spots
+      if (topScores.length < 5) {
+        for (let i = topScores.length; i < 5; i++) {
+          leaderboardEntries.innerHTML += `
+            <div class="leaderboard-entry">
+              <span class="leaderboard-rank">${i + 1}.</span>
+              <span>---</span>
+              <span>---</span>
+            </div>`;
+        }
+      }
+    }
+
+    function getModeFromState(state) {
+      if (state.isGunnerMode) return "Gunner";
+      if (state.isIsaacMode) return "Isaac";
+      if (state.isMasonMode) return "Mason";
+      if (state.isBryceMode) return "Bryce";
+      return "Mihailo";
+    }
+
+    // Update leaderboard every 5 seconds
+    setInterval(updateLeaderboard, 5000);
+
+    // Spacebar click functionality
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault(); // Prevent default spacebar behavior (scrolling)
+        clickFace();
+      }
+    });
+
+    // Username edit functionality
+    function updateUsernameDisplay() {
+      usernameDisplay.innerHTML = `Username: ${username} <span id="username-edit" title="Change username" class="${usernameChanged ? 'disabled' : ''}">✏️</span>`;
+      
+      const editButton = document.getElementById('username-edit');
+      if (editButton) {
+        editButton.addEventListener('click', () => {
+          if (!usernameChanged) {
+            usernameModal.style.display = 'block';
+            usernameChanged = true;
+            editButton.classList.add('disabled');
+          } else {
+            alert('You can only change your username once!');
+          }
         });
-    </script>
+      }
+    }
+
+    // Update username display when username is set
+    usernameSubmit.addEventListener('click', () => {
+      setTimeout(() => {
+        updateUsernameDisplay();
+        updateLeaderboard();
+      }, 100);
+    });
+
+    // If username is already set, update display on load
+    window.addEventListener('load', () => {
+      if (username) {
+        updateUsernameDisplay();
+        updateLeaderboard();
+      }
+    });
+
+    // Update the leaderboard immediately when the game state changes
+    const originalSaveGame = saveGame;
+    saveGame = function() {
+      originalSaveGame();
+      updateLeaderboard();
+    };
+  </script>
 </body>
 </html>
