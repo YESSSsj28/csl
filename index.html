@@ -1,826 +1,1362 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mihailo & Bryce Clicker</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mihailo & Friends Clicker</title>
   <style>
+    :root {
+      --bg: #0d0f14;
+      --fg: #f5f7fb;
+      --muted: #b6c0d1;
+      --accent: #00aaff;
+      --panel: rgba(255,255,255,0.06);
+      --panel-border: rgba(255,255,255,0.12);
+      --btn: #2a3140;
+      --btn-hover: #374151;
+      --btn-disabled: #5b6473;
+      --danger: #ff4d4d;
+      --shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+    /* Light theme */
+    .theme-light {
+      --bg: #f5f7fb;
+      --fg: #0d0f14;
+      --muted: #495266;
+      --panel: rgba(0,0,0,0.04);
+      --panel-border: rgba(0,0,0,0.08);
+      --btn: #e3e7f0;
+      --btn-hover: #d6dbe6;
+      --btn-disabled: #c9ceda;
+      --shadow: 0 10px 30px rgba(0,0,0,0.12);
+    }
+
+    html, body {
+      height: 100%;
+    }
     body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background-color: #1a1a1a; /* Start in night mode */
-      color: #ffffff; /* White text for night mode */
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--fg);
+      background: var(--bg);
       margin: 0;
-      padding: 0;
-      transition: background-color 0.3s, color 0.3s;
+      overflow-x: hidden;
     }
-    body.night-mode {
-      background-color: #1a1a1a;
-      color: #ffffff;
+
+    /* Background layers */
+    .bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
     }
+    /* Solid */
+    .bg-solid { background: var(--bg); }
+
+    /* Animated Aurora */
+    .bg-aurora {
+      background: radial-gradient(1200px 800px at 20% 20%, rgba(0, 255, 195, 0.25), transparent 60%),
+                  radial-gradient(1000px 700px at 80% 30%, rgba(0, 170, 255, 0.22), transparent 60%),
+                  radial-gradient(1200px 900px at 50% 80%, rgba(255, 0, 128, 0.18), transparent 60%),
+                  var(--bg);
+      animation: auroraShift 18s linear infinite;
+      filter: blur(0.2px);
+    }
+    @keyframes auroraShift {
+      0% { background-position: 0 0, 0 0, 0 0; }
+      50% { background-position: 10% 8%, -8% 6%, 0% -10%; }
+      100% { background-position: 0 0, 0 0, 0 0; }
+    }
+
+    /* Stars */
+    .bg-stars::before, .bg-stars::after {
+      content: "";
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(2px 2px at 20% 30%, #fff, transparent 40%),
+        radial-gradient(2px 2px at 40% 70%, #fff, transparent 40%),
+        radial-gradient(1.5px 1.5px at 60% 20%, #fff, transparent 40%),
+        radial-gradient(1.5px 1.5px at 80% 80%, #fff, transparent 40%),
+        radial-gradient(1.2px 1.2px at 35% 50%, #fff, transparent 40%),
+        radial-gradient(1.2px 1.2px at 75% 40%, #fff, transparent 40%),
+        var(--bg);
+      opacity: 0.6;
+      animation: starDrift 45s linear infinite;
+    }
+    .bg-stars::after {
+      transform: scale(1.2);
+      opacity: 0.4;
+      animation-duration: 60s;
+    }
+    @keyframes starDrift {
+      0% { transform: translateY(0px); }
+      100% { transform: translateY(-200px); }
+    }
+
+    /* Neon Grid */
+    .bg-grid {
+      background:
+        radial-gradient(circle at 50% -20%, rgba(0,0,0,0.6), transparent 65%),
+        linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.35)),
+        var(--bg);
+    }
+    .bg-grid::before {
+      content:"";
+      position: absolute; inset: 0;
+      background:
+        repeating-linear-gradient(0deg, rgba(0,255,170,0.18), rgba(0,255,170,0.18) 1px, transparent 1px, transparent 40px),
+        repeating-linear-gradient(90deg, rgba(0,170,255,0.18), rgba(0,170,255,0.18) 1px, transparent 1px, transparent 40px);
+      transform-origin: center;
+      animation: gridMove 18s linear infinite;
+      filter: drop-shadow(0 0 20px rgba(0, 170, 255, 0.25));
+    }
+    @keyframes gridMove {
+      0% { transform: perspective(500px) rotateX(60deg) translateY(0); }
+      100% { transform: perspective(500px) rotateX(60deg) translateY(40px); }
+    }
+
+    /* Sunset gradient */
+    .bg-sunset {
+      background: linear-gradient(120deg, #ff6a88 0%, #ff99ac 25%, #84fab0 75%, #8fd3f4 100%);
+      background-size: 200% 200%;
+      animation: sunsetShift 20s ease infinite;
+      filter: saturate(1.05);
+    }
+    @keyframes sunsetShift {
+      0%,100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    /* HUD */
+    .hud {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      backdrop-filter: blur(8px);
+      background: rgba(0,0,0,0.25);
+      border-bottom: 1px solid var(--panel-border);
+    }
+    .theme-light .hud { background: rgba(255,255,255,0.6); }
+
+    .hud .left, .hud .right {
+      display: flex; gap: 8px; align-items: center;
+    }
+    .hud .center { text-align: center; }
+    .title {
+      margin: 0; font-size: 22px; letter-spacing: 0.3px;
+      text-shadow: 0 2px 18px rgba(0,0,0,0.25);
+    }
+    .player-line {
+      font-size: 13px; color: var(--muted); margin-top: 2px;
+    }
+    .icon-btn {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      color: var(--fg);
+      padding: 8px 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: transform 0.05s ease, background 0.2s ease;
+    }
+    .icon-btn:hover { background: rgba(255,255,255,0.12); }
+    .icon-btn:active { transform: translateY(1px); }
+
     .container {
-      margin-top: 50px;
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 12px auto 80px;
+      padding: 0 16px;
     }
-    h1 {
-      color: #ffffff; /* White text for night mode */
+
+    .hud-stats {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 18px;
+      margin: 12px 0 4px; color: var(--muted);
     }
-    .night-mode h1 {
-      color: #ffffff;
+    .hud-stat-pill {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+    }
+
+    .clicker-wrap {
+      display: flex; flex-direction: column; align-items: center;
     }
     #clicker-img {
-      width: 200px;
-      height: 200px;
-      border-radius: 50%;
+      width: 240px; height: 240px; border-radius: 50%;
+      border: 6px solid rgba(255,255,255,0.9);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.35), 0 0 30px var(--accent);
       cursor: pointer;
-      border: 5px solid #ffffff; /* White border for night mode */
-      margin: 20px 0;
-      transition: transform 0.1s;
+      user-select: none;
+      object-fit: cover;
+      transition: transform 0.06s ease, box-shadow 0.2s ease;
     }
-    .night-mode #clicker-img {
-      border-color: #ffffff;
-    }
-    #clicker-img:active {
-      transform: scale(0.95);
-    }
-    #clicker-count {
-      font-size: 24px;
-      font-weight: bold;
-    }
-    #currency-count {
-      font-size: 18px;
-      font-weight: bold;
+    #clicker-img:active { transform: scale(0.98); }
+
+    .resource-rows {
+      display: flex; gap: 14px; justify-content: center; align-items: baseline;
       margin-top: 10px;
     }
+    .resource {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      padding: 10px 14px;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      min-width: 220px;
+    }
+    .resource .label { color: var(--muted); font-size: 12px; }
+    .resource .value { font-size: 22px; font-weight: 700; margin-top: 2px; }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+      padding: 14px;
+      margin: 16px auto;
+      box-shadow: var(--shadow);
+    }
+
+    .buy-toggle {
+      display: inline-flex; gap: 6px; margin: 8px 0 8px;
+      background: rgba(0,0,0,0.15);
+      padding: 6px;
+      border-radius: 999px;
+      border: 1px solid var(--panel-border);
+    }
+    .chip {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: transparent;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--fg);
+      border: 1px solid transparent;
+    }
+    .chip.active {
+      background: var(--accent);
+      color: #000;
+      font-weight: 700;
+      border-color: transparent;
+      box-shadow: 0 2px 14px rgba(0,0,0,0.25), 0 0 20px var(--accent);
+    }
+
     .upgrades {
-      margin-top: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+      margin-top: 8px;
     }
+    .upgrade-card {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 12px;
+      transition: transform 0.06s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+    .upgrade-card:hover {
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.2);
+    }
+    .upgrade-title {
+      display: flex; justify-content: space-between; align-items: center;
+      font-weight: 700;
+    }
+    .upgrade-info { color: var(--muted); font-size: 13px; margin: 6px 0 8px; }
+
     button {
-      padding: 10px 20px;
-      font-size: 16px;
-      margin: 5px;
-      cursor: pointer;
-      background-color: #555; /* Darker button for night mode */
-      color: #ffffff;
-      border: none;
-      border-radius: 5px;
-      transition: background-color 0.3s;
+      padding: 10px 14px; font-size: 16px; cursor: pointer;
+      background: var(--btn); color: var(--fg);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      transition: transform 0.06s ease, background 0.2s ease, border-color 0.2s ease;
     }
-    .night-mode button {
-      background-color: #555;
-    }
-    button:disabled {
-      background-color: #888;
-      cursor: not-allowed;
-    }
-    .upgrade-info {
-      font-size: 14px;
-      color: #bbb; /* Light gray for night mode */
-    }
-    .night-mode .upgrade-info {
-      color: #bbb;
-    }
+    button:hover { background: var(--btn-hover); }
+    button:active { transform: translateY(1px); }
+    button:disabled { background: var(--btn-disabled); cursor: not-allowed; }
+
+    .danger { background: var(--danger); color: #000; border-color: transparent; }
+    .danger:hover { filter: brightness(1.05); }
+
     .floating-text {
-      position: absolute;
-      font-size: 20px;
-      font-weight: bold;
-      color: #ffffff; /* White text for night mode */
-      animation: floatDown 1s ease-out;
-    }
-    .night-mode .floating-text {
+      position: fixed;
+      font-size: 18px;
+      font-weight: 800;
       color: #ffffff;
-    }
-    @keyframes floatDown {
-      0% { top: 0; opacity: 1; }
-      100% { top: 100%; opacity: 0; }
-    }
-    #mode-toggle {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-    }
-    .error-message {
-      color: red;
-      font-weight: bold;
-      margin-top: 10px;
-    }
-    #password-input {
-      position: fixed;
-      top: 90px;
-      right: 10px;
-      width: 100px;
-      padding: 5px;
-      font-size: 12px;
-    }
-    #free-coins-text {
-      position: fixed;
-      bottom: 10px;
-      left: 10px;
-      color: white;
-      font-size: 14px;
-      background-color: rgba(0, 0, 0, 0.7);
-      padding: 5px;
-      border-radius: 5px;
-    }
-    #update-text {
-      position: fixed;
-      top: 50%;
-      left: 50%;
+      pointer-events: none;
       transform: translate(-50%, -50%);
-      font-size: 32px;
-      font-weight: bold;
-      color: red;
-      background-color: rgba(255, 255, 255, 0.9);
-      padding: 20px;
-      border-radius: 10px;
-      z-index: 1000;
-      animation: fadeOut 5s forwards;
+      animation: floatUp 900ms ease-out forwards;
+      text-shadow: 0 0 10px rgba(0,0,0,0.5);
+      mix-blend-mode: screen;
     }
-    @keyframes fadeOut {
-      0% { opacity: 1; }
-      100% { opacity: 0; display: none; }
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translate(-50%, -50%) translateY(0) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -50%) translateY(-70px) scale(1.05); }
     }
-    #website-link {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      color: white;
-      font-size: 14px;
-      background-color: rgba(0, 0, 0, 0.7);
-      padding: 5px;
-      border-radius: 5px;
-      cursor: pointer;
+
+    /* Combo bar */
+    .combo {
+      margin: 12px auto 0;
+      width: min(420px, 90%);
+      background: rgba(0,0,0,0.2);
+      border: 1px solid var(--panel-border);
+      border-radius: 999px;
+      overflow: hidden;
+      display: none;
     }
-    #username-modal {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background-color: rgba(0, 0, 0, 0.9);
-      padding: 20px;
-      border-radius: 10px;
-      z-index: 10000;
+    .combo-inner {
+      height: 10px;
+      background: linear-gradient(90deg, var(--accent), #22d3ee);
+      width: 100%;
+      transform-origin: left;
+      transition: width 0.12s linear;
+    }
+    .combo-label {
       text-align: center;
+      font-size: 12px; color: var(--muted);
+      margin-top: 6px;
     }
-    #username-modal input {
+
+    /* Buff banner */
+    .buff-banner {
+      position: fixed;
+      top: 62px; left: 50%;
+      transform: translateX(-50%);
+      z-index: 6;
+      background: rgba(255,215,0,0.16);
+      border: 1px solid rgba(255,215,0,0.4);
+      color: #ffd700;
+      padding: 6px 12px;
+      border-radius: 999px;
+      backdrop-filter: blur(8px);
+      display: none;
+      box-shadow: var(--shadow);
+      font-weight: 700;
+    }
+
+    /* Golden orb */
+    .golden {
+      position: fixed;
+      width: 64px; height: 64px; border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #fff7b1, #ffd700, #ffb200 60%, rgba(255,178,0,0.05) 70%);
+      box-shadow: 0 0 30px #ffd700, 0 0 80px rgba(255, 217, 0, 0.6);
+      z-index: 5;
+      cursor: pointer;
+      animation: float 2.4s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    /* Modals */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      display: none; align-items: center; justify-content: center; z-index: 20;
+      backdrop-filter: blur(4px);
+    }
+    .modal {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+      padding: 16px;
+      width: min(900px, 92vw);
+      max-height: 80vh;
+      overflow: auto;
+      box-shadow: var(--shadow);
+    }
+    .modal h3 { margin: 8px 0 10px; }
+    .modal .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .settings-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px; margin-top: 8px;
+    }
+    .setting-card {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
       padding: 10px;
-      font-size: 16px;
-      margin-top: 10px;
-      border-radius: 5px;
-      border: none;
     }
-    #username-modal button {
-      padding: 10px 20px;
-      font-size: 16px;
-      margin-top: 10px;
-      background-color: #00aaff;
-      color: black;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
+    .field {
+      display: flex; gap: 8px; align-items: center;
+      background: rgba(0,0,0,0.12); border: 1px solid var(--panel-border);
+      padding: 8px 10px; border-radius: 10px;
     }
-    #username-modal button:hover {
-      background-color: #0088cc;
+    input[type="text"], select, input[type="range"], input[type="color"] {
+      background: transparent; color: var(--fg); border: 1px solid var(--panel-border);
+      border-radius: 8px; padding: 6px 10px; outline: none;
     }
-    #username-display {
-      position: fixed;
-      bottom: 10px;
-      right: 10px;
-      color: white;
-      font-size: 14px;
-      background-color: rgba(0, 0, 0, 0.7);
-      padding: 5px;
-      border-radius: 5px;
+    .toggle {
+      display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+      user-select: none;
     }
-    /* Leaderboard styles */
-    #leaderboard {
-      position: fixed;
-      top: 150px; /* Adjusted to avoid overlapping with other elements */
-      right: 20px;
-      background-color: rgba(0, 0, 0, 0.8);
-      padding: 15px;
+    .toggle input { transform: scale(1.2); }
+
+    /* Achievements */
+    .ach-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px,1fr));
+      gap: 10px;
+    }
+    .ach {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--panel-border);
       border-radius: 10px;
-      color: white;
-      width: 250px;
-      max-height: calc(100vh - 200px); /* Prevent overflow */
-      overflow-y: auto;
-      border: 2px solid #ffffff;
+      padding: 10px;
     }
-    #leaderboard h3 {
-      margin-top: 0;
-      text-align: center;
-      color: #00aaff;
+    .ach.locked { opacity: 0.5; }
+    .ach .name { font-weight: 700; }
+    .ach .desc { color: var(--muted); font-size: 13px; }
+
+    /* Toasts */
+    .toasts {
+      position: fixed; right: 14px; bottom: 14px; z-index: 25;
+      display: flex; flex-direction: column; gap: 8px; max-width: 300px;
     }
-    .leaderboard-entry {
-      display: flex;
-      justify-content: space-between;
-      margin: 5px 0;
-      padding: 5px;
-      background-color: rgba(255, 255, 255, 0.1);
-      border-radius: 5px;
+    .toast {
+      background: rgba(0,0,0,0.7);
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 10px 12px; border-radius: 10px; color: #fff; box-shadow: var(--shadow);
+      animation: toastIn 180ms ease-out;
     }
-    .leaderboard-rank {
-      color: #00aaff;
-      font-weight: bold;
+    .theme-light .toast { background: rgba(0,0,0,0.85); }
+    @keyframes toastIn {
+      from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; }
     }
-    /* Pencil icon styles */
-    #username-edit {
-      cursor: pointer;
-      margin-left: 5px;
-      font-size: 14px;
-      color: #00aaff;
-    }
-    #username-edit.disabled {
-      color: #666;
-      cursor: not-allowed;
-    }
+
+    /* Small helper */
+    .muted { color: var(--muted); }
+    .spacer { height: 10px; }
+
+    /* Reduce animations setting */
+    .no-anim * { animation: none !important; transition: none !important; }
   </style>
 </head>
-<body>
-  <!-- Username Modal -->
-  <div id="username-modal">
-    <h2>Enter Your Username</h2>
-    <input type="text" id="username-input" placeholder="Username" maxlength="20">
-    <button id="username-submit">Submit</button>
-    <p id="username-error" style="color: red; margin-top: 10px;"></p>
-  </div>
+<body class="theme-dark">
+  <!-- Dynamic background -->
+  <div class="bg bg-aurora" id="bg"></div>
 
-  <!-- Username Display -->
-  <div id="username-display"></div>
+  <!-- Buff banner -->
+  <div class="buff-banner" id="buffBanner">Golden Rush x5 • 20s</div>
 
-  <!-- Leaderboard -->
-  <div id="leaderboard">
-    <h3>Leaderboard</h3>
-    <div id="leaderboard-entries">Loading...</div>
-  </div>
-
-  <!-- Rest of the HTML remains unchanged -->
-  <div id="update-text">I know there might be bugs with the new updates like the leaderboard and the space bar working as a clicker also make sure to refreah every 10 minutes to see a new update. -Yug</div>
-  <div id="website-link" onclick="window.location.href='https://clickerfromyug.netlify.app'">Go to https://clickerfromyug.netlify.app</div>
-  <div class="container">
-    <h1 id="game-title">Mihailo Clicker</h1>
-    <p id="clicker-count">Mihailos: 0</p>
-    <p id="currency-count">Diamonds: 0</p>
-    <img id="clicker-img" src="https://github.com/YESSSsj28/yug-proxy/blob/main/Mihailo_Konjevic_0bb83a942afa46b5b1c773e59a1ac7fd.jpg?raw=true" alt="Clicker Face">
-    <div class="upgrades">
-      <button id="upgrade1-btn" disabled>Buy Farm (Cost: 10 Mihailos, 1 Diamonds)</button>
-      <p class="upgrade-info" id="upgrade1-info">Generates 1 per second and 1 extra per click.</p>
-      <button id="upgrade2-btn" disabled>Buy Factory (Cost: 100 Mihailos, 2 Diamonds)</button>
-      <p class="upgrade-info" id="upgrade2-info">Generates 5 per second and 2 extra per click.</p>
-      <button id="upgrade3-btn" disabled>Buy Mine (Cost: 500 Mihailos, 3 Diamonds)</button>
-      <p class="upgrade-info" id="upgrade3-info">Generates 10 per second and 5 extra per click.</p>
-      <button id="upgrade4-btn" disabled>Buy Temple (Cost: 1000 Mihailos, 4 Diamonds)</button>
-      <p class="upgrade-info" id="upgrade4-info">Generates 20 per second and 10 extra per click.</p>
-      <button id="upgrade5-btn" disabled>Buy Kingdom (Cost: 5000 Mihailos, 5 Diamonds)</button>
-      <p class="upgrade-info" id="upgrade5-info">Generates 50 per second and 25 extra per click.</p>
-      <button id="upgrade6-btn" disabled>Buy Empire (Cost: 10000 Mihailos, 6 Diamonds)</button>
-      <p class="upgrade-info" id="upgrade6-info">Generates 100 per second and 50 extra per click.</p>
-      <button id="upgrade7-btn" disabled>Buy MegaCorp (Cost: 50000 Mihailos, 7 Diamonds)</button>
-      <p class="upgrade-info" id="upgrade7-info">Generates 200 per second and 100 extra per click.</p>
-      <button id="upgrade8-btn" disabled>Buy Galaxy (Cost: 100000 Mihailos, 8 Diamonds)</button>
-      <p class="upgrade-info" id="upgrade8-info">Generates 500 per second and 250 extra per click.</p>
-      <button id="upgrade9-btn" disabled>Buy Universe (Cost: 500000 Mihailos, 9 Diamonds)</button>
-      <p class="upgrade-info" id="upgrade9-info">Generates 1000 per second and 500 extra per click.</p>
-      <button id="bryce-clicker-btn" disabled>Unlock Bryce Clicker (Cost: 1000000 Mihailos)</button>
-      <p class="upgrade-info" id="bryce-clicker-info">Unlocks Bryce Clicker mode. This is a rebirth.</p>
-      <button id="mason-clicker-btn" disabled style="display: none;">Unlock Mason Clicker (Cost: 5000000 Bryces)</button>
-      <p class="upgrade-info" id="mason-clicker-info" style="display: none;">Unlocks Mason Clicker mode. This is a rebirth.</p>
-      <button id="isaac-clicker-btn" disabled style="display: none;">Unlock Isaac Clicker (Cost: 10000000 Masons)</button>
-      <p class="upgrade-info" id="isaac-clicker-info" style="display: none;">Unlocks Isaac Clicker mode. This is a rebirth.</p>
-      <button id="gunner-clicker-btn" disabled style="display: none;">Unlock Gunner Clicker (Cost: 20000000 Isaacs)</button>
-      <p class="upgrade-info" id="gunner-clicker-info" style="display: none;">Unlocks Gunner Clicker mode. This is a rebirth.</p>
+  <!-- HUD -->
+  <div class="hud">
+    <div class="left">
+      <button class="icon-btn" id="btn-achievements" title="Achievements">🏆</button>
+      <button class="icon-btn" id="btn-daily" title="Daily Reward">🎁</button>
     </div>
-    <p id="error-message" class="error-message"></p>
+    <div class="center">
+      <h1 class="title" id="game-title">Mihailo Clicker</h1>
+      <div class="player-line">
+        Player: <span id="player-name">Anonymous</span>
+        <button class="icon-btn" id="edit-name" title="Rename">✏️</button>
+      </div>
+    </div>
+    <div class="right">
+      <button class="icon-btn" id="btn-settings" title="Settings">⚙️</button>
+    </div>
   </div>
 
-  <button id="mode-toggle">Toggle Night Mode</button>
-  <input id="password-input" type="text" placeholder="Enter Password">
-  <div id="free-coins-text">See Yug for 10k free coins</div>
+  <div class="container">
+    <div class="clicker-wrap">
+      <img id="clicker-img" src="https://github.com/YESSSsj28/yug-proxy/blob/main/Mihailo_Konjevic_0bb83a942afa46b5b1c773e59a1ac7fd.jpg?raw=true" alt="Clicker Face"/>
+      <div class="resource-rows">
+        <div class="resource">
+          <div class="label" id="unit-label">Mihailos</div>
+          <div class="value" id="clicker-count">0</div>
+        </div>
+        <div class="resource">
+          <div class="label" id="currency-label">Diamonds</div>
+          <div class="value" id="currency-count">0</div>
+        </div>
+      </div>
+      <div class="hud-stats">
+        <div class="hud-stat-pill">Per Click: <b id="per-click">1</b></div>
+        <div class="hud-stat-pill">Per Second: <b id="per-second">0</b></div>
+        <div class="hud-stat-pill">Total Clicks: <b id="total-clicks">0</b></div>
+        <div class="hud-stat-pill">Prestige Bonus: <b id="prestige-bonus">0%</b></div>
+      </div>
+
+      <div class="combo" id="combo">
+        <div class="combo-inner" id="comboInner"></div>
+      </div>
+      <div class="combo-label" id="comboLabel"></div>
+    </div>
+
+    <div class="panel">
+      <div class="buy-toggle">
+        <span class="chip active" data-buy="1">x1</span>
+        <span class="chip" data-buy="10">x10</span>
+        <span class="chip" data-buy="100">x100</span>
+        <span class="chip" data-buy="max">Max</span>
+      </div>
+      <div class="upgrades" id="upgrades"></div>
+    </div>
+
+    <div class="panel" id="prestige-panel">
+      <h3>Rebirth Modes</h3>
+      <p class="muted">Unlock a new mode to reset for a fresh run and a permanent global bonus.</p>
+      <div class="spacer"></div>
+      <div class="row" id="prestige-buttons"></div>
+    </div>
+
+    <div class="panel">
+      <div class="row">
+        <div class="field">
+          <label for="password-input">Password:</label>
+          <input id="password-input" type="text" placeholder="Enter code (press Enter)" />
+        </div>
+        <span class="muted">Codes: 10k (once per mode), HIHIHI897 (big boost)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modals -->
+  <div class="modal-backdrop" id="settings-backdrop">
+    <div class="modal">
+      <h3>Settings</h3>
+      <div class="settings-grid">
+        <div class="setting-card">
+          <div class="row">
+            <label class="toggle"><input type="checkbox" id="set-theme"> Light Theme</label>
+          </div>
+          <div class="row">
+            <label>Accent Color</label>
+            <input type="color" id="set-accent" value="#00aaff">
+          </div>
+          <div class="row">
+            <label>Background</label>
+            <select id="set-bg">
+              <option value="aurora">Aurora (Animated)</option>
+              <option value="stars">Stars (Animated)</option>
+              <option value="grid">Neon Grid (Animated)</option>
+              <option value="sunset">Sunset Gradient (Animated)</option>
+              <option value="solid">Solid</option>
+            </select>
+          </div>
+        </div>
+        <div class="setting-card">
+          <div class="row">
+            <label class="toggle"><input type="checkbox" id="set-sound"> Sounds</label>
+          </div>
+          <div class="row">
+            <label>Volume</label>
+            <input type="range" id="set-volume" min="0" max="1" step="0.01" value="0.8">
+          </div>
+          <div class="row">
+            <label class="toggle"><input type="checkbox" id="set-floating"> Floating Numbers</label>
+          </div>
+          <div class="row">
+            <label class="toggle"><input type="checkbox" id="set-reduce"> Reduce Animations</label>
+          </div>
+        </div>
+        <div class="setting-card">
+          <div class="row">
+            <button class="danger" id="btn-reset">Reset Mode</button>
+            <button id="btn-reset-all">Full Reset</button>
+          </div>
+          <div class="row">
+            <button id="btn-export">Export Save</button>
+            <button id="btn-import">Import Save</button>
+          </div>
+        </div>
+      </div>
+      <div class="spacer"></div>
+      <div class="row">
+        <button id="settings-close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="achievements-backdrop">
+    <div class="modal">
+      <h3>Achievements</h3>
+      <p class="muted">Unlock goals to make the dopamine hit juicier ✨</p>
+      <div class="ach-grid" id="ach-grid"></div>
+      <div class="spacer"></div>
+      <div class="row"><button id="ach-close">Close</button></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="daily-backdrop">
+    <div class="modal">
+      <h3>Daily Reward</h3>
+      <p class="muted" id="daily-text">Claim once per day for a big boost.</p>
+      <div class="spacer"></div>
+      <div class="row">
+        <button id="daily-claim">Claim</button>
+        <button id="daily-close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toasts -->
+  <div class="toasts" id="toasts"></div>
 
   <script>
-    // Game variables
-    let clickerCount = 0;
-    let currencyCount = 0; // New currency (Diamonds, Pasta, Chicken, Taco)
-    let upgrades = Array(9).fill(0); // Tracks the number of each upgrade
-    let isBryceMode = false;
-    let isMasonMode = false;
-    let isIsaacMode = false;
-    let isGunnerMode = false;
-    let mihailoPasswordUsed = false;
-    let brycePasswordUsed = false;
-    let clickCounter = 0; // Track total clicks for currency spawn
-    let username = ""; // Track the current username
-    let usernameChanged = false; // Track if username has been changed
+    (function() {
+      'use strict';
 
-    // Base upgrade costs
-    let upgradeCosts = [10, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000];
-    let upgradeCurrencyCosts = [1, 2, 3, 4, 5, 6, 7, 8, 9]; // New currency costs
-    let bryceClickerCost = 1000000;
-    let masonClickerCost = 5000000;
-    let isaacClickerCost = 10000000;
-    let gunnerClickerCost = 20000000;
-
-    // Upgrade cost multipliers
-    const costMultiplier = 1.5; // Price increases by 1.5x after each purchase
-
-    // Upgrade effects
-    const upgradePerSecond = [1, 5, 10, 20, 50, 100, 200, 500, 1000];
-    const upgradePerClick = [1, 2, 5, 10, 25, 50, 100, 250, 500];
-
-    // DOM elements
-    const clickerCountElement = document.getElementById("clicker-count");
-    const currencyCountElement = document.getElementById("currency-count");
-    const clickerImgElement = document.getElementById("clicker-img");
-    const upgradeBtns = Array.from({ length: 9 }, (_, i) => document.getElementById(`upgrade${i + 1}-btn`));
-    const upgradeInfos = Array.from({ length: 9 }, (_, i) => document.getElementById(`upgrade${i + 1}-info`));
-    const bryceClickerBtn = document.getElementById("bryce-clicker-btn");
-    const masonClickerBtn = document.getElementById("mason-clicker-btn");
-    const isaacClickerBtn = document.getElementById("isaac-clicker-btn");
-    const gunnerClickerBtn = document.getElementById("gunner-clicker-btn");
-    const masonClickerInfo = document.getElementById("mason-clicker-info");
-    const isaacClickerInfo = document.getElementById("isaac-clicker-info");
-    const gunnerClickerInfo = document.getElementById("gunner-clicker-info");
-    const modeToggle = document.getElementById("mode-toggle");
-    const passwordInput = document.getElementById("password-input");
-    const errorMessage = document.getElementById("error-message");
-    const gameTitle = document.getElementById("game-title");
-    const updateText = document.getElementById("update-text");
-    const usernameModal = document.getElementById("username-modal");
-    const usernameInput = document.getElementById("username-input");
-    const usernameSubmit = document.getElementById("username-submit");
-    const usernameError = document.getElementById("username-error");
-    const usernameDisplay = document.getElementById("username-display");
-    const leaderboardEntries = document.getElementById("leaderboard-entries");
-
-    // Clicker mode (Mihailo, Bryce, Mason, Isaac, or Gunner)
-    const mihailoFace = "https://github.com/YESSSsj28/yug-proxy/blob/main/Mihailo_Konjevic_0bb83a942afa46b5b1c773e59a1ac7fd.jpg?raw=true";
-    const bryceFace = "https://github.com/YESSSsj28/yug-proxy/blob/main/IMG_20250307_094354.jpg?raw=true";
-    const masonFace = "https://github.com/YESSSsj28/yug-proxy/blob/main/Screenshot%202025-03-07%2012.43.41%20PM.png?raw=true";
-    const isaacFace = "https://github.com/YESSSsj28/yug-proxy/blob/main/Screenshot%202025-03-08%202.57.21%20PM.png?raw=true";
-    const gunnerFace = "https://github.com/YESSSsj28/yug-proxy/blob/main/Screenshot%202025-03-08%202.49.39%20PM.png?raw=true";
-
-    // Upgrade names for each mode
-    const upgradeNames = {
-      mihailo: ["Farm", "Factory", "Mine", "Temple", "Kingdom", "Empire", "MegaCorp", "Galaxy", "Universe"],
-      bryce: ["Bryce Farm", "Bryce Factory", "Bryce Mine", "Bryce Temple", "Bryce Kingdom", "Bryce Empire", "Bryce MegaCorp", "Bryce Galaxy", "Bryce Universe"],
-      mason: ["Mason Farm", "Mason Factory", "Mason Mine", "Mason Temple", "Mason Kingdom", "Mason Empire", "Mason MegaCorp", "Mason Galaxy", "Mason Universe"],
-      isaac: ["Isaac Farm", "Isaac Factory", "Isaac Mine", "Isaac Temple", "Isaac Kingdom", "Isaac Empire", "Isaac MegaCorp", "Isaac Galaxy", "Isaac Universe"],
-      gunner: ["Gunner Farm", "Gunner Factory", "Gunner Mine", "Gunner Temple", "Gunner Kingdom", "Gunner Empire", "Gunner MegaCorp", "Gunner Galaxy", "Gunner Universe"]
-    };
-
-    // New currency names for each mode
-    const currencyNames = {
-      mihailo: "Diamonds",
-      bryce: "Pasta",
-      mason: "Chicken",
-      isaac: "Taco",
-      gunner: "Chicken"
-    };
-
-    // Click delay to prevent spam
-    let canClick = true;
-    const clickDelay = 100; // 100ms delay between clicks
-
-    // Save game state to localStorage
-    function saveGame() {
-      const gameState = {
-        clickerCount,
-        currencyCount,
-        upgrades,
-        isBryceMode,
-        isMasonMode,
-        isIsaacMode,
-        isGunnerMode,
-        mihailoPasswordUsed,
-        brycePasswordUsed,
-        upgradeCosts,
-        upgradeCurrencyCosts,
-        clickCounter,
+      // Assets
+      const FACES = {
+        mihailo: "https://github.com/YESSSsj28/yug-proxy/blob/main/Mihailo_Konjevic_0bb83a942afa46b5b1c773e59a1ac7fd.jpg?raw=true",
+        bryce:   "https://github.com/YESSSsj28/yug-proxy/blob/main/IMG_20250307_094354.jpg?raw=true",
+        mason:   "https://github.com/YESSSsj28/yug-proxy/blob/main/Screenshot%202025-03-07%2012.43.41%20PM.png?raw=true",
+        isaac:   "https://github.com/YESSSsj28/yug-proxy/blob/main/Screenshot%202025-03-08%202.57.21%20PM.png?raw=true",
+        gunner:  "https://github.com/YESSSsj28/yug-proxy/blob/main/Screenshot%202025-03-08%202.49.39%20PM.png?raw=true"
       };
-      localStorage.setItem(`clickerGameState_${username}`, JSON.stringify(gameState));
-    }
 
-    // Load game state from localStorage
-    function loadGame() {
-      const savedState = localStorage.getItem(`clickerGameState_${username}`);
-      if (savedState) {
-        const gameState = JSON.parse(savedState);
-        clickerCount = gameState.clickerCount || 0;
-        currencyCount = gameState.currencyCount || 0;
-        upgrades = gameState.upgrades || Array(9).fill(0);
-        isBryceMode = gameState.isBryceMode || false;
-        isMasonMode = gameState.isMasonMode || false;
-        isIsaacMode = gameState.isIsaacMode || false;
-        isGunnerMode = gameState.isGunnerMode || false;
-        mihailoPasswordUsed = gameState.mihailoPasswordUsed || false;
-        brycePasswordUsed = gameState.brycePasswordUsed || false;
-        upgradeCosts = gameState.upgradeCosts || [10, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000];
-        upgradeCurrencyCosts = gameState.upgradeCurrencyCosts || [1, 2, 3, 4, 5, 6, 7, 8, 9];
-        clickCounter = gameState.clickCounter || 0;
-        updateClickerMode();
-        updateClickerCount();
-        updateUpgradeButtons();
+      const MODE_TITLES = {
+        mihailo: "Mihailo Clicker",
+        bryce: "Bryce Clicker",
+        mason: "Mason Clicker",
+        isaac: "Isaac Clicker",
+        gunner: "Gunner Clicker"
+      };
+
+      const CURRENCY_NAMES = {
+        mihailo: "Diamonds",
+        bryce: "Pasta",
+        mason: "Chicken",
+        isaac: "Taco",
+        gunner: "Chicken"
+      };
+
+      const UPGRADE_NAMES = {
+        mihailo: ["Farm", "Factory", "Mine", "Temple", "Kingdom", "Empire", "MegaCorp", "Galaxy", "Universe"],
+        bryce:   ["Bryce Farm", "Bryce Factory", "Bryce Mine", "Bryce Temple", "Bryce Kingdom", "Bryce Empire", "Bryce MegaCorp", "Bryce Galaxy", "Bryce Universe"],
+        mason:   ["Mason Farm", "Mason Factory", "Mason Mine", "Mason Temple", "Mason Kingdom", "Mason Empire", "Mason MegaCorp", "Mason Galaxy", "Mason Universe"],
+        isaac:   ["Isaac Farm", "Isaac Factory", "Isaac Mine", "Isaac Temple", "Isaac Kingdom", "Isaac Empire", "Isaac MegaCorp", "Isaac Galaxy", "Isaac Universe"],
+        gunner:  ["Gunner Farm", "Gunner Factory", "Gunner Mine", "Gunner Temple", "Gunner Kingdom", "Gunner Empire", "Gunner MegaCorp", "Gunner Galaxy", "Gunner Universe"]
+      };
+
+      // Upgrade effects and costs
+      const UPGRADE_PER_SECOND = [1, 5, 10, 20, 50, 100, 200, 500, 1000];
+      const UPGRADE_PER_CLICK  = [1, 2, 5, 10, 25, 50, 100, 250, 500];
+      const COST_MULTIPLIER = 1.5;
+      const BASE_UPGRADE_COSTS = [10, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000];
+      const BASE_CURR_COSTS    = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+      // Prestige chain
+      const PRESTIGES = [
+        { from: 'mihailo', to: 'bryce',  cost: 1_000_000 },
+        { from: 'bryce',   to: 'mason',  cost: 5_000_000 },
+        { from: 'mason',   to: 'isaac',  cost: 10_000_000 },
+        { from: 'isaac',   to: 'gunner', cost: 20_000_000 }
+      ];
+
+      // Achievements
+      const ACH = [
+        { id: 'first_click', name: 'First Tap', desc: 'Make your very first click.', check: s => s.totalClicks >= 1 },
+        { id: 'click_100', name: 'Click Rookie', desc: 'Reach 100 total clicks.', check: s => s.totalClicks >= 100 },
+        { id: 'click_1000', name: 'Click Pro', desc: 'Reach 1,000 total clicks.', check: s => s.totalClicks >= 1000 },
+        { id: 'upg_10', name: 'Builder', desc: 'Buy 10 upgrades total.', check: s => s.totalUpgrades >= 10 },
+        { id: 'upg_100', name: 'Tycoon', desc: 'Buy 100 upgrades total.', check: s => s.totalUpgrades >= 100 },
+        { id: 'ps_100', name: 'Engine Online', desc: 'Reach 100 per second.', check: s => getPerSecond(s) >= 100 },
+        { id: 'curr_50', name: 'Shiny Collector', desc: 'Collect 50 special currency.', check: s => s.currency >= 50 },
+        { id: 'prestige_1', name: 'Fresh Start', desc: 'Unlock Bryce mode.', check: s => s.unlocked.includes('bryce') },
+        { id: 'gold_1', name: 'Golden Touch', desc: 'Click 1 Golden Orb.', check: s => s.goldenClicks >= 1 },
+        { id: 'gold_10', name: 'Gold Hunter', desc: 'Click 10 Golden Orbs.', check: s => s.goldenClicks >= 10 },
+      ];
+
+      // State
+      const state = {
+        mode: 'mihailo',
+        clickers: 0,
+        currency: 0,
+        upgrades: Array(9).fill(0),
+        upgradeCosts: BASE_UPGRADE_COSTS.slice(),
+        upgradeCurrencyCosts: BASE_CURR_COSTS.slice(),
+        totalClicks: 0,
+        totalUpgrades: 0,
+        buyAmount: '1',
+        playerName: 'Anonymous',
+        permBonus: 0, // +0.1 per prestige
+        unlocked: ['mihailo'],
+        cheatUsed: { mihailo: false, bryce: false, mason: false, isaac: false, gunner: false },
+        goldenClicks: 0,
+
+        // Gameplay boosts
+        combo: { count: 0, expiresAt: 0, windowMs: 1000 },
+        buff: { active: false, multiplier: 5, endsAt: 0 },
+
+        // Settings
+        settings: {
+          theme: 'dark',
+          background: 'aurora',
+          accent: '#00aaff',
+          sounds: true, volume: 0.8,
+          floatingText: true,
+          reduceAnimations: false
+        },
+
+        // Daily
+        daily: { next: 0 },
+
+        // Time
+        lastSave: Date.now()
+      };
+
+      // DOM
+      const el = {
+        bg: document.getElementById('bg'),
+        title: document.getElementById('game-title'),
+        name: document.getElementById('player-name'),
+        editName: document.getElementById('edit-name'),
+        clickerCount: document.getElementById('clicker-count'),
+        currencyCount: document.getElementById('currency-count'),
+        perClick: document.getElementById('per-click'),
+        perSecond: document.getElementById('per-second'),
+        totalClicks: document.getElementById('total-clicks'),
+        img: document.getElementById('clicker-img'),
+        unitLabel: document.getElementById('unit-label'),
+        currencyLabel: document.getElementById('currency-label'),
+        upgrades: document.getElementById('upgrades'),
+        prestigeButtons: document.getElementById('prestige-buttons'),
+        password: document.getElementById('password-input'),
+        buyChips: null,
+
+        // Modals
+        settingsBackdrop: document.getElementById('settings-backdrop'),
+        achBackdrop: document.getElementById('achievements-backdrop'),
+        dailyBackdrop: document.getElementById('daily-backdrop'),
+        achGrid: document.getElementById('ach-grid'),
+
+        // Settings controls
+        setTheme: document.getElementById('set-theme'),
+        setAccent: document.getElementById('set-accent'),
+        setBg: document.getElementById('set-bg'),
+        setSound: document.getElementById('set-sound'),
+        setVolume: document.getElementById('set-volume'),
+        setFloating: document.getElementById('set-floating'),
+        setReduce: document.getElementById('set-reduce'),
+
+        btnReset: document.getElementById('btn-reset'),
+        btnResetAll: document.getElementById('btn-reset-all'),
+        btnExport: document.getElementById('btn-export'),
+        btnImport: document.getElementById('btn-import'),
+        settingsClose: document.getElementById('settings-close'),
+
+        btnAchievements: document.getElementById('btn-achievements'),
+        achClose: document.getElementById('ach-close'),
+        btnDaily: document.getElementById('btn-daily'),
+        dailyText: document.getElementById('daily-text'),
+        dailyClaim: document.getElementById('daily-claim'),
+        dailyClose: document.getElementById('daily-close'),
+
+        // UI
+        buffBanner: document.getElementById('buffBanner'),
+        comboBar: document.getElementById('combo'),
+        comboInner: document.getElementById('comboInner'),
+        comboLabel: document.getElementById('comboLabel'),
+        toasts: document.getElementById('toasts'),
+        prestigeBonus: document.getElementById('prestige-bonus')
+      };
+
+      const saveKey = 'clickerUltraV3';
+
+      // Utils
+      const fmt = n => Math.floor(n).toLocaleString();
+      const now = () => Date.now();
+
+      // Sound engine (WebAudio beeps)
+      let audioCtx = null;
+      function sfx(type = 'click', volOverride) {
+        if (!state.settings.sounds) return;
+        const volume = typeof volOverride === 'number' ? volOverride : state.settings.volume;
+        if (volume <= 0) return;
+        try {
+          if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          const o = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          o.connect(g); g.connect(audioCtx.destination);
+          let freq = 220, dur = 0.08, typeOsc = 'square';
+          if (type === 'buy') { freq = 440; dur = 0.09; typeOsc = 'sine'; }
+          if (type === 'ach') { freq = 880; dur = 0.18; typeOsc = 'triangle'; }
+          if (type === 'gold') { freq = 660; dur = 0.3; typeOsc = 'sawtooth'; }
+          o.type = typeOsc;
+          o.frequency.setValueAtTime(freq, audioCtx.currentTime);
+          g.gain.setValueAtTime(0.001, audioCtx.currentTime);
+          g.gain.exponentialRampToValueAtTime(volume, audioCtx.currentTime + 0.01);
+          g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+          o.start();
+          o.stop(audioCtx.currentTime + dur + 0.02);
+        } catch {}
       }
-    }
 
-    // Update the clicker count display
-    function updateClickerCount() {
-      let clickerName = "Mihailos";
-      if (isBryceMode) clickerName = "Bryces";
-      if (isMasonMode) clickerName = "Masons";
-      if (isIsaacMode) clickerName = "Isaacs";
-      if (isGunnerMode) clickerName = "Gunners";
-      clickerCountElement.textContent = `${clickerName}: ${clickerCount}`;
-      currencyCountElement.textContent = `${currencyNames[getCurrentMode()]}: ${currencyCount}`;
-      checkUpgradeAvailability();
-      saveGame(); // Save game state after every update
-    }
-
-    // Get current mode
-    function getCurrentMode() {
-      if (isGunnerMode) return "gunner";
-      if (isIsaacMode) return "isaac";
-      if (isMasonMode) return "mason";
-      if (isBryceMode) return "bryce";
-      return "mihailo";
-    }
-
-    // Handle clicking the face
-    function clickFace() {
-      if (!canClick) return;
-      canClick = false;
-
-      let clickerPerClick = 1;
-      upgrades.forEach((count, i) => {
-        clickerPerClick += count * upgradePerClick[i];
-      });
-      clickerCount += clickerPerClick;
-      clickCounter++; // Increment click counter
-
-      // Spawn currency every 35 clicks
-      if (clickCounter % 35 === 0) {
-        currencyCount++;
-        showFloatingText(`+1 ${currencyNames[getCurrentMode()]}`);
+      // Save/Load
+      function save() {
+        state.lastSave = now();
+        try { localStorage.setItem(saveKey, JSON.stringify(state)); } catch (e) {}
+      }
+      function load() {
+        try {
+          const raw = localStorage.getItem(saveKey);
+          if (!raw) return;
+          const data = JSON.parse(raw);
+          Object.assign(state, {
+            ...state,
+            ...data,
+            upgrades: Array.isArray(data.upgrades) ? data.upgrades : state.upgrades,
+            upgradeCosts: Array.isArray(data.upgradeCosts) ? data.upgradeCosts : state.upgradeCosts,
+            upgradeCurrencyCosts: Array.isArray(data.upgradeCurrencyCosts) ? data.upgradeCurrencyCosts : state.upgradeCurrencyCosts,
+            cheatUsed: { ...state.cheatUsed, ...(data.cheatUsed || {}) },
+            unlocked: Array.isArray(data.unlocked) ? data.unlocked : state.unlocked,
+            settings: { ...state.settings, ...(data.settings || {}) },
+            combo: { ...state.combo, ...(data.combo || {}) },
+            buff: { ...state.buff, ...(data.buff || {}) },
+            daily: { ...state.daily, ...(data.daily || {}) }
+          });
+        } catch (e) {}
       }
 
-      updateClickerCount();
-      showFloatingText(`+${clickerPerClick}`);
-
-      setTimeout(() => {
-        canClick = true;
-      }, clickDelay);
-    }
-
-    // Show floating text animation
-    function showFloatingText(text) {
-      const floatingText = document.createElement("div");
-      floatingText.className = "floating-text";
-      floatingText.textContent = text;
-      floatingText.style.left = `${Math.random() * 80 + 10}%`;
-      document.body.appendChild(floatingText);
-      setTimeout(() => {
-        floatingText.remove();
-      }, 1000);
-    }
-
-    // Buy upgrades
-    function buyUpgrade(index) {
-      if (clickerCount >= upgradeCosts[index] && currencyCount >= upgradeCurrencyCosts[index]) {
-        clickerCount -= upgradeCosts[index];
-        currencyCount -= upgradeCurrencyCosts[index];
-        upgrades[index]++;
-        upgradeCosts[index] = Math.floor(upgradeCosts[index] * costMultiplier);
-        upgradeCurrencyCosts[index] = Math.floor(upgradeCurrencyCosts[index] * costMultiplier);
-        updateUpgradeButtons();
-        updateClickerCount();
+      // Core math
+      function getPerClick(s = state) {
+        let pc = 1;
+        for (let i = 0; i < 9; i++) {
+          pc += s.upgrades[i] * UPGRADE_PER_CLICK[i];
+        }
+        // Apply permanent bonus
+        pc *= (1 + s.permBonus);
+        // Combo
+        const comboMult = 1 + Math.min(s.combo.count, 40) * 0.1; // up to x5
+        pc *= comboMult;
+        // Buff
+        if (s.buff.active && now() < s.buff.endsAt) pc *= s.buff.multiplier;
+        return pc;
       }
-    }
-
-    // Update upgrade buttons and info
-    function updateUpgradeButtons() {
-      const mode = getCurrentMode();
-      upgradeBtns.forEach((btn, i) => {
-        btn.textContent = `Buy ${upgradeNames[mode][i]} (Cost: ${upgradeCosts[i]} ${mode === "mihailo" ? "Mihailos" : mode === "bryce" ? "Bryces" : mode === "mason" ? "Masons" : mode === "isaac" ? "Isaacs" : "Gunners"}, ${upgradeCurrencyCosts[i]} ${currencyNames[mode]})`;
-        btn.disabled = clickerCount < upgradeCosts[i] || currencyCount < upgradeCurrencyCosts[i];
-      });
-    }
-
-    // Reset game for Bryce, Mason, Isaac, or Gunner Clicker
-    function resetGame() {
-      clickerCount = 0;
-      currencyCount = 0;
-      upgrades = Array(9).fill(0);
-      upgradeCosts = [10, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000];
-      upgradeCurrencyCosts = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-      updateUpgradeButtons();
-      updateClickerCount();
-    }
-
-    // Update clicker mode (Mihailo, Bryce, Mason, Isaac, or Gunner)
-    function updateClickerMode() {
-      if (isGunnerMode) {
-        clickerImgElement.src = gunnerFace;
-        gameTitle.textContent = "Gunner Clicker";
-      } else if (isIsaacMode) {
-        clickerImgElement.src = isaacFace;
-        gameTitle.textContent = "Isaac Clicker";
-      } else if (isMasonMode) {
-        clickerImgElement.src = masonFace;
-        gameTitle.textContent = "Mason Clicker";
-      } else if (isBryceMode) {
-        clickerImgElement.src = bryceFace;
-        gameTitle.textContent = "Bryce Clicker";
-      } else {
-        clickerImgElement.src = mihailoFace;
-        gameTitle.textContent = "Mihailo Clicker";
+      function getPerSecond(s = state) {
+        let ps = 0;
+        for (let i = 0; i < 9; i++) {
+          ps += s.upgrades[i] * UPGRADE_PER_SECOND[i];
+        }
+        ps *= (1 + s.permBonus);
+        return ps;
       }
-      updateUpgradeButtons();
-    }
 
-    // Check if upgrades are affordable
-    function checkUpgradeAvailability() {
-      upgradeBtns.forEach((btn, i) => {
-        btn.disabled = clickerCount < upgradeCosts[i] || currencyCount < upgradeCurrencyCosts[i];
-      });
-      bryceClickerBtn.disabled = clickerCount < bryceClickerCost || isBryceMode;
-      masonClickerBtn.disabled = clickerCount < masonClickerCost || !isBryceMode;
-      isaacClickerBtn.disabled = clickerCount < isaacClickerCost || !isMasonMode;
-      gunnerClickerBtn.disabled = clickerCount < gunnerClickerCost || !isIsaacMode;
-    }
+      // UI update helpers
+      function updateModeVisuals() {
+        el.img.src = FACES[state.mode];
+        el.title.textContent = MODE_TITLES[state.mode];
+        el.unitLabel.textContent = unitName();
+        el.currencyLabel.textContent = CURRENCY_NAMES[state.mode];
+      }
+      function unitName() {
+        return { mihailo: 'Mihailos', bryce: 'Bryces', mason: 'Masons', isaac: 'Isaacs', gunner: 'Gunners' }[state.mode];
+      }
 
-    // Generate clickers per second
-    function generatePerSecond() {
-      let clickerPerSecond = 0;
-      upgrades.forEach((count, i) => {
-        clickerPerSecond += count * upgradePerSecond[i];
-      });
-      clickerCount += clickerPerSecond;
-      updateClickerCount();
-    }
+      function refreshCountsOnly() {
+        el.clickerCount.textContent = fmt(state.clickers);
+        el.currencyCount.textContent = fmt(state.currency);
+        el.perClick.textContent = fmt(getPerClick());
+        el.perSecond.textContent = fmt(getPerSecond());
+        el.totalClicks.textContent = fmt(state.totalClicks);
+        el.prestigeBonus.textContent = Math.round(state.permBonus * 100) + '%';
+        // Buff banner
+        const remaining = Math.max(0, state.buff.endsAt - now());
+        el.buffBanner.style.display = (state.buff.active && remaining > 0) ? 'block' : 'none';
+        if (remaining > 0) {
+          el.buffBanner.textContent = `Golden Rush x${state.buff.multiplier} • ${Math.ceil(remaining/1000)}s`;
+        }
+        // Combo display
+        if (state.combo.count > 0 && state.combo.expiresAt > now()) {
+          el.comboBar.style.display = 'block';
+          const left = Math.max(0, state.combo.expiresAt - now());
+          const pct = Math.max(0, Math.min(1, left / state.combo.windowMs));
+          el.comboInner.style.width = (pct * 100) + '%';
+          el.comboLabel.textContent = `Combo x${(1 + Math.min(state.combo.count, 40) * 0.1).toFixed(2)}`;
+        } else {
+          el.comboBar.style.display = 'none';
+          el.comboLabel.textContent = '';
+        }
+        save();
+      }
 
-    // Password system
-    passwordInput.addEventListener("keyup", (e) => {
-      if (e.key === "Enter") {
-        if (passwordInput.value === "10k") {
-          if (isBryceMode) {
-            if (!brycePasswordUsed) {
-              clickerCount += 10000;
-              brycePasswordUsed = true;
-              alert("You received 10,000 Bryces!");
-            } else {
-              alert("You've already used the password in Bryce Clicker.");
-            }
-          } else if (isMasonMode) {
-            if (!mihailoPasswordUsed) {
-              clickerCount += 10000;
-              mihailoPasswordUsed = true;
-              alert("You received 10,000 Masons!");
-            } else {
-              alert("You've already used the password in Mason Clicker.");
-            }
-          } else if (isIsaacMode) {
-            if (!mihailoPasswordUsed) {
-              clickerCount += 10000;
-              mihailoPasswordUsed = true;
-              alert("You received 10,000 Isaacs!");
-            } else {
-              alert("You've already used the password in Isaac Clicker.");
-            }
-          } else if (isGunnerMode) {
-            if (!mihailoPasswordUsed) {
-              clickerCount += 10000;
-              mihailoPasswordUsed = true;
-              alert("You received 10,000 Gunners!");
-            } else {
-              alert("You've already used the password in Gunner Clicker.");
-            }
-          } else {
-            if (!mihailoPasswordUsed) {
-              clickerCount += 10000;
-              mihailoPasswordUsed = true;
-              alert("You received 10,000 Mihailos!");
-            } else {
-              alert("You've already used the password in Mihailo Clicker.");
+      function refreshUpgrades() {
+        const names = UPGRADE_NAMES[state.mode];
+        el.upgrades.innerHTML = '';
+        for (let i = 0; i < 9; i++) {
+          const card = document.createElement('div');
+          card.className = 'upgrade-card';
+
+          const title = document.createElement('div');
+          title.className = 'upgrade-title';
+          title.innerHTML = `<span>${names[i]}</span><span class="muted">Owned: ${state.upgrades[i]}</span>`;
+
+          const info = document.createElement('div');
+          info.className = 'upgrade-info';
+          info.textContent = `+${UPGRADE_PER_SECOND[i]} per second, +${UPGRADE_PER_CLICK[i]} per click`;
+
+          const btn = document.createElement('button');
+          const nextCost = state.upgradeCosts[i];
+          const nextCurr = state.upgradeCurrencyCosts[i];
+          let buyLabel = state.buyAmount === 'max' ? '(Max)' : `x${state.buyAmount}`;
+          let preview = `Next: ${fmt(nextCost)} ${unitName()}, ${fmt(nextCurr)} ${CURRENCY_NAMES[state.mode]}`;
+          btn.textContent = `Buy ${names[i]} ${buyLabel} • ${preview}`;
+          btn.disabled = !(state.clickers >= nextCost && state.currency >= nextCurr);
+          btn.addEventListener('click', () => buyUpgrade(i));
+
+          card.appendChild(title);
+          card.appendChild(info);
+          card.appendChild(btn);
+          el.upgrades.appendChild(card);
+        }
+      }
+
+      function refreshPrestigeButtons() {
+        el.prestigeButtons.innerHTML = '';
+        const next = PRESTIGES.find(p => p.from === state.mode);
+        if (!next) {
+          const done = document.createElement('div');
+          done.className = 'muted';
+          done.textContent = 'You unlocked all modes. GG!';
+          el.prestigeButtons.appendChild(done);
+          return;
+        }
+        const btn = document.createElement('button');
+        btn.textContent = `Unlock ${MODE_TITLES[next.to]} (Cost: ${fmt(next.cost)} ${unitName()})`;
+        btn.disabled = state.clickers < next.cost;
+        btn.addEventListener('click', () => {
+          if (state.clickers >= next.cost) {
+            if (confirm(`Unlock ${MODE_TITLES[next.to]}? Rebirth will reset progress but grant a permanent bonus.`)) {
+              doPrestige(next.to);
             }
           }
-          updateClickerCount();
-          passwordInput.value = "";
-        } else if (passwordInput.value === "HIHIHI897") {
-          clickerCount += 101901901;
-          alert("You received 101,901,901 coins!");
-          updateClickerCount();
-          passwordInput.value = "";
+        });
+        el.prestigeButtons.appendChild(btn);
+      }
+
+      function refreshAll() {
+        updateModeVisuals();
+        refreshCountsOnly();
+        refreshUpgrades();
+        refreshPrestigeButtons();
+        renderAchievements();
+      }
+
+      // Buy upgrades
+      function buyUpgrade(index) {
+        const want = state.buyAmount === 'max' ? Number.MAX_SAFE_INTEGER : parseInt(state.buyAmount, 10);
+        let bought = 0;
+        for (let k = 0; k < want; k++) {
+          const c = state.upgradeCosts[index];
+          const cur = state.upgradeCurrencyCosts[index];
+          if (state.clickers >= c && state.currency >= cur) {
+            state.clickers -= c;
+            state.currency -= cur;
+            state.upgrades[index] += 1;
+            state.totalUpgrades += 1;
+            state.upgradeCosts[index] = Math.floor(state.upgradeCosts[index] * COST_MULTIPLIER);
+            state.upgradeCurrencyCosts[index] = Math.floor(state.upgradeCurrencyCosts[index] * COST_MULTIPLIER);
+            bought++;
+          } else break;
+        }
+        if (bought > 0) {
+          sfx('buy');
+          showFloatingText(`Bought ${bought}x`);
+          refreshAll();
+          checkAchievements();
         }
       }
-    });
 
-    // Toggle night mode
-    modeToggle.addEventListener("click", () => {
-      document.body.classList.toggle("night-mode");
-    });
+      // Clicker
+      function clickFace(evt) {
+        const gained = getPerClick();
+        state.clickers += gained;
+        state.totalClicks += 1;
+        // Combo update
+        const t = now();
+        if (t < state.combo.expiresAt) {
+          state.combo.count += 1;
+        } else {
+          state.combo.count = 1;
+        }
+        state.combo.expiresAt = t + state.combo.windowMs;
 
-    // Event listeners
-    clickerImgElement.addEventListener("click", clickFace);
-    upgradeBtns.forEach((btn, i) => {
-      btn.addEventListener("click", () => buyUpgrade(i));
-    });
-    bryceClickerBtn.addEventListener("click", () => {
-      if (clickerCount >= bryceClickerCost) {
-        isBryceMode = true;
-        bryceClickerBtn.style.display = "none";
-        masonClickerBtn.style.display = "block";
-        masonClickerInfo.style.display = "block";
-        updateClickerMode();
-        resetGame();
-        alert("You have unlocked Bryce Clicker! This is a rebirth. All progress has been reset.");
-      }
-    });
-    masonClickerBtn.addEventListener("click", () => {
-      if (clickerCount >= masonClickerCost) {
-        isMasonMode = true;
-        masonClickerBtn.style.display = "none";
-        masonClickerInfo.style.display = "none";
-        isaacClickerBtn.style.display = "block";
-        isaacClickerInfo.style.display = "block";
-        updateClickerMode();
-        resetGame();
-        alert("You have unlocked Mason Clicker! This is a rebirth. All progress has been reset.");
-      }
-    });
-    isaacClickerBtn.addEventListener("click", () => {
-      if (clickerCount >= isaacClickerCost) {
-        isIsaacMode = true;
-        isaacClickerBtn.style.display = "none";
-        isaacClickerInfo.style.display = "none";
-        gunnerClickerBtn.style.display = "block";
-        gunnerClickerInfo.style.display = "block";
-        updateClickerMode();
-        resetGame();
-        alert("You have unlocked Isaac Clicker! This is a rebirth. All progress has been reset.");
-      }
-    });
-    gunnerClickerBtn.addEventListener("click", () => {
-      if (clickerCount >= gunnerClickerCost) {
-        isGunnerMode = true;
-        gunnerClickerBtn.style.display = "none";
-        gunnerClickerInfo.style.display = "none";
-        updateClickerMode();
-        resetGame();
-        alert("You have unlocked Gunner Clicker! This is a rebirth. All progress has been reset.");
-      }
-    });
+        // Every 30 clicks give 1 special currency (slightly more frequent)
+        if (state.totalClicks % 30 === 0) {
+          state.currency += 1;
+          showFloatingText(`+1 ${CURRENCY_NAMES[state.mode]}`, evt?.clientX, evt?.clientY ? evt.clientY - 16 : undefined);
+        }
 
-    // Game loop
-    setInterval(generatePerSecond, 1000);
+        if (evt) showFloatingText(`+${fmt(gained)}`, evt.clientX, evt.clientY);
+        else showFloatingText(`+${fmt(gained)}`);
 
-    // Show update text once
-    setTimeout(() => {
-      updateText.style.display = "none";
-    }, 5000); // Hide after 5 seconds
-
-    // Username system
-    usernameSubmit.addEventListener("click", () => {
-      const inputUsername = usernameInput.value.trim();
-      if (!inputUsername) {
-        usernameError.textContent = "Username cannot be empty!";
-        return;
+        sfx('click', 0.4);
+        refreshAll();
+        checkAchievements();
       }
 
-      // Check if the username is already in use
-      const activeUsers = JSON.parse(localStorage.getItem("activeUsers")) || [];
-      if (activeUsers.includes(inputUsername)) {
-        usernameError.textContent = "Username is already in use!";
-        return;
-      }
-
-      // Add the username to active users
-      activeUsers.push(inputUsername);
-      localStorage.setItem("activeUsers", JSON.stringify(activeUsers));
-
-      // Set the username and hide the modal
-      username = inputUsername;
-      localStorage.setItem("currentUsername", username); // Save username to localStorage
-      usernameModal.style.display = "none";
-      usernameDisplay.textContent = `Username: ${username}`; // Update username display
-      loadGame(); // Load the game state for this user
-    });
-
-    // Load saved game state on page load
-    window.addEventListener("load", () => {
-      const savedUsername = localStorage.getItem("currentUsername");
-      if (savedUsername) {
-        username = savedUsername;
-        usernameModal.style.display = "none";
-        usernameDisplay.textContent = `Username: ${username}`; // Update username display
-        loadGame();
-      } else {
-        usernameModal.style.display = "block";
-      }
-    });
-
-    // Save game state periodically (every 10 seconds)
-    setInterval(saveGame, 10000);
-
-    // Leaderboard functionality
-    function updateLeaderboard() {
-      const allUsers = JSON.parse(localStorage.getItem("activeUsers")) || [];
-      const scores = allUsers.map(user => {
-        const state = JSON.parse(localStorage.getItem(`clickerGameState_${user}`)) || {};
-        return {
-          username: user,
-          score: state.clickerCount || 0,
-          mode: getModeFromState(state)
-        };
-      });
-
-      // Sort by score descending
-      scores.sort((a, b) => b.score - a.score);
-
-      // Only show top 5
-      const topScores = scores.slice(0, 5);
-
-      // Update leaderboard display
-      leaderboardEntries.innerHTML = topScores
-        .map((entry, index) => `
-          <div class="leaderboard-entry">
-            <span class="leaderboard-rank">${index + 1}.</span>
-            <span>${entry.username}</span>
-            <span>${entry.mode}</span>
-          </div>
-        `)
-        .join('');
-
-      // If there are less than 5 players, fill remaining spots
-      if (topScores.length < 5) {
-        for (let i = topScores.length; i < 5; i++) {
-          leaderboardEntries.innerHTML += `
-            <div class="leaderboard-entry">
-              <span class="leaderboard-rank">${i + 1}.</span>
-              <span>---</span>
-              <span>---</span>
-            </div>`;
+      // Per second generation
+      function generatePerSecond() {
+        const ps = getPerSecond();
+        if (ps > 0) {
+          state.clickers += ps;
+          refreshCountsOnly();
+        }
+        // Combo expiry
+        if (state.combo.count > 0 && now() > state.combo.expiresAt) {
+          state.combo.count = 0;
+          refreshCountsOnly();
+        }
+        // Buff expiry
+        if (state.buff.active && now() >= state.buff.endsAt) {
+          state.buff.active = false;
+          refreshCountsOnly();
         }
       }
-    }
 
-    function getModeFromState(state) {
-      if (state.isGunnerMode) return "Gunner";
-      if (state.isIsaacMode) return "Isaac";
-      if (state.isMasonMode) return "Mason";
-      if (state.isBryceMode) return "Bryce";
-      return "Mihailo";
-    }
+      // Prestige
+      function doPrestige(nextMode) {
+        // perm bonus +10%
+        state.permBonus = Math.round((state.permBonus + 0.1) * 1000) / 1000;
+        if (!state.unlocked.includes(nextMode)) state.unlocked.push(nextMode);
 
-    // Update leaderboard every 5 seconds
-    setInterval(updateLeaderboard, 5000);
+        state.mode = nextMode;
+        state.clickers = 0;
+        state.currency = 0;
+        state.upgrades = Array(9).fill(0);
+        state.upgradeCosts = BASE_UPGRADE_COSTS.slice();
+        state.upgradeCurrencyCosts = BASE_CURR_COSTS.slice();
+        state.totalClicks = 0;
+        state.totalUpgrades = 0;
+        state.combo.count = 0;
+        state.buff.active = false;
 
-    // Spacebar click functionality
-    document.addEventListener('keydown', (e) => {
-      if (e.code === 'Space') {
-        e.preventDefault(); // Prevent default spacebar behavior (scrolling)
-        clickFace();
+        updateModeVisuals();
+        refreshAll();
+        toast(`Unlocked ${MODE_TITLES[nextMode]}! +10% permanent bonus`);
       }
-    });
 
-    // Username edit functionality
-    function updateUsernameDisplay() {
-      usernameDisplay.innerHTML = `Username: ${username} <span id="username-edit" title="Change username" class="${usernameChanged ? 'disabled' : ''}">✏️</span>`;
-      
-      const editButton = document.getElementById('username-edit');
-      if (editButton) {
-        editButton.addEventListener('click', () => {
-          if (!usernameChanged) {
-            usernameModal.style.display = 'block';
-            usernameChanged = true;
-            editButton.classList.add('disabled');
-          } else {
-            alert('You can only change your username once!');
+      // Floating text
+      function showFloatingText(text, x, y) {
+        if (!state.settings.floatingText) return;
+        const node = document.createElement('div');
+        node.className = 'floating-text';
+        node.textContent = text;
+        let rx = x, ry = y;
+        if (typeof rx !== 'number' || typeof ry !== 'number') {
+          const r = el.img.getBoundingClientRect();
+          rx = r.left + r.width / 2;
+          ry = r.top + r.height / 2;
+        }
+        node.style.left = rx + 'px';
+        node.style.top = ry + 'px';
+        document.body.appendChild(node);
+        setTimeout(() => node.remove(), 900);
+      }
+
+      // Golden event
+      let goldenEl = null;
+      function spawnGolden() {
+        if (goldenEl) return;
+        goldenEl = document.createElement('div');
+        goldenEl.className = 'golden';
+        const w = window.innerWidth, h = window.innerHeight;
+        const x = Math.random() * (w - 120) + 60;
+        const y = Math.random() * (h - 220) + 140;
+        goldenEl.style.left = x + 'px';
+        goldenEl.style.top = y + 'px';
+        document.body.appendChild(goldenEl);
+
+        const kill = () => { if (goldenEl) { goldenEl.remove(); goldenEl = null; } };
+        const timer = setTimeout(kill, 10000);
+
+        goldenEl.addEventListener('click', () => {
+          clearTimeout(timer);
+          state.goldenClicks++;
+          startBuff(5, 20_000); // x5 for 20s
+          sfx('gold');
+          showFloatingText('G O L D E N  R U S H ✨', x, y);
+          checkAchievements();
+          kill();
+        });
+      }
+      function startBuff(mult, ms) {
+        state.buff.active = true;
+        state.buff.multiplier = mult;
+        state.buff.endsAt = now() + ms;
+        refreshCountsOnly();
+      }
+      function scheduleGolden() {
+        const wait = Math.floor(45_000 + Math.random() * 45_000); // 45–90s
+        setTimeout(() => { spawnGolden(); scheduleGolden(); }, wait);
+      }
+
+      // Achievements UI
+      function renderAchievements() {
+        el.achGrid.innerHTML = '';
+        const got = state.ach || {};
+        ACH.forEach(a => {
+          const node = document.createElement('div');
+          const unlocked = got[a.id];
+          node.className = 'ach' + (unlocked ? '' : ' locked');
+          node.innerHTML = `<div class="name">${a.name}</div><div class="desc">${a.desc}</div>`;
+          el.achGrid.appendChild(node);
+        });
+      }
+      function checkAchievements() {
+        if (!state.ach) state.ach = {};
+        ACH.forEach(a => {
+          if (!state.ach[a.id] && a.check(state)) {
+            state.ach[a.id] = true;
+            toast(`Achievement unlocked: ${a.name} 🏆`);
+            sfx('ach', 0.6);
           }
         });
       }
-    }
 
-    // Update username display when username is set
-    usernameSubmit.addEventListener('click', () => {
-      setTimeout(() => {
-        updateUsernameDisplay();
-        updateLeaderboard();
-      }, 100);
-    });
-
-    // If username is already set, update display on load
-    window.addEventListener('load', () => {
-      if (username) {
-        updateUsernameDisplay();
-        updateLeaderboard();
+      // Toasts
+      function toast(msg) {
+        const t = document.createElement('div');
+        t.className = 'toast';
+        t.textContent = msg;
+        el.toasts.appendChild(t);
+        setTimeout(() => {
+          t.style.opacity = '0';
+          t.style.transform = 'translateY(6px)';
+          setTimeout(() => t.remove(), 200);
+        }, 3200);
       }
-    });
 
-    // Update the leaderboard immediately when the game state changes
-    const originalSaveGame = saveGame;
-    saveGame = function() {
-      originalSaveGame();
-      updateLeaderboard();
-    };
+      // Settings bindings
+      function applySettings() {
+        document.body.classList.toggle('theme-light', state.settings.theme === 'light');
+        document.body.classList.toggle('theme-dark', state.settings.theme !== 'light');
+        document.body.classList.toggle('no-anim', !!state.settings.reduceAnimations);
+        document.documentElement.style.setProperty('--accent', state.settings.accent);
+
+        el.bg.className = 'bg ' + ({
+          aurora: 'bg-aurora',
+          stars: 'bg-stars',
+          grid: 'bg-grid',
+          sunset: 'bg-sunset',
+          solid: 'bg-solid'
+        }[state.settings.background] || 'bg-aurora');
+
+        // Sync controls
+        el.setTheme.checked = (state.settings.theme === 'light');
+        el.setAccent.value = state.settings.accent;
+        el.setBg.value = state.settings.background;
+        el.setSound.checked = !!state.settings.sounds;
+        el.setVolume.value = state.settings.volume;
+        el.setFloating.checked = !!state.settings.floatingText;
+        el.setReduce.checked = !!state.settings.reduceAnimations;
+      }
+
+      // Daily reward
+      function updateDailyUI() {
+        const t = now();
+        if (t >= (state.daily.next || 0)) {
+          el.dailyText.textContent = 'Your daily is ready! Claim for a big boost.';
+          el.dailyClaim.disabled = false;
+        } else {
+          const left = state.daily.next - t;
+          const hrs = Math.floor(left / 3600000);
+          const mins = Math.floor((left % 3600000) / 60000);
+          el.dailyText.textContent = `Next daily in ${hrs}h ${mins}m`;
+          el.dailyClaim.disabled = true;
+        }
+      }
+      function claimDaily() {
+        const ps = getPerSecond();
+        const reward = Math.max(1000, ps * 600); // ~10min of income
+        state.clickers += reward;
+        state.currency += 5;
+        toast(`Daily +${fmt(reward)} ${unitName()} and +5 ${CURRENCY_NAMES[state.mode]} 🎁`);
+        state.daily.next = now() + 24 * 3600_000;
+        updateDailyUI();
+        refreshCountsOnly();
+      }
+
+      // Offline progress
+      function applyOffline() {
+        const t = now();
+        const dt = Math.min(8 * 3600_000, Math.max(0, t - (state.lastSave || t)));
+        const secs = Math.floor(dt / 1000);
+        const ps = getPerSecond();
+        if (secs > 5 && ps > 0) {
+          const gain = ps * secs;
+          state.clickers += gain;
+          toast(`+${fmt(gain)} from offline progress ⏱️`);
+        }
+      }
+
+      // Events
+      el.img.addEventListener('click', (e) => clickFace(e));
+      document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && !e.repeat) {
+          e.preventDefault();
+          clickFace();
+        }
+      });
+
+      document.querySelectorAll('.buy-toggle .chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          state.buyAmount = chip.dataset.buy;
+          document.querySelectorAll('.buy-toggle .chip').forEach(c => c.classList.toggle('active', c === chip));
+          refreshUpgrades();
+          save();
+        });
+      });
+
+      el.password.addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') {
+          const code = el.password.value.trim();
+          el.password.value = '';
+          if (!code) return;
+
+          if (code === '10k') {
+            if (!state.cheatUsed[state.mode]) {
+              state.clickers += 10000;
+              state.cheatUsed[state.mode] = true;
+              toast(`+10,000 ${unitName()}!`);
+              refreshAll();
+            } else {
+              toast('That code is already used in this mode.');
+            }
+          } else if (code === 'HIHIHI897') {
+            state.clickers += 101_901_901;
+            toast('You received 101,901,901 coins!');
+            refreshAll();
+          } else {
+            toast('Invalid code.');
+          }
+        }
+      });
+
+      // Settings open/close
+      document.getElementById('btn-settings').addEventListener('click', () => {
+        el.settingsBackdrop.style.display = 'flex';
+      });
+      el.settingsClose.addEventListener('click', () => {
+        el.settingsBackdrop.style.display = 'none';
+      });
+      el.settingsBackdrop.addEventListener('click', (e) => {
+        if (e.target === el.settingsBackdrop) el.settingsBackdrop.style.display = 'none';
+      });
+
+      // Achievements modal
+      document.getElementById('btn-achievements').addEventListener('click', () => {
+        renderAchievements();
+        el.achBackdrop.style.display = 'flex';
+      });
+      el.achClose.addEventListener('click', () => el.achBackdrop.style.display = 'none');
+      el.achBackdrop.addEventListener('click', (e) => { if (e.target === el.achBackdrop) el.achBackdrop.style.display = 'none'; });
+
+      // Daily modal
+      document.getElementById('btn-daily').addEventListener('click', () => {
+        updateDailyUI();
+        el.dailyBackdrop.style.display = 'flex';
+      });
+      el.dailyClose.addEventListener('click', () => el.dailyBackdrop.style.display = 'none');
+      el.dailyBackdrop.addEventListener('click', (e) => { if (e.target === el.dailyBackdrop) el.dailyBackdrop.style.display = 'none'; });
+      el.dailyClaim.addEventListener('click', claimDaily);
+
+      // Settings controls
+      el.setTheme.addEventListener('change', () => {
+        state.settings.theme = el.setTheme.checked ? 'light' : 'dark';
+        applySettings(); save();
+      });
+      el.setAccent.addEventListener('input', () => {
+        state.settings.accent = el.setAccent.value; applySettings(); save();
+      });
+      el.setBg.addEventListener('change', () => {
+        state.settings.background = el.setBg.value; applySettings(); save();
+      });
+      el.setSound.addEventListener('change', () => {
+        state.settings.sounds = el.setSound.checked; save();
+      });
+      el.setVolume.addEventListener('input', () => {
+        state.settings.volume = parseFloat(el.setVolume.value || '0.8'); save();
+      });
+      el.setFloating.addEventListener('change', () => {
+        state.settings.floatingText = el.setFloating.checked; save();
+      });
+      el.setReduce.addEventListener('change', () => {
+        state.settings.reduceAnimations = el.setReduce.checked; applySettings(); save();
+      });
+
+      // Reset/Export/Import (in settings)
+      el.btnReset.addEventListener('click', () => {
+        if (!confirm('Reset progress for this mode?')) return;
+        state.clickers = 0; state.currency = 0;
+        state.upgrades = Array(9).fill(0);
+        state.upgradeCosts = BASE_UPGRADE_COSTS.slice();
+        state.upgradeCurrencyCosts = BASE_CURR_COSTS.slice();
+        state.totalClicks = 0; state.totalUpgrades = 0;
+        state.combo.count = 0; state.buff.active = false;
+        refreshAll();
+        toast('Progress reset for this mode.');
+      });
+      el.btnResetAll.addEventListener('click', () => {
+        if (!confirm('Full reset (all modes, settings, achievements)?')) return;
+        localStorage.removeItem(saveKey);
+        location.reload();
+      });
+      el.btnExport.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(btoa(JSON.stringify(state)));
+          toast('Save copied to clipboard.');
+        } catch {
+          toast('Clipboard blocked by browser.');
+        }
+      });
+      el.btnImport.addEventListener('click', () => {
+        const raw = prompt('Paste your save string:');
+        if (!raw) return;
+        try {
+          const parsed = JSON.parse(atob(raw));
+          if (!parsed || typeof parsed !== 'object' || !parsed.mode) throw new Error('Invalid');
+          Object.assign(state, { ...state, ...parsed });
+          applySettings();
+          refreshAll();
+          toast('Save imported!');
+        } catch {
+          toast('Invalid or corrupted save.');
+        }
+      });
+
+      // Rename
+      el.editName.addEventListener('click', () => {
+        const next = prompt('Enter your name:', state.playerName || 'Anonymous');
+        if (next !== null) {
+          const trimmed = next.trim().slice(0, 20) || 'Anonymous';
+          state.playerName = trimmed;
+          el.name.textContent = trimmed;
+          save();
+        }
+      });
+
+      // Prestige/golden timers
+      function scheduleLoops() {
+        setInterval(generatePerSecond, 1000);
+        setInterval(save, 10000);
+      }
+
+      // Initialize
+      load();
+      applyOffline();
+      el.name.textContent = state.playerName || 'Anonymous';
+      applySettings();
+      updateModeVisuals();
+      document.querySelectorAll('.buy-toggle .chip').forEach(c => {
+        c.classList.toggle('active', c.dataset.buy === state.buyAmount);
+      });
+      refreshAll();
+      scheduleLoops();
+      scheduleGolden();
+
+      // Golden rush banner initial visibility
+      refreshCountsOnly();
+    })();
   </script>
 </body>
 </html>
