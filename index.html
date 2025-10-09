@@ -513,7 +513,7 @@
           <label for="password-input">Password:</label>
           <input id="password-input" type="text" placeholder="Enter code (press Enter)" />
         </div>
-        <span class="muted">Codes: 10k (once per mode), HIHIHI897 (big boost)</span>
+        <span class="muted">Codes: 10k (once per mode)</span>
       </div>
     </div>
   </div>
@@ -1222,7 +1222,7 @@
             } else {
               toast('That code is already used in this mode.');
             }
-          } else if (code === 'HIHIHI897') {
+          } else if (code === 'ADMIN') {
             state.clickers += 101_901_901;
             toast('You received 101,901,901 coins!');
             refreshAll();
