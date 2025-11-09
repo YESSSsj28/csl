@@ -64,11 +64,17 @@
     background: linear-gradient(135deg, #0a0a0a, #16213e);
   }
 
-  #twitchLink {
-    display: inline-block;
+  .social-links {
+    display: flex;
+    gap: 20px;
     margin: 25px 0;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .social-link {
+    display: inline-block;
     padding: 15px 30px;
-    background-color: #9146ff;
     color: white;
     text-decoration: none;
     border-radius: 10px;
@@ -78,10 +84,33 @@
     box-shadow: 0 0 15px rgba(145, 70, 255, 0.5);
   }
 
-  #twitchLink:hover {
-    background-color: #772ce8;
+  #twitchLink {
+    background-color: #9146ff;
+  }
+
+  #discordLink {
+    background-color: #5865F2;
+  }
+
+  #youtubeLink {
+    background-color: #FF0000;
+  }
+
+  .social-link:hover {
     transform: scale(1.05);
     box-shadow: 0 0 25px rgba(145, 70, 255, 0.8);
+  }
+
+  #twitchLink:hover {
+    background-color: #772ce8;
+  }
+
+  #discordLink:hover {
+    background-color: #4752c4;
+  }
+
+  #youtubeLink:hover {
+    background-color: #cc0000;
   }
 
   .login-panel {
@@ -305,9 +334,17 @@
   <h1>Welcome to StruckByLightn's Giveaway!</h1>
   <p style="font-size: 1.2rem; margin-bottom: 10px;">Join the fun and participate in our Last One Standing giveaway!</p>
   
-  <a id="twitchLink" href="https://www.twitch.tv/struckbylightn" target="_blank">
-    🎮 Watch Live on Twitch 🎮
-  </a>
+  <div class="social-links">
+    <a id="twitchLink" href="https://www.twitch.tv/struckbylightn" target="_blank">
+      🎮 Watch Live on Twitch 🎮
+    </a>
+    <a id="discordLink" href="https://discord.gg/FrHSYYJ6mR" target="_blank">
+      💬 Join Discord 💬
+    </a>
+    <a id="youtubeLink" href="https://www.youtube.com/@StruckByLightningWasTaken" target="_blank">
+      📺 YouTube Channel 📺
+    </a>
+  </div>
   
   <div class="login-panel">
     <h2>Login to Participate</h2>
@@ -323,9 +360,17 @@
   <div class="dashboard-content">
     <h1>Welcome, <span id="dashboardUsername"></span>!</h1>
     
-    <a id="dashboardTwitchLink" href="https://www.twitch.tv/struckbylightn" target="_blank">
-      🎮 Watch Live on Twitch 🎮
-    </a>
+    <div class="social-links">
+      <a id="dashboardTwitchLink" href="https://www.twitch.tv/struckbylightn" target="_blank">
+        🎮 Watch Live on Twitch 🎮
+      </a>
+      <a id="dashboardDiscordLink" href="https://discord.gg/FrHSYYJ6mR" target="_blank">
+        💬 Join Discord 💬
+      </a>
+      <a id="dashboardYoutubeLink" href="https://www.youtube.com/@StruckByLightningWasTaken" target="_blank">
+        📺 YouTube Channel 📺
+      </a>
+    </div>
 
     <div class="user-stats">
       <h2>Your Dashboard</h2>
@@ -402,6 +447,8 @@ let isAdmin = false;
 // Giveaway state
 let users = [];
 let eliminatedUsers = [];
+let activeUsers = [];
+let isEliminationRunning = false;
 
 // UI elements
 const screens = {
@@ -637,7 +684,7 @@ function startCountdown() {
             setTimeout(() => {
                 giveawayRef.update({
                     phase: "elimination",
-                    drawing: true
+                    drawing: false
                 });
             }, 1000);
         }
@@ -651,7 +698,7 @@ function startEliminationRound() {
     winnerDisplay.textContent = "";
     
     // Get active users (not eliminated and not admins)
-    const activeUsers = users.filter(u => !eliminatedUsers.includes(u));
+    activeUsers = users.filter(u => !eliminatedUsers.includes(u));
     
     if (activeUsers.length <= 1) {
         // We have a winner!
@@ -660,13 +707,29 @@ function startEliminationRound() {
         return;
     }
     
-    // Start the elimination animation
-    eliminateNext(activeUsers);
+    // Populate scroll with active users
+    populateScroll(activeUsers);
+    
+    // Reset current name display
+    currentName.textContent = "Ready for next elimination...";
 }
 
 // Elimination animation
-function eliminateNext(activeUsers) {
-    populateScroll(activeUsers);
+function eliminateNext() {
+    if (isEliminationRunning) return;
+    
+    isEliminationRunning = true;
+    nextBtn.disabled = true;
+    
+    // Get active users (not eliminated and not admins)
+    activeUsers = users.filter(u => !eliminatedUsers.includes(u));
+    
+    if (activeUsers.length <= 1) {
+        // We have a winner!
+        const winner = activeUsers[0] || "No one";
+        showWinner(winner);
+        return;
+    }
     
     let totalScrolls = 30;
     let speed = 40;
@@ -700,6 +763,18 @@ function eliminateNext(activeUsers) {
                 eliminatedUsers: eliminatedUsers,
                 drawing: false
             });
+            
+            // Re-enable the next button after a short delay
+            setTimeout(() => {
+                isEliminationRunning = false;
+                nextBtn.disabled = false;
+                
+                // Check if we have a winner after this elimination
+                if (activeUsers.length <= 1) {
+                    const winner = activeUsers[0] || "No one";
+                    showWinner(winner);
+                }
+            }, 1500);
         }
     }
     
@@ -743,10 +818,15 @@ function showWinner(winner) {
 
 // Next elimination button (ADMIN ONLY)
 nextBtn.addEventListener('click', () => {
-    nextBtn.style.display = 'none';
+    if (!isAdmin) return;
+    
+    // Update Firebase to indicate we're drawing
     giveawayRef.update({
         drawing: true
     });
+    
+    // Start the elimination animation
+    eliminateNext();
 });
 
 // Initialize - Start with welcome screen
