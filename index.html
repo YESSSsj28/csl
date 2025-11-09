@@ -1,1362 +1,756 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Mihailo & Friends Clicker</title>
-  <style>
-    :root {
-      --bg: #0d0f14;
-      --fg: #f5f7fb;
-      --muted: #b6c0d1;
-      --accent: #00aaff;
-      --panel: rgba(255,255,255,0.06);
-      --panel-border: rgba(255,255,255,0.12);
-      --btn: #2a3140;
-      --btn-hover: #374151;
-      --btn-disabled: #5b6473;
-      --danger: #ff4d4d;
-      --shadow: 0 10px 30px rgba(0,0,0,0.35);
-    }
-    /* Light theme */
-    .theme-light {
-      --bg: #f5f7fb;
-      --fg: #0d0f14;
-      --muted: #495266;
-      --panel: rgba(0,0,0,0.04);
-      --panel-border: rgba(0,0,0,0.08);
-      --btn: #e3e7f0;
-      --btn-hover: #d6dbe6;
-      --btn-disabled: #c9ceda;
-      --shadow: 0 10px 30px rgba(0,0,0,0.12);
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Last One Standing Giveaway</title>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    background-color: #0a0a0a;
+    color: #00ff99;
+    font-family: 'Segoe UI', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+    overflow: hidden;
+    transition: opacity 0.8s ease-in-out;
+  }
 
-    html, body {
-      height: 100%;
-    }
-    body {
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      color: var(--fg);
-      background: var(--bg);
-      margin: 0;
-      overflow-x: hidden;
-    }
+  .screen {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+  }
 
-    /* Background layers */
-    .bg {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      pointer-events: none;
-    }
-    /* Solid */
-    .bg-solid { background: var(--bg); }
+  h1 {
+    margin-bottom: 20px;
+    text-shadow: 0 0 10px #00ff99;
+    font-size: 2.5rem;
+  }
 
-    /* Animated Aurora */
-    .bg-aurora {
-      background: radial-gradient(1200px 800px at 20% 20%, rgba(0, 255, 195, 0.25), transparent 60%),
-                  radial-gradient(1000px 700px at 80% 30%, rgba(0, 170, 255, 0.22), transparent 60%),
-                  radial-gradient(1200px 900px at 50% 80%, rgba(255, 0, 128, 0.18), transparent 60%),
-                  var(--bg);
-      animation: auroraShift 18s linear infinite;
-      filter: blur(0.2px);
-    }
-    @keyframes auroraShift {
-      0% { background-position: 0 0, 0 0, 0 0; }
-      50% { background-position: 10% 8%, -8% 6%, 0% -10%; }
-      100% { background-position: 0 0, 0 0, 0 0; }
-    }
+  h2 {
+    margin-bottom: 15px;
+    text-shadow: 0 0 8px #00ff99;
+    font-size: 2rem;
+  }
 
-    /* Stars */
-    .bg-stars::before, .bg-stars::after {
-      content: "";
-      position: absolute; inset: 0;
-      background:
-        radial-gradient(2px 2px at 20% 30%, #fff, transparent 40%),
-        radial-gradient(2px 2px at 40% 70%, #fff, transparent 40%),
-        radial-gradient(1.5px 1.5px at 60% 20%, #fff, transparent 40%),
-        radial-gradient(1.5px 1.5px at 80% 80%, #fff, transparent 40%),
-        radial-gradient(1.2px 1.2px at 35% 50%, #fff, transparent 40%),
-        radial-gradient(1.2px 1.2px at 75% 40%, #fff, transparent 40%),
-        var(--bg);
-      opacity: 0.6;
-      animation: starDrift 45s linear infinite;
-    }
-    .bg-stars::after {
-      transform: scale(1.2);
-      opacity: 0.4;
-      animation-duration: 60s;
-    }
-    @keyframes starDrift {
-      0% { transform: translateY(0px); }
-      100% { transform: translateY(-200px); }
-    }
+  h3 {
+    margin-bottom: 10px;
+    text-shadow: 0 0 6px #00ff99;
+    font-size: 1.5rem;
+  }
 
-    /* Neon Grid */
-    .bg-grid {
-      background:
-        radial-gradient(circle at 50% -20%, rgba(0,0,0,0.6), transparent 65%),
-        linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.35)),
-        var(--bg);
-    }
-    .bg-grid::before {
-      content:"";
-      position: absolute; inset: 0;
-      background:
-        repeating-linear-gradient(0deg, rgba(0,255,170,0.18), rgba(0,255,170,0.18) 1px, transparent 1px, transparent 40px),
-        repeating-linear-gradient(90deg, rgba(0,170,255,0.18), rgba(0,170,255,0.18) 1px, transparent 1px, transparent 40px);
-      transform-origin: center;
-      animation: gridMove 18s linear infinite;
-      filter: drop-shadow(0 0 20px rgba(0, 170, 255, 0.25));
-    }
-    @keyframes gridMove {
-      0% { transform: perspective(500px) rotateX(60deg) translateY(0); }
-      100% { transform: perspective(500px) rotateX(60deg) translateY(40px); }
-    }
+  #welcomeScreen {
+    background: linear-gradient(135deg, #0a0a0a, #1a1a2e);
+  }
 
-    /* Sunset gradient */
-    .bg-sunset {
-      background: linear-gradient(120deg, #ff6a88 0%, #ff99ac 25%, #84fab0 75%, #8fd3f4 100%);
-      background-size: 200% 200%;
-      animation: sunsetShift 20s ease infinite;
-      filter: saturate(1.05);
-    }
-    @keyframes sunsetShift {
-      0%,100% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-    }
+  #dashboardScreen {
+    background: linear-gradient(135deg, #0a0a0a, #16213e);
+  }
 
-    /* HUD */
-    .hud {
-      position: sticky;
-      top: 0;
-      z-index: 5;
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 16px;
-      backdrop-filter: blur(8px);
-      background: rgba(0,0,0,0.25);
-      border-bottom: 1px solid var(--panel-border);
-    }
-    .theme-light .hud { background: rgba(255,255,255,0.6); }
+  #twitchLink {
+    display: inline-block;
+    margin: 25px 0;
+    padding: 15px 30px;
+    background-color: #9146ff;
+    color: white;
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 1.2rem;
+    transition: all 0.3s;
+    box-shadow: 0 0 15px rgba(145, 70, 255, 0.5);
+  }
 
-    .hud .left, .hud .right {
-      display: flex; gap: 8px; align-items: center;
-    }
-    .hud .center { text-align: center; }
-    .title {
-      margin: 0; font-size: 22px; letter-spacing: 0.3px;
-      text-shadow: 0 2px 18px rgba(0,0,0,0.25);
-    }
-    .player-line {
-      font-size: 13px; color: var(--muted); margin-top: 2px;
-    }
-    .icon-btn {
-      background: var(--panel);
-      border: 1px solid var(--panel-border);
-      color: var(--fg);
-      padding: 8px 10px;
-      border-radius: 10px;
-      cursor: pointer;
-      box-shadow: var(--shadow);
-      transition: transform 0.05s ease, background 0.2s ease;
-    }
-    .icon-btn:hover { background: rgba(255,255,255,0.12); }
-    .icon-btn:active { transform: translateY(1px); }
+  #twitchLink:hover {
+    background-color: #772ce8;
+    transform: scale(1.05);
+    box-shadow: 0 0 25px rgba(145, 70, 255, 0.8);
+  }
 
-    .container {
-      position: relative;
-      z-index: 1;
-      max-width: 1100px;
-      margin: 12px auto 80px;
-      padding: 0 16px;
-    }
+  .login-panel {
+    margin-top: 30px;
+    padding: 25px;
+    border: 2px solid #00ff99;
+    border-radius: 12px;
+    max-width: 400px;
+    width: 90%;
+    background: rgba(0, 255, 153, 0.05);
+    box-shadow: 0 0 20px rgba(0, 255, 153, 0.2);
+  }
 
-    .hud-stats {
-      display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 18px;
-      margin: 12px 0 4px; color: var(--muted);
-    }
-    .hud-stat-pill {
-      background: var(--panel);
-      border: 1px solid var(--panel-border);
-      padding: 8px 12px;
-      border-radius: 999px;
-      font-size: 13px;
-    }
+  .login-panel input {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    margin: 12px 0;
+    background: #111;
+    border: 1px solid #00ff99;
+    border-radius: 8px;
+    color: #00ff99;
+    font-size: 1rem;
+  }
 
-    .clicker-wrap {
-      display: flex; flex-direction: column; align-items: center;
-    }
-    #clicker-img {
-      width: 240px; height: 240px; border-radius: 50%;
-      border: 6px solid rgba(255,255,255,0.9);
-      box-shadow: 0 18px 40px rgba(0,0,0,0.35), 0 0 30px var(--accent);
-      cursor: pointer;
-      user-select: none;
-      object-fit: cover;
-      transition: transform 0.06s ease, box-shadow 0.2s ease;
-    }
-    #clicker-img:active { transform: scale(0.98); }
+  .login-panel button {
+    width: 100%;
+    margin: 8px 0;
+  }
 
-    .resource-rows {
-      display: flex; gap: 14px; justify-content: center; align-items: baseline;
-      margin-top: 10px;
-    }
-    .resource {
-      background: var(--panel);
-      border: 1px solid var(--panel-border);
-      padding: 10px 14px;
-      border-radius: 12px;
-      box-shadow: var(--shadow);
-      min-width: 220px;
-    }
-    .resource .label { color: var(--muted); font-size: 12px; }
-    .resource .value { font-size: 22px; font-weight: 700; margin-top: 2px; }
+  .dashboard-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+    max-width: 800px;
+    width: 90%;
+  }
 
-    .panel {
-      background: var(--panel);
-      border: 1px solid var(--panel-border);
-      border-radius: 14px;
-      padding: 14px;
-      margin: 16px auto;
-      box-shadow: var(--shadow);
-    }
+  .admin-panel {
+    border: 2px solid #00ff99;
+    border-radius: 12px;
+    padding: 25px;
+    background: rgba(0, 255, 153, 0.05);
+    box-shadow: 0 0 20px rgba(0, 255, 153, 0.2);
+    width: 100%;
+  }
 
-    .buy-toggle {
-      display: inline-flex; gap: 6px; margin: 8px 0 8px;
-      background: rgba(0,0,0,0.15);
-      padding: 6px;
-      border-radius: 999px;
-      border: 1px solid var(--panel-border);
-    }
-    .chip {
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: transparent;
-      cursor: pointer;
-      font-size: 13px;
-      color: var(--fg);
-      border: 1px solid transparent;
-    }
-    .chip.active {
-      background: var(--accent);
-      color: #000;
-      font-weight: 700;
-      border-color: transparent;
-      box-shadow: 0 2px 14px rgba(0,0,0,0.25), 0 0 20px var(--accent);
-    }
+  .user-stats {
+    border: 2px solid #00ccff;
+    border-radius: 12px;
+    padding: 25px;
+    background: rgba(0, 204, 255, 0.05);
+    box-shadow: 0 0 20px rgba(0, 204, 255, 0.2);
+    width: 100%;
+  }
 
-    .upgrades {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 12px;
-      margin-top: 8px;
-    }
-    .upgrade-card {
-      background: rgba(255,255,255,0.08);
-      border: 1px solid var(--panel-border);
-      border-radius: 12px;
-      padding: 12px;
-      transition: transform 0.06s ease, background 0.2s ease, border-color 0.2s ease;
-    }
-    .upgrade-card:hover {
-      background: rgba(255,255,255,0.12);
-      border-color: rgba(255,255,255,0.2);
-    }
-    .upgrade-title {
-      display: flex; justify-content: space-between; align-items: center;
-      font-weight: 700;
-    }
-    .upgrade-info { color: var(--muted); font-size: 13px; margin: 6px 0 8px; }
+  #lobbyScreen {
+    background: linear-gradient(135deg, #0a0a0a, #16213e);
+  }
 
-    button {
-      padding: 10px 14px; font-size: 16px; cursor: pointer;
-      background: var(--btn); color: var(--fg);
-      border: 1px solid var(--panel-border);
-      border-radius: 10px;
-      transition: transform 0.06s ease, background 0.2s ease, border-color 0.2s ease;
-    }
-    button:hover { background: var(--btn-hover); }
-    button:active { transform: translateY(1px); }
-    button:disabled { background: var(--btn-disabled); cursor: not-allowed; }
+  #participantsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 15px;
+    margin: 25px 0;
+    max-width: 800px;
+    width: 90%;
+    max-height: 60vh;
+    overflow-y: auto;
+    padding: 15px;
+  }
 
-    .danger { background: var(--danger); color: #000; border-color: transparent; }
-    .danger:hover { filter: brightness(1.05); }
+  .user {
+    padding: 15px;
+    border-radius: 8px;
+    color: #00ff99;
+    background-color: #111;
+    font-size: 1.1rem;
+    border: 1px solid #00ff99;
+    box-shadow: 0 0 10px rgba(0, 255, 153, 0.3);
+    transition: all 0.3s ease;
+  }
 
-    .floating-text {
-      position: fixed;
-      font-size: 18px;
-      font-weight: 800;
-      color: #ffffff;
-      pointer-events: none;
-      transform: translate(-50%, -50%);
-      animation: floatUp 900ms ease-out forwards;
-      text-shadow: 0 0 10px rgba(0,0,0,0.5);
-      mix-blend-mode: screen;
-    }
-    @keyframes floatUp {
-      0% { opacity: 1; transform: translate(-50%, -50%) translateY(0) scale(1); }
-      100% { opacity: 0; transform: translate(-50%, -50%) translateY(-70px) scale(1.05); }
-    }
+  .user:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 15px rgba(0, 255, 153, 0.6);
+  }
 
-    /* Combo bar */
-    .combo {
-      margin: 12px auto 0;
-      width: min(420px, 90%);
-      background: rgba(0,0,0,0.2);
-      border: 1px solid var(--panel-border);
-      border-radius: 999px;
-      overflow: hidden;
-      display: none;
-    }
-    .combo-inner {
-      height: 10px;
-      background: linear-gradient(90deg, var(--accent), #22d3ee);
-      width: 100%;
-      transform-origin: left;
-      transition: width 0.12s linear;
-    }
-    .combo-label {
-      text-align: center;
-      font-size: 12px; color: var(--muted);
-      margin-top: 6px;
-    }
+  #countdownScreen {
+    background: #0a0a0a;
+  }
 
-    /* Buff banner */
-    .buff-banner {
-      position: fixed;
-      top: 62px; left: 50%;
-      transform: translateX(-50%);
-      z-index: 6;
-      background: rgba(255,215,0,0.16);
-      border: 1px solid rgba(255,215,0,0.4);
-      color: #ffd700;
-      padding: 6px 12px;
-      border-radius: 999px;
-      backdrop-filter: blur(8px);
-      display: none;
-      box-shadow: var(--shadow);
-      font-weight: 700;
-    }
+  #countdown {
+    font-size: 12rem;
+    color: #006400;
+    text-shadow: 0 0 30px #00ff00;
+    font-weight: bold;
+    animation: pulse 1s infinite;
+  }
 
-    /* Golden orb */
-    .golden {
-      position: fixed;
-      width: 64px; height: 64px; border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, #fff7b1, #ffd700, #ffb200 60%, rgba(255,178,0,0.05) 70%);
-      box-shadow: 0 0 30px #ffd700, 0 0 80px rgba(255, 217, 0, 0.6);
-      z-index: 5;
-      cursor: pointer;
-      animation: float 2.4s ease-in-out infinite;
-    }
-    @keyframes float {
-      0%,100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
-    }
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
 
-    /* Modals */
-    .modal-backdrop {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-      display: none; align-items: center; justify-content: center; z-index: 20;
-      backdrop-filter: blur(4px);
-    }
-    .modal {
-      background: var(--panel);
-      border: 1px solid var(--panel-border);
-      border-radius: 14px;
-      padding: 16px;
-      width: min(900px, 92vw);
-      max-height: 80vh;
-      overflow: auto;
-      box-shadow: var(--shadow);
-    }
-    .modal h3 { margin: 8px 0 10px; }
-    .modal .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-    .settings-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 12px; margin-top: 8px;
-    }
-    .setting-card {
-      background: rgba(255,255,255,0.08);
-      border: 1px solid var(--panel-border);
-      border-radius: 10px;
-      padding: 10px;
-    }
-    .field {
-      display: flex; gap: 8px; align-items: center;
-      background: rgba(0,0,0,0.12); border: 1px solid var(--panel-border);
-      padding: 8px 10px; border-radius: 10px;
-    }
-    input[type="text"], select, input[type="range"], input[type="color"] {
-      background: transparent; color: var(--fg); border: 1px solid var(--panel-border);
-      border-radius: 8px; padding: 6px 10px; outline: none;
-    }
-    .toggle {
-      display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
-      user-select: none;
-    }
-    .toggle input { transform: scale(1.2); }
+  #drawScreen {
+    background: linear-gradient(135deg, #0a0a0a, #1a1a2e);
+  }
 
-    /* Achievements */
-    .ach-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px,1fr));
-      gap: 10px;
-    }
-    .ach {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid var(--panel-border);
-      border-radius: 10px;
-      padding: 10px;
-    }
-    .ach.locked { opacity: 0.5; }
-    .ach .name { font-weight: 700; }
-    .ach .desc { color: var(--muted); font-size: 13px; }
+  #scrollContainer {
+    height: 300px;
+    width: 90%;
+    max-width: 600px;
+    overflow: hidden;
+    border: 3px solid #00ff99;
+    margin: 25px auto;
+    border-radius: 12px;
+    background-color: #111;
+    box-shadow: 0 0 25px rgba(0, 255, 153, 0.5);
+  }
 
-    /* Toasts */
-    .toasts {
-      position: fixed; right: 14px; bottom: 14px; z-index: 25;
-      display: flex; flex-direction: column; gap: 8px; max-width: 300px;
-    }
-    .toast {
-      background: rgba(0,0,0,0.7);
-      border: 1px solid rgba(255,255,255,0.15);
-      padding: 10px 12px; border-radius: 10px; color: #fff; box-shadow: var(--shadow);
-      animation: toastIn 180ms ease-out;
-    }
-    .theme-light .toast { background: rgba(0,0,0,0.85); }
-    @keyframes toastIn {
-      from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; }
-    }
+  #scrollList {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
 
-    /* Small helper */
-    .muted { color: var(--muted); }
-    .spacer { height: 10px; }
+  #currentName {
+    font-size: 3.5rem;
+    margin: 30px 0;
+    text-shadow: 0 0 20px #00ff99;
+    background-color: transparent;
+    min-height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
-    /* Reduce animations setting */
-    .no-anim * { animation: none !important; transition: none !important; }
-  </style>
+  .winner {
+    color: #00ff99;
+    font-size: 3rem;
+    text-shadow: 0 0 25px #00ff99;
+    margin: 30px 0;
+    padding: 25px;
+    border-radius: 15px;
+    background: rgba(0, 255, 153, 0.1);
+    border: 3px solid #00ff99;
+    box-shadow: 0 0 30px rgba(0, 255, 153, 0.4);
+  }
+
+  button {
+    padding: 15px 35px;
+    background-color: #00ff99;
+    color: #0a0a0a;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1.2rem;
+    box-shadow: 0 0 15px #00ff99;
+    transition: 0.3s;
+    margin: 15px;
+  }
+
+  button:hover {
+    background-color: #00ccff;
+    box-shadow: 0 0 25px #00ccff;
+    transform: scale(1.05);
+  }
+
+  button:disabled {
+    background-color: #555;
+    color: #999;
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .eliminated {
+    opacity: 0.4;
+    text-decoration: line-through;
+    color: #ff5555;
+    border-color: #ff5555;
+    box-shadow: 0 0 8px rgba(255, 85, 85, 0.3);
+  }
+
+  #userInfo {
+    margin-top: 20px;
+    padding: 15px;
+    border-top: 1px solid #00ff99;
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .online-users {
+    margin-top: 15px;
+    padding: 15px;
+    border: 1px solid #00ccff;
+    border-radius: 8px;
+    background: rgba(0, 204, 255, 0.05);
+  }
+
+  .online-users h4 {
+    margin-bottom: 10px;
+    color: #00ccff;
+  }
+
+  .user-count {
+    font-size: 1.3rem;
+    color: #00ff99;
+    margin: 10px 0;
+  }
+</style>
 </head>
-<body class="theme-dark">
-  <!-- Dynamic background -->
-  <div class="bg bg-aurora" id="bg"></div>
+<body>
 
-  <!-- Buff banner -->
-  <div class="buff-banner" id="buffBanner">Golden Rush x5 • 20s</div>
-
-  <!-- HUD -->
-  <div class="hud">
-    <div class="left">
-      <button class="icon-btn" id="btn-achievements" title="Achievements">🏆</button>
-      <button class="icon-btn" id="btn-daily" title="Daily Reward">🎁</button>
-    </div>
-    <div class="center">
-      <h1 class="title" id="game-title">Mihailo Clicker</h1>
-      <div class="player-line">
-        Player: <span id="player-name">Anonymous</span>
-        <button class="icon-btn" id="edit-name" title="Rename">✏️</button>
-      </div>
-    </div>
-    <div class="right">
-      <button class="icon-btn" id="btn-settings" title="Settings">⚙️</button>
-    </div>
+<!-- SCREEN 1: Welcome Screen -->
+<div id="welcomeScreen" class="screen">
+  <h1>Welcome to StruckByLightn's Giveaway!</h1>
+  <p style="font-size: 1.2rem; margin-bottom: 10px;">Join the fun and participate in our Last One Standing giveaway!</p>
+  
+  <a id="twitchLink" href="https://www.twitch.tv/struckbylightn" target="_blank">
+    🎮 Watch Live on Twitch 🎮
+  </a>
+  
+  <div class="login-panel">
+    <h2>Login to Participate</h2>
+    <input type="text" id="usernameInput" placeholder="Username">
+    <input type="password" id="passwordInput" placeholder="Password">
+    <button id="loginBtn">Login</button>
+    <button id="signupBtn">Sign Up</button>
   </div>
+</div>
 
-  <div class="container">
-    <div class="clicker-wrap">
-      <img id="clicker-img" src="https://github.com/YESSSsj28/yug-proxy/blob/main/Mihailo_Konjevic_0bb83a942afa46b5b1c773e59a1ac7fd.jpg?raw=true" alt="Clicker Face"/>
-      <div class="resource-rows">
-        <div class="resource">
-          <div class="label" id="unit-label">Mihailos</div>
-          <div class="value" id="clicker-count">0</div>
-        </div>
-        <div class="resource">
-          <div class="label" id="currency-label">Diamonds</div>
-          <div class="value" id="currency-count">0</div>
-        </div>
-      </div>
-      <div class="hud-stats">
-        <div class="hud-stat-pill">Per Click: <b id="per-click">1</b></div>
-        <div class="hud-stat-pill">Per Second: <b id="per-second">0</b></div>
-        <div class="hud-stat-pill">Total Clicks: <b id="total-clicks">0</b></div>
-        <div class="hud-stat-pill">Prestige Bonus: <b id="prestige-bonus">0%</b></div>
-      </div>
+<!-- SCREEN 2: Dashboard Screen -->
+<div id="dashboardScreen" class="screen" style="display:none;">
+  <div class="dashboard-content">
+    <h1>Welcome, <span id="dashboardUsername"></span>!</h1>
+    
+    <a id="dashboardTwitchLink" href="https://www.twitch.tv/struckbylightn" target="_blank">
+      🎮 Watch Live on Twitch 🎮
+    </a>
 
-      <div class="combo" id="combo">
-        <div class="combo-inner" id="comboInner"></div>
+    <div class="user-stats">
+      <h2>Your Dashboard</h2>
+      <p class="user-count">Currently <span id="onlineCount">0</span> users online</p>
+      <div id="onlineUsersList" class="online-users">
+        <h4>Online Users:</h4>
+        <div id="onlineUsers"></div>
       </div>
-      <div class="combo-label" id="comboLabel"></div>
+      <p id="giveawayStatus">No active giveaway</p>
     </div>
 
-    <div class="panel">
-      <div class="buy-toggle">
-        <span class="chip active" data-buy="1">x1</span>
-        <span class="chip" data-buy="10">x10</span>
-        <span class="chip" data-buy="100">x100</span>
-        <span class="chip" data-buy="max">Max</span>
-      </div>
-      <div class="upgrades" id="upgrades"></div>
+    <!-- Admin Panel (only visible to admins) -->
+    <div id="adminPanel" class="admin-panel" style="display:none;">
+      <h2>Admin Controls</h2>
+      <p>Start and manage giveaways</p>
+      <button id="startGiveawayBtn">Start New Giveaway</button>
+      <button id="endGiveawayBtn" style="display:none;">End Current Giveaway</button>
     </div>
 
-    <div class="panel" id="prestige-panel">
-      <h3>Rebirth Modes</h3>
-      <p class="muted">Unlock a new mode to reset for a fresh run and a permanent global bonus.</p>
-      <div class="spacer"></div>
-      <div class="row" id="prestige-buttons"></div>
-    </div>
-
-    <div class="panel">
-      <div class="row">
-        <div class="field">
-          <label for="password-input">Password:</label>
-          <input id="password-input" type="text" placeholder="Enter code (press Enter)" />
-        </div>
-        <span class="muted">Codes: 10k (once per mode)</span>
-      </div>
-    </div>
+    <button id="dashboardLogoutBtn">Logout</button>
   </div>
+</div>
 
-  <!-- Modals -->
-  <div class="modal-backdrop" id="settings-backdrop">
-    <div class="modal">
-      <h3>Settings</h3>
-      <div class="settings-grid">
-        <div class="setting-card">
-          <div class="row">
-            <label class="toggle"><input type="checkbox" id="set-theme"> Light Theme</label>
-          </div>
-          <div class="row">
-            <label>Accent Color</label>
-            <input type="color" id="set-accent" value="#00aaff">
-          </div>
-          <div class="row">
-            <label>Background</label>
-            <select id="set-bg">
-              <option value="aurora">Aurora (Animated)</option>
-              <option value="stars">Stars (Animated)</option>
-              <option value="grid">Neon Grid (Animated)</option>
-              <option value="sunset">Sunset Gradient (Animated)</option>
-              <option value="solid">Solid</option>
-            </select>
-          </div>
-        </div>
-        <div class="setting-card">
-          <div class="row">
-            <label class="toggle"><input type="checkbox" id="set-sound"> Sounds</label>
-          </div>
-          <div class="row">
-            <label>Volume</label>
-            <input type="range" id="set-volume" min="0" max="1" step="0.01" value="0.8">
-          </div>
-          <div class="row">
-            <label class="toggle"><input type="checkbox" id="set-floating"> Floating Numbers</label>
-          </div>
-          <div class="row">
-            <label class="toggle"><input type="checkbox" id="set-reduce"> Reduce Animations</label>
-          </div>
-        </div>
-        <div class="setting-card">
-          <div class="row">
-            <button class="danger" id="btn-reset">Reset Mode</button>
-            <button id="btn-reset-all">Full Reset</button>
-          </div>
-          <div class="row">
-            <button id="btn-export">Export Save</button>
-            <button id="btn-import">Import Save</button>
-          </div>
-        </div>
-      </div>
-      <div class="spacer"></div>
-      <div class="row">
-        <button id="settings-close">Close</button>
-      </div>
-    </div>
+<!-- SCREEN 3: Giveaway Lobby -->
+<div id="lobbyScreen" class="screen" style="display:none;">
+  <h1>Giveaway Lobby</h1>
+  <p id="lobbyStatus">Waiting for admin to start the giveaway...</p>
+  
+  <div id="participantsGrid"></div>
+  
+  <button id="startBtn" style="display:none;">Start Giveaway</button>
+</div>
+
+<!-- SCREEN 4: Countdown -->
+<div id="countdownScreen" class="screen" style="display:none;">
+  <div id="countdown">3</div>
+</div>
+
+<!-- SCREEN 5: Elimination Screen -->
+<div id="drawScreen" class="screen" style="display:none;">
+  <h1>Last One Standing</h1>
+  
+  <div id="scrollContainer">
+    <div id="scrollList"></div>
   </div>
+  
+  <div id="currentName">Waiting for elimination...</div>
+  
+  <button id="nextBtn" style="display:none;">Next Elimination</button>
+  
+  <div id="winnerDisplay" class="winner"></div>
+</div>
 
-  <div class="modal-backdrop" id="achievements-backdrop">
-    <div class="modal">
-      <h3>Achievements</h3>
-      <p class="muted">Unlock goals to make the dopamine hit juicier ✨</p>
-      <div class="ach-grid" id="ach-grid"></div>
-      <div class="spacer"></div>
-      <div class="row"><button id="ach-close">Close</button></div>
-    </div>
-  </div>
+<script>
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyCwcWUoSwb0ztseiCFZoQeK9Z0RGKTdRNI",
+  authDomain: "struckbylightn-e416f.firebaseapp.com",
+  databaseURL: "https://struckbylightn-e416f-default-rtdb.firebaseio.com/",
+  projectId: "struckbylightn-e416f",
+  storageBucket: "struckbylightn-e416f.appspot.com",
+  messagingSenderId: "6352638251",
+  appId: "1:6352638251:web:383980ccf8428102c0b56e",
+  measurementId: "G-GY2WRS8K8X"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-  <div class="modal-backdrop" id="daily-backdrop">
-    <div class="modal">
-      <h3>Daily Reward</h3>
-      <p class="muted" id="daily-text">Claim once per day for a big boost.</p>
-      <div class="spacer"></div>
-      <div class="row">
-        <button id="daily-claim">Claim</button>
-        <button id="daily-close">Close</button>
-      </div>
-    </div>
-  </div>
+// Admins (admins cannot participate in giveaway)
+const admins = ["StruckByLightn","Yaunt"];
+let currentUser = null;
+let isAdmin = false;
 
-  <!-- Toasts -->
-  <div class="toasts" id="toasts"></div>
+// Giveaway state
+let users = [];
+let eliminatedUsers = [];
 
-  <script>
-    (function() {
-      'use strict';
+// UI elements
+const screens = {
+  welcome: document.getElementById('welcomeScreen'),
+  dashboard: document.getElementById('dashboardScreen'),
+  lobby: document.getElementById('lobbyScreen'),
+  countdown: document.getElementById('countdownScreen'),
+  draw: document.getElementById('drawScreen')
+};
 
-      // Assets
-      const FACES = {
-        mihailo: "https://github.com/YESSSsj28/yug-proxy/blob/main/Mihailo_Konjevic_0bb83a942afa46b5b1c773e59a1ac7fd.jpg?raw=true",
-        bryce:   "https://github.com/YESSSsj28/yug-proxy/blob/main/IMG_20250307_094354.jpg?raw=true",
-        mason:   "https://github.com/YESSSsj28/yug-proxy/blob/main/Screenshot%202025-03-07%2012.43.41%20PM.png?raw=true",
-        isaac:   "https://github.com/YESSSsj28/yug-proxy/blob/main/Screenshot%202025-03-08%202.57.21%20PM.png?raw=true",
-        gunner:  "https://github.com/YESSSsj28/yug-proxy/blob/main/Screenshot%202025-03-08%202.49.39%20PM.png?raw=true"
-      };
+const usernameInput = document.getElementById('usernameInput');
+const passwordInput = document.getElementById('passwordInput');
+const loginBtn = document.getElementById('loginBtn');
+const signupBtn = document.getElementById('signupBtn');
+const dashboardLogoutBtn = document.getElementById('dashboardLogoutBtn');
+const dashboardUsername = document.getElementById('dashboardUsername');
+const onlineCount = document.getElementById('onlineCount');
+const onlineUsers = document.getElementById('onlineUsers');
+const giveawayStatus = document.getElementById('giveawayStatus');
+const adminPanel = document.getElementById('adminPanel');
+const startGiveawayBtn = document.getElementById('startGiveawayBtn');
+const endGiveawayBtn = document.getElementById('endGiveawayBtn');
+const participantsGrid = document.getElementById('participantsGrid');
+const startBtn = document.getElementById('startBtn');
+const lobbyStatus = document.getElementById('lobbyStatus');
+const countdownEl = document.getElementById('countdown');
+const scrollList = document.getElementById('scrollList');
+const currentName = document.getElementById('currentName');
+const nextBtn = document.getElementById('nextBtn');
+const winnerDisplay = document.getElementById('winnerDisplay');
 
-      const MODE_TITLES = {
-        mihailo: "Mihailo Clicker",
-        bryce: "Bryce Clicker",
-        mason: "Mason Clicker",
-        isaac: "Isaac Clicker",
-        gunner: "Gunner Clicker"
-      };
+// Giveaway reference
+const giveawayRef = db.ref("currentGiveaway");
 
-      const CURRENCY_NAMES = {
-        mihailo: "Diamonds",
-        bryce: "Pasta",
-        mason: "Chicken",
-        isaac: "Taco",
-        gunner: "Chicken"
-      };
+// Show only one screen at a time
+function showScreen(screenName) {
+  // Hide all screens first
+  Object.values(screens).forEach(screen => {
+    screen.style.display = 'none';
+  });
+  
+  // Show the requested screen
+  screens[screenName].style.display = 'flex';
+}
 
-      const UPGRADE_NAMES = {
-        mihailo: ["Farm", "Factory", "Mine", "Temple", "Kingdom", "Empire", "MegaCorp", "Galaxy", "Universe"],
-        bryce:   ["Bryce Farm", "Bryce Factory", "Bryce Mine", "Bryce Temple", "Bryce Kingdom", "Bryce Empire", "Bryce MegaCorp", "Bryce Galaxy", "Bryce Universe"],
-        mason:   ["Mason Farm", "Mason Factory", "Mason Mine", "Mason Temple", "Mason Kingdom", "Mason Empire", "Mason MegaCorp", "Mason Galaxy", "Mason Universe"],
-        isaac:   ["Isaac Farm", "Isaac Factory", "Isaac Mine", "Isaac Temple", "Isaac Kingdom", "Isaac Empire", "Isaac MegaCorp", "Isaac Galaxy", "Isaac Universe"],
-        gunner:  ["Gunner Farm", "Gunner Factory", "Gunner Mine", "Gunner Temple", "Gunner Kingdom", "Gunner Empire", "Gunner MegaCorp", "Gunner Galaxy", "Gunner Universe"]
-      };
+// Login / Signup
+signupBtn.onclick = () => {
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value;
+    if(!username || !password) return alert("Enter both username and password");
+    
+    db.ref("users/"+username).set({password}).then(() => {
+        alert("Account created! Please login.");
+        usernameInput.value = '';
+        passwordInput.value = '';
+    });
+};
 
-      // Upgrade effects and costs
-      const UPGRADE_PER_SECOND = [1, 5, 10, 20, 50, 100, 200, 500, 1000];
-      const UPGRADE_PER_CLICK  = [1, 2, 5, 10, 25, 50, 100, 250, 500];
-      const COST_MULTIPLIER = 1.5;
-      const BASE_UPGRADE_COSTS = [10, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000];
-      const BASE_CURR_COSTS    = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+loginBtn.onclick = () => {
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value;
+    
+    db.ref("users/"+username).get().then(snap => {
+        if(!snap.exists()) return alert("User not found");
+        if(snap.val().password !== password) return alert("Wrong password");
+        
+        currentUser = username;
+        isAdmin = admins.includes(currentUser);
+        
+        // Update UI
+        dashboardUsername.textContent = currentUser + (isAdmin ? " (Admin)" : "");
+        usernameInput.value = '';
+        passwordInput.value = '';
+        
+        // Show admin panel if user is admin
+        adminPanel.style.display = isAdmin ? 'block' : 'none';
+        
+        // Mark online
+        const userRef = db.ref("onlineUsers/"+currentUser);
+        userRef.set(true);
+        userRef.onDisconnect().remove();
+        
+        // Go to dashboard
+        showScreen('dashboard');
+    });
+};
 
-      // Prestige chain
-      const PRESTIGES = [
-        { from: 'mihailo', to: 'bryce',  cost: 1_000_000 },
-        { from: 'bryce',   to: 'mason',  cost: 5_000_000 },
-        { from: 'mason',   to: 'isaac',  cost: 10_000_000 },
-        { from: 'isaac',   to: 'gunner', cost: 20_000_000 }
-      ];
+// Logout from dashboard
+dashboardLogoutBtn.onclick = () => {
+    if(currentUser){
+        db.ref("onlineUsers/"+currentUser).remove();
+        currentUser = null;
+        isAdmin = false;
+        showScreen('welcome');
+    }
+};
 
-      // Achievements
-      const ACH = [
-        { id: 'first_click', name: 'First Tap', desc: 'Make your very first click.', check: s => s.totalClicks >= 1 },
-        { id: 'click_100', name: 'Click Rookie', desc: 'Reach 100 total clicks.', check: s => s.totalClicks >= 100 },
-        { id: 'click_1000', name: 'Click Pro', desc: 'Reach 1,000 total clicks.', check: s => s.totalClicks >= 1000 },
-        { id: 'upg_10', name: 'Builder', desc: 'Buy 10 upgrades total.', check: s => s.totalUpgrades >= 10 },
-        { id: 'upg_100', name: 'Tycoon', desc: 'Buy 100 upgrades total.', check: s => s.totalUpgrades >= 100 },
-        { id: 'ps_100', name: 'Engine Online', desc: 'Reach 100 per second.', check: s => getPerSecond(s) >= 100 },
-        { id: 'curr_50', name: 'Shiny Collector', desc: 'Collect 50 special currency.', check: s => s.currency >= 50 },
-        { id: 'prestige_1', name: 'Fresh Start', desc: 'Unlock Bryce mode.', check: s => s.unlocked.includes('bryce') },
-        { id: 'gold_1', name: 'Golden Touch', desc: 'Click 1 Golden Orb.', check: s => s.goldenClicks >= 1 },
-        { id: 'gold_10', name: 'Gold Hunter', desc: 'Click 10 Golden Orbs.', check: s => s.goldenClicks >= 10 },
-      ];
-
-      // State
-      const state = {
-        mode: 'mihailo',
-        clickers: 0,
-        currency: 0,
-        upgrades: Array(9).fill(0),
-        upgradeCosts: BASE_UPGRADE_COSTS.slice(),
-        upgradeCurrencyCosts: BASE_CURR_COSTS.slice(),
-        totalClicks: 0,
-        totalUpgrades: 0,
-        buyAmount: '1',
-        playerName: 'Anonymous',
-        permBonus: 0, // +0.1 per prestige
-        unlocked: ['mihailo'],
-        cheatUsed: { mihailo: false, bryce: false, mason: false, isaac: false, gunner: false },
-        goldenClicks: 0,
-
-        // Gameplay boosts
-        combo: { count: 0, expiresAt: 0, windowMs: 1000 },
-        buff: { active: false, multiplier: 5, endsAt: 0 },
-
-        // Settings
-        settings: {
-          theme: 'dark',
-          background: 'aurora',
-          accent: '#00aaff',
-          sounds: true, volume: 0.8,
-          floatingText: true,
-          reduceAnimations: false
-        },
-
-        // Daily
-        daily: { next: 0 },
-
-        // Time
-        lastSave: Date.now()
-      };
-
-      // DOM
-      const el = {
-        bg: document.getElementById('bg'),
-        title: document.getElementById('game-title'),
-        name: document.getElementById('player-name'),
-        editName: document.getElementById('edit-name'),
-        clickerCount: document.getElementById('clicker-count'),
-        currencyCount: document.getElementById('currency-count'),
-        perClick: document.getElementById('per-click'),
-        perSecond: document.getElementById('per-second'),
-        totalClicks: document.getElementById('total-clicks'),
-        img: document.getElementById('clicker-img'),
-        unitLabel: document.getElementById('unit-label'),
-        currencyLabel: document.getElementById('currency-label'),
-        upgrades: document.getElementById('upgrades'),
-        prestigeButtons: document.getElementById('prestige-buttons'),
-        password: document.getElementById('password-input'),
-        buyChips: null,
-
-        // Modals
-        settingsBackdrop: document.getElementById('settings-backdrop'),
-        achBackdrop: document.getElementById('achievements-backdrop'),
-        dailyBackdrop: document.getElementById('daily-backdrop'),
-        achGrid: document.getElementById('ach-grid'),
-
-        // Settings controls
-        setTheme: document.getElementById('set-theme'),
-        setAccent: document.getElementById('set-accent'),
-        setBg: document.getElementById('set-bg'),
-        setSound: document.getElementById('set-sound'),
-        setVolume: document.getElementById('set-volume'),
-        setFloating: document.getElementById('set-floating'),
-        setReduce: document.getElementById('set-reduce'),
-
-        btnReset: document.getElementById('btn-reset'),
-        btnResetAll: document.getElementById('btn-reset-all'),
-        btnExport: document.getElementById('btn-export'),
-        btnImport: document.getElementById('btn-import'),
-        settingsClose: document.getElementById('settings-close'),
-
-        btnAchievements: document.getElementById('btn-achievements'),
-        achClose: document.getElementById('ach-close'),
-        btnDaily: document.getElementById('btn-daily'),
-        dailyText: document.getElementById('daily-text'),
-        dailyClaim: document.getElementById('daily-claim'),
-        dailyClose: document.getElementById('daily-close'),
-
-        // UI
-        buffBanner: document.getElementById('buffBanner'),
-        comboBar: document.getElementById('combo'),
-        comboInner: document.getElementById('comboInner'),
-        comboLabel: document.getElementById('comboLabel'),
-        toasts: document.getElementById('toasts'),
-        prestigeBonus: document.getElementById('prestige-bonus')
-      };
-
-      const saveKey = 'clickerUltraV3';
-
-      // Utils
-      const fmt = n => Math.floor(n).toLocaleString();
-      const now = () => Date.now();
-
-      // Sound engine (WebAudio beeps)
-      let audioCtx = null;
-      function sfx(type = 'click', volOverride) {
-        if (!state.settings.sounds) return;
-        const volume = typeof volOverride === 'number' ? volOverride : state.settings.volume;
-        if (volume <= 0) return;
-        try {
-          if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-          const o = audioCtx.createOscillator();
-          const g = audioCtx.createGain();
-          o.connect(g); g.connect(audioCtx.destination);
-          let freq = 220, dur = 0.08, typeOsc = 'square';
-          if (type === 'buy') { freq = 440; dur = 0.09; typeOsc = 'sine'; }
-          if (type === 'ach') { freq = 880; dur = 0.18; typeOsc = 'triangle'; }
-          if (type === 'gold') { freq = 660; dur = 0.3; typeOsc = 'sawtooth'; }
-          o.type = typeOsc;
-          o.frequency.setValueAtTime(freq, audioCtx.currentTime);
-          g.gain.setValueAtTime(0.001, audioCtx.currentTime);
-          g.gain.exponentialRampToValueAtTime(volume, audioCtx.currentTime + 0.01);
-          g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
-          o.start();
-          o.stop(audioCtx.currentTime + dur + 0.02);
-        } catch {}
-      }
-
-      // Save/Load
-      function save() {
-        state.lastSave = now();
-        try { localStorage.setItem(saveKey, JSON.stringify(state)); } catch (e) {}
-      }
-      function load() {
-        try {
-          const raw = localStorage.getItem(saveKey);
-          if (!raw) return;
-          const data = JSON.parse(raw);
-          Object.assign(state, {
-            ...state,
-            ...data,
-            upgrades: Array.isArray(data.upgrades) ? data.upgrades : state.upgrades,
-            upgradeCosts: Array.isArray(data.upgradeCosts) ? data.upgradeCosts : state.upgradeCosts,
-            upgradeCurrencyCosts: Array.isArray(data.upgradeCurrencyCosts) ? data.upgradeCurrencyCosts : state.upgradeCurrencyCosts,
-            cheatUsed: { ...state.cheatUsed, ...(data.cheatUsed || {}) },
-            unlocked: Array.isArray(data.unlocked) ? data.unlocked : state.unlocked,
-            settings: { ...state.settings, ...(data.settings || {}) },
-            combo: { ...state.combo, ...(data.combo || {}) },
-            buff: { ...state.buff, ...(data.buff || {}) },
-            daily: { ...state.daily, ...(data.daily || {}) }
-          });
-        } catch (e) {}
-      }
-
-      // Core math
-      function getPerClick(s = state) {
-        let pc = 1;
-        for (let i = 0; i < 9; i++) {
-          pc += s.upgrades[i] * UPGRADE_PER_CLICK[i];
+// Update online users list on dashboard
+db.ref("onlineUsers").on("value", snap => {
+    onlineUsers.innerHTML = '';
+    users = [];
+    let userCount = 0;
+    
+    snap.forEach(u => {
+        userCount++;
+        const userDiv = document.createElement('div');
+        userDiv.className = 'user';
+        userDiv.textContent = u.key + (admins.includes(u.key) ? " 👑" : "");
+        userDiv.style.margin = '5px 0';
+        userDiv.style.padding = '8px';
+        userDiv.style.fontSize = '0.9rem';
+        onlineUsers.appendChild(userDiv);
+        
+        // Add to users list for giveaway (excluding admins)
+        if(!admins.includes(u.key)) {
+            users.push(u.key);
         }
-        // Apply permanent bonus
-        pc *= (1 + s.permBonus);
-        // Combo
-        const comboMult = 1 + Math.min(s.combo.count, 40) * 0.1; // up to x5
-        pc *= comboMult;
-        // Buff
-        if (s.buff.active && now() < s.buff.endsAt) pc *= s.buff.multiplier;
-        return pc;
-      }
-      function getPerSecond(s = state) {
-        let ps = 0;
-        for (let i = 0; i < 9; i++) {
-          ps += s.upgrades[i] * UPGRADE_PER_SECOND[i];
-        }
-        ps *= (1 + s.permBonus);
-        return ps;
-      }
+    });
+    
+    onlineCount.textContent = userCount;
+    
+    // Update participants grid in lobby
+    updateParticipantsGrid();
+});
 
-      // UI update helpers
-      function updateModeVisuals() {
-        el.img.src = FACES[state.mode];
-        el.title.textContent = MODE_TITLES[state.mode];
-        el.unitLabel.textContent = unitName();
-        el.currencyLabel.textContent = CURRENCY_NAMES[state.mode];
-      }
-      function unitName() {
-        return { mihailo: 'Mihailos', bryce: 'Bryces', mason: 'Masons', isaac: 'Isaacs', gunner: 'Gunners' }[state.mode];
-      }
+// Update participants grid in lobby
+function updateParticipantsGrid() {
+    participantsGrid.innerHTML = '';
+    users.forEach(user => {
+        const div = document.createElement('div');
+        div.className = 'user';
+        div.textContent = user;
+        participantsGrid.appendChild(div);
+    });
+    
+    // Show start button only for admin in lobby
+    startBtn.style.display = isAdmin ? 'inline-block' : 'none';
+}
 
-      function refreshCountsOnly() {
-        el.clickerCount.textContent = fmt(state.clickers);
-        el.currencyCount.textContent = fmt(state.currency);
-        el.perClick.textContent = fmt(getPerClick());
-        el.perSecond.textContent = fmt(getPerSecond());
-        el.totalClicks.textContent = fmt(state.totalClicks);
-        el.prestigeBonus.textContent = Math.round(state.permBonus * 100) + '%';
-        // Buff banner
-        const remaining = Math.max(0, state.buff.endsAt - now());
-        el.buffBanner.style.display = (state.buff.active && remaining > 0) ? 'block' : 'none';
-        if (remaining > 0) {
-          el.buffBanner.textContent = `Golden Rush x${state.buff.multiplier} • ${Math.ceil(remaining/1000)}s`;
+// Listen for giveaway state changes
+giveawayRef.on("value", snap => {
+    const giveaway = snap.val();
+    
+    if (giveaway && giveaway.started) {
+        // Update dashboard status
+        giveawayStatus.textContent = "Giveaway in progress!";
+        giveawayStatus.style.color = "#00ff99";
+        
+        // If user is logged in, show lobby
+        if (currentUser && screens.dashboard.style.display !== 'none') {
+            showScreen('lobby');
         }
-        // Combo display
-        if (state.combo.count > 0 && state.combo.expiresAt > now()) {
-          el.comboBar.style.display = 'block';
-          const left = Math.max(0, state.combo.expiresAt - now());
-          const pct = Math.max(0, Math.min(1, left / state.combo.windowMs));
-          el.comboInner.style.width = (pct * 100) + '%';
-          el.comboLabel.textContent = `Combo x${(1 + Math.min(state.combo.count, 40) * 0.1).toFixed(2)}`;
+        
+        eliminatedUsers = giveaway.eliminatedUsers || [];
+        
+        // Update end giveaway button for admin
+        endGiveawayBtn.style.display = isAdmin ? 'inline-block' : 'none';
+        
+        // Handle different phases
+        if (giveaway.phase === "countdown") {
+            startCountdown();
+        } else if (giveaway.phase === "elimination") {
+            startEliminationRound();
+        } else if (giveaway.winner) {
+            showWinner(giveaway.winner);
+        }
+    } else {
+        // No active giveaway
+        giveawayStatus.textContent = "No active giveaway";
+        giveawayStatus.style.color = "#00ccff";
+        endGiveawayBtn.style.display = 'none';
+        
+        // If we're in lobby but no giveaway, return to dashboard
+        if (currentUser && screens.lobby.style.display !== 'none') {
+            showScreen('dashboard');
+        }
+    }
+});
+
+// Start giveaway from dashboard (ADMIN ONLY)
+startGiveawayBtn.onclick = () => {
+    if(!isAdmin) return;
+    
+    if (users.length < 2) {
+        alert("Need at least 2 users to start a giveaway!");
+        return;
+    }
+    
+    // Start the giveaway with countdown phase
+    giveawayRef.set({
+        id: Date.now(),
+        type: "lastOneStanding",
+        admin: currentUser,
+        started: true,
+        phase: "countdown",
+        users: users,
+        eliminatedUsers: []
+    });
+};
+
+// End giveaway button (ADMIN ONLY)
+endGiveawayBtn.onclick = () => {
+    if(!isAdmin) return;
+    giveawayRef.remove();
+};
+
+// Start giveaway from lobby (ADMIN ONLY)
+startBtn.onclick = () => {
+    if(!isAdmin) return;
+    
+    // Move to countdown phase
+    giveawayRef.update({
+        phase: "countdown"
+    });
+};
+
+// Countdown function
+function startCountdown() {
+    showScreen('countdown');
+    
+    let count = 3;
+    countdownEl.textContent = count;
+    
+    const countdownInterval = setInterval(() => {
+        count--;
+        if (count > 0) {
+            countdownEl.textContent = count;
         } else {
-          el.comboBar.style.display = 'none';
-          el.comboLabel.textContent = '';
+            clearInterval(countdownInterval);
+            countdownEl.textContent = "GO!";
+            
+            // Move to elimination phase after a brief pause
+            setTimeout(() => {
+                giveawayRef.update({
+                    phase: "elimination",
+                    drawing: true
+                });
+            }, 1000);
         }
-        save();
-      }
+    }, 1000);
+}
 
-      function refreshUpgrades() {
-        const names = UPGRADE_NAMES[state.mode];
-        el.upgrades.innerHTML = '';
-        for (let i = 0; i < 9; i++) {
-          const card = document.createElement('div');
-          card.className = 'upgrade-card';
+// Start elimination round
+function startEliminationRound() {
+    showScreen('draw');
+    nextBtn.style.display = isAdmin ? 'inline-block' : 'none';
+    winnerDisplay.textContent = "";
+    
+    // Get active users (not eliminated and not admins)
+    const activeUsers = users.filter(u => !eliminatedUsers.includes(u));
+    
+    if (activeUsers.length <= 1) {
+        // We have a winner!
+        const winner = activeUsers[0] || "No one";
+        showWinner(winner);
+        return;
+    }
+    
+    // Start the elimination animation
+    eliminateNext(activeUsers);
+}
 
-          const title = document.createElement('div');
-          title.className = 'upgrade-title';
-          title.innerHTML = `<span>${names[i]}</span><span class="muted">Owned: ${state.upgrades[i]}</span>`;
-
-          const info = document.createElement('div');
-          info.className = 'upgrade-info';
-          info.textContent = `+${UPGRADE_PER_SECOND[i]} per second, +${UPGRADE_PER_CLICK[i]} per click`;
-
-          const btn = document.createElement('button');
-          const nextCost = state.upgradeCosts[i];
-          const nextCurr = state.upgradeCurrencyCosts[i];
-          let buyLabel = state.buyAmount === 'max' ? '(Max)' : `x${state.buyAmount}`;
-          let preview = `Next: ${fmt(nextCost)} ${unitName()}, ${fmt(nextCurr)} ${CURRENCY_NAMES[state.mode]}`;
-          btn.textContent = `Buy ${names[i]} ${buyLabel} • ${preview}`;
-          btn.disabled = !(state.clickers >= nextCost && state.currency >= nextCurr);
-          btn.addEventListener('click', () => buyUpgrade(i));
-
-          card.appendChild(title);
-          card.appendChild(info);
-          card.appendChild(btn);
-          el.upgrades.appendChild(card);
+// Elimination animation
+function eliminateNext(activeUsers) {
+    populateScroll(activeUsers);
+    
+    let totalScrolls = 30;
+    let speed = 40;
+    let i = 0;
+    
+    function step() {
+        if (activeUsers.length === 0) return;
+        
+        // Clone first element and append to end, then remove first
+        if (scrollList.children.length > 0) {
+            scrollList.appendChild(scrollList.firstElementChild.cloneNode(true));
+            scrollList.removeChild(scrollList.firstElementChild);
         }
-      }
-
-      function refreshPrestigeButtons() {
-        el.prestigeButtons.innerHTML = '';
-        const next = PRESTIGES.find(p => p.from === state.mode);
-        if (!next) {
-          const done = document.createElement('div');
-          done.className = 'muted';
-          done.textContent = 'You unlocked all modes. GG!';
-          el.prestigeButtons.appendChild(done);
-          return;
-        }
-        const btn = document.createElement('button');
-        btn.textContent = `Unlock ${MODE_TITLES[next.to]} (Cost: ${fmt(next.cost)} ${unitName()})`;
-        btn.disabled = state.clickers < next.cost;
-        btn.addEventListener('click', () => {
-          if (state.clickers >= next.cost) {
-            if (confirm(`Unlock ${MODE_TITLES[next.to]}? Rebirth will reset progress but grant a permanent bonus.`)) {
-              doPrestige(next.to);
-            }
-          }
-        });
-        el.prestigeButtons.appendChild(btn);
-      }
-
-      function refreshAll() {
-        updateModeVisuals();
-        refreshCountsOnly();
-        refreshUpgrades();
-        refreshPrestigeButtons();
-        renderAchievements();
-      }
-
-      // Buy upgrades
-      function buyUpgrade(index) {
-        const want = state.buyAmount === 'max' ? Number.MAX_SAFE_INTEGER : parseInt(state.buyAmount, 10);
-        let bought = 0;
-        for (let k = 0; k < want; k++) {
-          const c = state.upgradeCosts[index];
-          const cur = state.upgradeCurrencyCosts[index];
-          if (state.clickers >= c && state.currency >= cur) {
-            state.clickers -= c;
-            state.currency -= cur;
-            state.upgrades[index] += 1;
-            state.totalUpgrades += 1;
-            state.upgradeCosts[index] = Math.floor(state.upgradeCosts[index] * COST_MULTIPLIER);
-            state.upgradeCurrencyCosts[index] = Math.floor(state.upgradeCurrencyCosts[index] * COST_MULTIPLIER);
-            bought++;
-          } else break;
-        }
-        if (bought > 0) {
-          sfx('buy');
-          showFloatingText(`Bought ${bought}x`);
-          refreshAll();
-          checkAchievements();
-        }
-      }
-
-      // Clicker
-      function clickFace(evt) {
-        const gained = getPerClick();
-        state.clickers += gained;
-        state.totalClicks += 1;
-        // Combo update
-        const t = now();
-        if (t < state.combo.expiresAt) {
-          state.combo.count += 1;
+        
+        i++;
+        if (i < totalScrolls) {
+            // Slow down at end
+            const newSpeed = speed + (i * 5);
+            setTimeout(step, newSpeed);
         } else {
-          state.combo.count = 1;
+            // Select random user to eliminate
+            const idx = Math.floor(Math.random() * activeUsers.length);
+            const eliminated = activeUsers.splice(idx, 1)[0];
+            
+            // Update UI
+            currentName.textContent = `🚫 Eliminated: ${eliminated}`;
+            
+            // Update Firebase
+            eliminatedUsers.push(eliminated);
+            giveawayRef.update({
+                eliminatedUsers: eliminatedUsers,
+                drawing: false
+            });
         }
-        state.combo.expiresAt = t + state.combo.windowMs;
+    }
+    
+    step();
+}
 
-        // Every 30 clicks give 1 special currency (slightly more frequent)
-        if (state.totalClicks % 30 === 0) {
-          state.currency += 1;
-          showFloatingText(`+1 ${CURRENCY_NAMES[state.mode]}`, evt?.clientX, evt?.clientY ? evt.clientY - 16 : undefined);
+// Populate scroll list with users
+function populateScroll(userList) {
+    scrollList.innerHTML = '';
+    userList.forEach(u => {
+        const div = document.createElement('div');
+        div.className = 'user';
+        div.textContent = u;
+        scrollList.append(div);
+    });
+}
+
+// Show winner
+function showWinner(winner) {
+    currentName.textContent = `🎉 Winner: ${winner} 🎉`;
+    winnerDisplay.textContent = `Congratulations ${winner}!`;
+    nextBtn.style.display = 'none';
+    
+    // Update Firebase
+    giveawayRef.update({
+        winner: winner,
+        drawing: false
+    });
+    
+    // After 5 seconds, return to dashboard and reset giveaway
+    setTimeout(() => {
+        if (currentUser) {
+            showScreen('dashboard');
+            // Reset giveaway after delay
+            setTimeout(() => {
+                giveawayRef.remove();
+            }, 1000);
         }
+    }, 5000);
+}
 
-        if (evt) showFloatingText(`+${fmt(gained)}`, evt.clientX, evt.clientY);
-        else showFloatingText(`+${fmt(gained)}`);
+// Next elimination button (ADMIN ONLY)
+nextBtn.addEventListener('click', () => {
+    nextBtn.style.display = 'none';
+    giveawayRef.update({
+        drawing: true
+    });
+});
 
-        sfx('click', 0.4);
-        refreshAll();
-        checkAchievements();
-      }
-
-      // Per second generation
-      function generatePerSecond() {
-        const ps = getPerSecond();
-        if (ps > 0) {
-          state.clickers += ps;
-          refreshCountsOnly();
-        }
-        // Combo expiry
-        if (state.combo.count > 0 && now() > state.combo.expiresAt) {
-          state.combo.count = 0;
-          refreshCountsOnly();
-        }
-        // Buff expiry
-        if (state.buff.active && now() >= state.buff.endsAt) {
-          state.buff.active = false;
-          refreshCountsOnly();
-        }
-      }
-
-      // Prestige
-      function doPrestige(nextMode) {
-        // perm bonus +10%
-        state.permBonus = Math.round((state.permBonus + 0.1) * 1000) / 1000;
-        if (!state.unlocked.includes(nextMode)) state.unlocked.push(nextMode);
-
-        state.mode = nextMode;
-        state.clickers = 0;
-        state.currency = 0;
-        state.upgrades = Array(9).fill(0);
-        state.upgradeCosts = BASE_UPGRADE_COSTS.slice();
-        state.upgradeCurrencyCosts = BASE_CURR_COSTS.slice();
-        state.totalClicks = 0;
-        state.totalUpgrades = 0;
-        state.combo.count = 0;
-        state.buff.active = false;
-
-        updateModeVisuals();
-        refreshAll();
-        toast(`Unlocked ${MODE_TITLES[nextMode]}! +10% permanent bonus`);
-      }
-
-      // Floating text
-      function showFloatingText(text, x, y) {
-        if (!state.settings.floatingText) return;
-        const node = document.createElement('div');
-        node.className = 'floating-text';
-        node.textContent = text;
-        let rx = x, ry = y;
-        if (typeof rx !== 'number' || typeof ry !== 'number') {
-          const r = el.img.getBoundingClientRect();
-          rx = r.left + r.width / 2;
-          ry = r.top + r.height / 2;
-        }
-        node.style.left = rx + 'px';
-        node.style.top = ry + 'px';
-        document.body.appendChild(node);
-        setTimeout(() => node.remove(), 900);
-      }
-
-      // Golden event
-      let goldenEl = null;
-      function spawnGolden() {
-        if (goldenEl) return;
-        goldenEl = document.createElement('div');
-        goldenEl.className = 'golden';
-        const w = window.innerWidth, h = window.innerHeight;
-        const x = Math.random() * (w - 120) + 60;
-        const y = Math.random() * (h - 220) + 140;
-        goldenEl.style.left = x + 'px';
-        goldenEl.style.top = y + 'px';
-        document.body.appendChild(goldenEl);
-
-        const kill = () => { if (goldenEl) { goldenEl.remove(); goldenEl = null; } };
-        const timer = setTimeout(kill, 10000);
-
-        goldenEl.addEventListener('click', () => {
-          clearTimeout(timer);
-          state.goldenClicks++;
-          startBuff(5, 20_000); // x5 for 20s
-          sfx('gold');
-          showFloatingText('G O L D E N  R U S H ✨', x, y);
-          checkAchievements();
-          kill();
-        });
-      }
-      function startBuff(mult, ms) {
-        state.buff.active = true;
-        state.buff.multiplier = mult;
-        state.buff.endsAt = now() + ms;
-        refreshCountsOnly();
-      }
-      function scheduleGolden() {
-        const wait = Math.floor(45_000 + Math.random() * 45_000); // 45–90s
-        setTimeout(() => { spawnGolden(); scheduleGolden(); }, wait);
-      }
-
-      // Achievements UI
-      function renderAchievements() {
-        el.achGrid.innerHTML = '';
-        const got = state.ach || {};
-        ACH.forEach(a => {
-          const node = document.createElement('div');
-          const unlocked = got[a.id];
-          node.className = 'ach' + (unlocked ? '' : ' locked');
-          node.innerHTML = `<div class="name">${a.name}</div><div class="desc">${a.desc}</div>`;
-          el.achGrid.appendChild(node);
-        });
-      }
-      function checkAchievements() {
-        if (!state.ach) state.ach = {};
-        ACH.forEach(a => {
-          if (!state.ach[a.id] && a.check(state)) {
-            state.ach[a.id] = true;
-            toast(`Achievement unlocked: ${a.name} 🏆`);
-            sfx('ach', 0.6);
-          }
-        });
-      }
-
-      // Toasts
-      function toast(msg) {
-        const t = document.createElement('div');
-        t.className = 'toast';
-        t.textContent = msg;
-        el.toasts.appendChild(t);
-        setTimeout(() => {
-          t.style.opacity = '0';
-          t.style.transform = 'translateY(6px)';
-          setTimeout(() => t.remove(), 200);
-        }, 3200);
-      }
-
-      // Settings bindings
-      function applySettings() {
-        document.body.classList.toggle('theme-light', state.settings.theme === 'light');
-        document.body.classList.toggle('theme-dark', state.settings.theme !== 'light');
-        document.body.classList.toggle('no-anim', !!state.settings.reduceAnimations);
-        document.documentElement.style.setProperty('--accent', state.settings.accent);
-
-        el.bg.className = 'bg ' + ({
-          aurora: 'bg-aurora',
-          stars: 'bg-stars',
-          grid: 'bg-grid',
-          sunset: 'bg-sunset',
-          solid: 'bg-solid'
-        }[state.settings.background] || 'bg-aurora');
-
-        // Sync controls
-        el.setTheme.checked = (state.settings.theme === 'light');
-        el.setAccent.value = state.settings.accent;
-        el.setBg.value = state.settings.background;
-        el.setSound.checked = !!state.settings.sounds;
-        el.setVolume.value = state.settings.volume;
-        el.setFloating.checked = !!state.settings.floatingText;
-        el.setReduce.checked = !!state.settings.reduceAnimations;
-      }
-
-      // Daily reward
-      function updateDailyUI() {
-        const t = now();
-        if (t >= (state.daily.next || 0)) {
-          el.dailyText.textContent = 'Your daily is ready! Claim for a big boost.';
-          el.dailyClaim.disabled = false;
-        } else {
-          const left = state.daily.next - t;
-          const hrs = Math.floor(left / 3600000);
-          const mins = Math.floor((left % 3600000) / 60000);
-          el.dailyText.textContent = `Next daily in ${hrs}h ${mins}m`;
-          el.dailyClaim.disabled = true;
-        }
-      }
-      function claimDaily() {
-        const ps = getPerSecond();
-        const reward = Math.max(1000, ps * 600); // ~10min of income
-        state.clickers += reward;
-        state.currency += 5;
-        toast(`Daily +${fmt(reward)} ${unitName()} and +5 ${CURRENCY_NAMES[state.mode]} 🎁`);
-        state.daily.next = now() + 24 * 3600_000;
-        updateDailyUI();
-        refreshCountsOnly();
-      }
-
-      // Offline progress
-      function applyOffline() {
-        const t = now();
-        const dt = Math.min(8 * 3600_000, Math.max(0, t - (state.lastSave || t)));
-        const secs = Math.floor(dt / 1000);
-        const ps = getPerSecond();
-        if (secs > 5 && ps > 0) {
-          const gain = ps * secs;
-          state.clickers += gain;
-          toast(`+${fmt(gain)} from offline progress ⏱️`);
-        }
-      }
-
-      // Events
-      el.img.addEventListener('click', (e) => clickFace(e));
-      document.addEventListener('keydown', (e) => {
-        if (e.code === 'Space' && !e.repeat) {
-          e.preventDefault();
-          clickFace();
-        }
-      });
-
-      document.querySelectorAll('.buy-toggle .chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-          state.buyAmount = chip.dataset.buy;
-          document.querySelectorAll('.buy-toggle .chip').forEach(c => c.classList.toggle('active', c === chip));
-          refreshUpgrades();
-          save();
-        });
-      });
-
-      el.password.addEventListener('keyup', (e) => {
-        if (e.key === 'Enter') {
-          const code = el.password.value.trim();
-          el.password.value = '';
-          if (!code) return;
-
-          if (code === '10k') {
-            if (!state.cheatUsed[state.mode]) {
-              state.clickers += 10000;
-              state.cheatUsed[state.mode] = true;
-              toast(`+10,000 ${unitName()}!`);
-              refreshAll();
-            } else {
-              toast('That code is already used in this mode.');
-            }
-          } else if (code === 'ADMIN') {
-            state.clickers += 101_901_901;
-            toast('You received 101,901,901 coins!');
-            refreshAll();
-          } else {
-            toast('Invalid code.');
-          }
-        }
-      });
-
-      // Settings open/close
-      document.getElementById('btn-settings').addEventListener('click', () => {
-        el.settingsBackdrop.style.display = 'flex';
-      });
-      el.settingsClose.addEventListener('click', () => {
-        el.settingsBackdrop.style.display = 'none';
-      });
-      el.settingsBackdrop.addEventListener('click', (e) => {
-        if (e.target === el.settingsBackdrop) el.settingsBackdrop.style.display = 'none';
-      });
-
-      // Achievements modal
-      document.getElementById('btn-achievements').addEventListener('click', () => {
-        renderAchievements();
-        el.achBackdrop.style.display = 'flex';
-      });
-      el.achClose.addEventListener('click', () => el.achBackdrop.style.display = 'none');
-      el.achBackdrop.addEventListener('click', (e) => { if (e.target === el.achBackdrop) el.achBackdrop.style.display = 'none'; });
-
-      // Daily modal
-      document.getElementById('btn-daily').addEventListener('click', () => {
-        updateDailyUI();
-        el.dailyBackdrop.style.display = 'flex';
-      });
-      el.dailyClose.addEventListener('click', () => el.dailyBackdrop.style.display = 'none');
-      el.dailyBackdrop.addEventListener('click', (e) => { if (e.target === el.dailyBackdrop) el.dailyBackdrop.style.display = 'none'; });
-      el.dailyClaim.addEventListener('click', claimDaily);
-
-      // Settings controls
-      el.setTheme.addEventListener('change', () => {
-        state.settings.theme = el.setTheme.checked ? 'light' : 'dark';
-        applySettings(); save();
-      });
-      el.setAccent.addEventListener('input', () => {
-        state.settings.accent = el.setAccent.value; applySettings(); save();
-      });
-      el.setBg.addEventListener('change', () => {
-        state.settings.background = el.setBg.value; applySettings(); save();
-      });
-      el.setSound.addEventListener('change', () => {
-        state.settings.sounds = el.setSound.checked; save();
-      });
-      el.setVolume.addEventListener('input', () => {
-        state.settings.volume = parseFloat(el.setVolume.value || '0.8'); save();
-      });
-      el.setFloating.addEventListener('change', () => {
-        state.settings.floatingText = el.setFloating.checked; save();
-      });
-      el.setReduce.addEventListener('change', () => {
-        state.settings.reduceAnimations = el.setReduce.checked; applySettings(); save();
-      });
-
-      // Reset/Export/Import (in settings)
-      el.btnReset.addEventListener('click', () => {
-        if (!confirm('Reset progress for this mode?')) return;
-        state.clickers = 0; state.currency = 0;
-        state.upgrades = Array(9).fill(0);
-        state.upgradeCosts = BASE_UPGRADE_COSTS.slice();
-        state.upgradeCurrencyCosts = BASE_CURR_COSTS.slice();
-        state.totalClicks = 0; state.totalUpgrades = 0;
-        state.combo.count = 0; state.buff.active = false;
-        refreshAll();
-        toast('Progress reset for this mode.');
-      });
-      el.btnResetAll.addEventListener('click', () => {
-        if (!confirm('Full reset (all modes, settings, achievements)?')) return;
-        localStorage.removeItem(saveKey);
-        location.reload();
-      });
-      el.btnExport.addEventListener('click', async () => {
-        try {
-          await navigator.clipboard.writeText(btoa(JSON.stringify(state)));
-          toast('Save copied to clipboard.');
-        } catch {
-          toast('Clipboard blocked by browser.');
-        }
-      });
-      el.btnImport.addEventListener('click', () => {
-        const raw = prompt('Paste your save string:');
-        if (!raw) return;
-        try {
-          const parsed = JSON.parse(atob(raw));
-          if (!parsed || typeof parsed !== 'object' || !parsed.mode) throw new Error('Invalid');
-          Object.assign(state, { ...state, ...parsed });
-          applySettings();
-          refreshAll();
-          toast('Save imported!');
-        } catch {
-          toast('Invalid or corrupted save.');
-        }
-      });
-
-      // Rename
-      el.editName.addEventListener('click', () => {
-        const next = prompt('Enter your name:', state.playerName || 'Anonymous');
-        if (next !== null) {
-          const trimmed = next.trim().slice(0, 20) || 'Anonymous';
-          state.playerName = trimmed;
-          el.name.textContent = trimmed;
-          save();
-        }
-      });
-
-      // Prestige/golden timers
-      function scheduleLoops() {
-        setInterval(generatePerSecond, 1000);
-        setInterval(save, 10000);
-      }
-
-      // Initialize
-      load();
-      applyOffline();
-      el.name.textContent = state.playerName || 'Anonymous';
-      applySettings();
-      updateModeVisuals();
-      document.querySelectorAll('.buy-toggle .chip').forEach(c => {
-        c.classList.toggle('active', c.dataset.buy === state.buyAmount);
-      });
-      refreshAll();
-      scheduleLoops();
-      scheduleGolden();
-
-      // Golden rush banner initial visibility
-      refreshCountsOnly();
-    })();
-  </script>
+// Initialize - Start with welcome screen
+showScreen('welcome');
+</script>
 </body>
 </html>
