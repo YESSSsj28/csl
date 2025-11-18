@@ -3,834 +3,320 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Last One Standing Giveaway</title>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+<title>Seed of Wars - 3D Model Checklist</title>
 <style>
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+  body { background:#1a1a1a; color:#f2f2f2; line-height:1.6; overflow-x:hidden; }
+  a { color:#ff9800; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+
+  /* Cutscene overlay */
+  #cutscene {
+    position:fixed;
+    top:0; left:0; width:100%; height:100%;
+    background:#111;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    z-index:1000;
+    animation: fadeOut 1s ease 4s forwards;
   }
-  
-  body {
-    background-color: #0a0a0a;
-    color: #00ff99;
-    font-family: 'Segoe UI', sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    margin: 0;
-    overflow: hidden;
-    transition: opacity 0.8s ease-in-out;
+  #cutscene h1 {
+    font-size:3rem;
+    color:#ff9800;
+    margin-bottom:10px;
+    opacity:0;
+    animation: fadeInSlide 2s forwards;
+  }
+  #cutscene p {
+    font-size:1.2rem;
+    color:#f2f2f2;
+    position:absolute;
+    bottom:20px;
+    right:20px;
+    opacity:0;
+    animation: fadeInSlide 2s 1s forwards;
   }
 
-  .screen {
-    width: 100%;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 20px;
+  @keyframes fadeInSlide {
+    0% { opacity:0; transform:translateY(20px); }
+    100% { opacity:1; transform:translateY(0); }
+  }
+  @keyframes fadeOut {
+    0% { opacity:1; }
+    100% { opacity:0; visibility:hidden; display:none; }
   }
 
-  h1 {
-    margin-bottom: 20px;
-    text-shadow: 0 0 10px #00ff99;
-    font-size: 2.5rem;
+  /* Main content */
+  .container { width:90%; max-width:1200px; margin:auto; padding:20px; display:none; }
+  .visible { display:block; }
+
+  #currentTime {
+    position:fixed;
+    top:20px; right:20px;
+    background:rgba(0,0,0,0.5);
+    padding:8px 12px;
+    border-radius:8px;
+    font-size:1rem;
+    color:#ff9800;
+    z-index:999;
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   }
 
-  h2 {
-    margin-bottom: 15px;
-    text-shadow: 0 0 8px #00ff99;
-    font-size: 2rem;
-  }
+  header { text-align:center; padding:40px 20px; background:linear-gradient(135deg,#2b2b2b,#111); }
+  header h1 { font-size:3rem; color:#ff9800; margin-bottom:10px; }
+  header p { font-size:1.2rem; max-width:800px; margin:auto; }
 
-  h3 {
-    margin-bottom: 10px;
-    text-shadow: 0 0 6px #00ff99;
-    font-size: 1.5rem;
-  }
+  section { padding:40px 0; }
+  section h2 { font-size:2rem; color:#ff9800; margin-bottom:20px; text-align:center; }
 
-  #welcomeScreen {
-    background: linear-gradient(135deg, #0a0a0a, #1a1a2e);
+  .checklist { display:flex; flex-wrap:wrap; justify-content:center; gap:20px; }
+  .card {
+    background:#222;
+    padding:20px;
+    border-radius:12px;
+    flex:1 1 250px;
+    max-width:300px;
   }
+  .card h3 { margin-bottom:15px; color:#ff9800; }
+  .card ul { list-style:none; padding-left:0; }
+  .card li { margin-bottom:10px; display:flex; align-items:center; }
+  .card input[type="checkbox"] { margin-right:10px; transform:scale(1.2); cursor:pointer; }
 
-  #dashboardScreen {
-    background: linear-gradient(135deg, #0a0a0a, #16213e);
-  }
+  footer { background:#111; padding:20px; text-align:center; font-size:0.9rem; color:#888; }
+  button { margin-top:20px; padding:10px 20px; font-size:1rem; border:none; border-radius:8px; background:#ff9800; color:#111; cursor:pointer; transition:0.2s; }
+  button:hover { background:#e68900; }
 
-  .social-links {
-    display: flex;
-    gap: 20px;
-    margin: 25px 0;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .social-link {
-    display: inline-block;
-    padding: 15px 30px;
-    color: white;
-    text-decoration: none;
-    border-radius: 10px;
-    font-weight: bold;
-    font-size: 1.2rem;
-    transition: all 0.3s;
-    box-shadow: 0 0 15px rgba(145, 70, 255, 0.5);
-  }
-
-  #twitchLink {
-    background-color: #9146ff;
-  }
-
-  #discordLink {
-    background-color: #5865F2;
-  }
-
-  #youtubeLink {
-    background-color: #FF0000;
-  }
-
-  .social-link:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 25px rgba(145, 70, 255, 0.8);
-  }
-
-  #twitchLink:hover {
-    background-color: #772ce8;
-  }
-
-  #discordLink:hover {
-    background-color: #4752c4;
-  }
-
-  #youtubeLink:hover {
-    background-color: #cc0000;
-  }
-
-  .login-panel {
-    margin-top: 30px;
-    padding: 25px;
-    border: 2px solid #00ff99;
-    border-radius: 12px;
-    max-width: 400px;
-    width: 90%;
-    background: rgba(0, 255, 153, 0.05);
-    box-shadow: 0 0 20px rgba(0, 255, 153, 0.2);
-  }
-
-  .login-panel input {
-    display: block;
-    width: 100%;
-    padding: 12px;
-    margin: 12px 0;
-    background: #111;
-    border: 1px solid #00ff99;
-    border-radius: 8px;
-    color: #00ff99;
-    font-size: 1rem;
-  }
-
-  .login-panel button {
-    width: 100%;
-    margin: 8px 0;
-  }
-
-  .dashboard-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 30px;
-    max-width: 800px;
-    width: 90%;
-  }
-
-  .admin-panel {
-    border: 2px solid #00ff99;
-    border-radius: 12px;
-    padding: 25px;
-    background: rgba(0, 255, 153, 0.05);
-    box-shadow: 0 0 20px rgba(0, 255, 153, 0.2);
-    width: 100%;
-  }
-
-  .user-stats {
-    border: 2px solid #00ccff;
-    border-radius: 12px;
-    padding: 25px;
-    background: rgba(0, 204, 255, 0.05);
-    box-shadow: 0 0 20px rgba(0, 204, 255, 0.2);
-    width: 100%;
-  }
-
-  #lobbyScreen {
-    background: linear-gradient(135deg, #0a0a0a, #16213e);
-  }
-
-  #participantsGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 15px;
-    margin: 25px 0;
-    max-width: 800px;
-    width: 90%;
-    max-height: 60vh;
-    overflow-y: auto;
-    padding: 15px;
-  }
-
-  .user {
-    padding: 15px;
-    border-radius: 8px;
-    color: #00ff99;
-    background-color: #111;
-    font-size: 1.1rem;
-    border: 1px solid #00ff99;
-    box-shadow: 0 0 10px rgba(0, 255, 153, 0.3);
-    transition: all 0.3s ease;
-  }
-
-  .user:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 0 15px rgba(0, 255, 153, 0.6);
-  }
-
-  #countdownScreen {
-    background: #0a0a0a;
-  }
-
-  #countdown {
-    font-size: 12rem;
-    color: #006400;
-    text-shadow: 0 0 30px #00ff00;
-    font-weight: bold;
-    animation: pulse 1s infinite;
-  }
-
-  @keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
-  }
-
-  #drawScreen {
-    background: linear-gradient(135deg, #0a0a0a, #1a1a2e);
-  }
-
-  #scrollContainer {
-    height: 300px;
-    width: 90%;
-    max-width: 600px;
-    overflow: hidden;
-    border: 3px solid #00ff99;
-    margin: 25px auto;
-    border-radius: 12px;
-    background-color: #111;
-    box-shadow: 0 0 25px rgba(0, 255, 153, 0.5);
-  }
-
-  #scrollList {
-    display: flex;
-    flex-direction: column;
-    position: relative;
-  }
-
-  #currentName {
-    font-size: 3.5rem;
-    margin: 30px 0;
-    text-shadow: 0 0 20px #00ff99;
-    background-color: transparent;
-    min-height: 100px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .winner {
-    color: #00ff99;
-    font-size: 3rem;
-    text-shadow: 0 0 25px #00ff99;
-    margin: 30px 0;
-    padding: 25px;
-    border-radius: 15px;
-    background: rgba(0, 255, 153, 0.1);
-    border: 3px solid #00ff99;
-    box-shadow: 0 0 30px rgba(0, 255, 153, 0.4);
-  }
-
-  button {
-    padding: 15px 35px;
-    background-color: #00ff99;
-    color: #0a0a0a;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 1.2rem;
-    box-shadow: 0 0 15px #00ff99;
-    transition: 0.3s;
-    margin: 15px;
-  }
-
-  button:hover {
-    background-color: #00ccff;
-    box-shadow: 0 0 25px #00ccff;
-    transform: scale(1.05);
-  }
-
-  button:disabled {
-    background-color: #555;
-    color: #999;
-    box-shadow: none;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  .eliminated {
-    opacity: 0.4;
-    text-decoration: line-through;
-    color: #ff5555;
-    border-color: #ff5555;
-    box-shadow: 0 0 8px rgba(255, 85, 85, 0.3);
-  }
-
-  #userInfo {
-    margin-top: 20px;
-    padding: 15px;
-    border-top: 1px solid #00ff99;
-    width: 100%;
-    max-width: 400px;
-  }
-
-  .online-users {
-    margin-top: 15px;
-    padding: 15px;
-    border: 1px solid #00ccff;
-    border-radius: 8px;
-    background: rgba(0, 204, 255, 0.05);
-  }
-
-  .online-users h4 {
-    margin-bottom: 10px;
-    color: #00ccff;
-  }
-
-  .user-count {
-    font-size: 1.3rem;
-    color: #00ff99;
-    margin: 10px 0;
+  @media(max-width:768px){
+    .card { flex:1 1 100%; }
+    header h1 { font-size:2.2rem; }
+    #cutscene h1 { font-size:2rem; }
   }
 </style>
 </head>
 <body>
 
-<!-- SCREEN 1: Welcome Screen -->
-<div id="welcomeScreen" class="screen">
-  <h1>Welcome to StruckByLightn's Giveaway!</h1>
-  <p style="font-size: 1.2rem; margin-bottom: 10px;">Join the fun and participate in our Last One Standing giveaway!</p>
-  
-  <div class="social-links">
-    <a id="twitchLink" href="https://www.twitch.tv/struckbylightn" target="_blank">
-      🎮 Watch Live on Twitch 🎮
-    </a>
-    <a id="discordLink" href="https://discord.gg/FrHSYYJ6mR" target="_blank">
-      💬 Join Discord 💬
-    </a>
-    <a id="youtubeLink" href="https://www.youtube.com/@StruckByLightningWasTaken" target="_blank">
-      📺 YouTube Channel 📺
-    </a>
-  </div>
-  
-  <div class="login-panel">
-    <h2>Login to Participate</h2>
-    <input type="text" id="usernameInput" placeholder="Username">
-    <input type="password" id="passwordInput" placeholder="Password">
-    <button id="loginBtn">Login</button>
-    <button id="signupBtn">Sign Up</button>
-  </div>
+<!-- Cutscene overlay -->
+<div id="cutscene">
+  <h1>Welcome Hydrelic</h1>
+  <p id="cutTime"></p>
 </div>
 
-<!-- SCREEN 2: Dashboard Screen -->
-<div id="dashboardScreen" class="screen" style="display:none;">
-  <div class="dashboard-content">
-    <h1>Welcome, <span id="dashboardUsername"></span>!</h1>
-    
-    <div class="social-links">
-      <a id="dashboardTwitchLink" href="https://www.twitch.tv/struckbylightn" target="_blank">
-        🎮 Watch Live on Twitch 🎮
-      </a>
-      <a id="dashboardDiscordLink" href="https://discord.gg/FrHSYYJ6mR" target="_blank">
-        💬 Join Discord 💬
-      </a>
-      <a id="dashboardYoutubeLink" href="https://www.youtube.com/@StruckByLightningWasTaken" target="_blank">
-        📺 YouTube Channel 📺
-      </a>
-    </div>
+<!-- Current time displayed top-right after cutscene -->
+<div id="currentTime" style="display:none;"></div>
 
-    <div class="user-stats">
-      <h2>Your Dashboard</h2>
-      <p class="user-count">Currently <span id="onlineCount">0</span> users online</p>
-      <div id="onlineUsersList" class="online-users">
-        <h4>Online Users:</h4>
-        <div id="onlineUsers"></div>
+<div class="container" id="mainContent">
+
+  <header>
+    <h1>Seed of Wars - 3D Model Checklist</h1>
+    <p>Track all your game assets here!</p>
+  </header>
+
+  <!-- Environment / Terrain -->
+  <section>
+    <h2>Environment / Terrain</h2>
+    <div class="checklist">
+      <div class="card">
+        <h3>Environment Models</h3>
+        <ul>
+          <li><input type="checkbox" id="island1"> Player Island 1</li>
+          <li><input type="checkbox" id="island2"> Player Island 2</li>
+          <li><input type="checkbox" id="island3"> Player Island 3</li>
+          <li><input type="checkbox" id="island4"> Player Island 4</li>
+          <li><input type="checkbox" id="centralIsland"> Central Island / Arena</li>
+          <li><input type="checkbox" id="bridge1"> Bridge 1</li>
+          <li><input type="checkbox" id="bridge2"> Bridge 2</li>
+          <li><input type="checkbox" id="bridge3"> Bridge 3</li>
+          <li><input type="checkbox" id="bridge4"> Bridge 4</li>
+          <li><input type="checkbox" id="gardenTiles"> Garden Plot Tiles</li>
+          <li><input type="checkbox" id="respawnPlatforms"> Respawn Platforms</li>
+          <li><input type="checkbox" id="water"> Water / Ocean</li>
+          <li><input type="checkbox" id="decorTrees"> Decorative Trees</li>
+          <li><input type="checkbox" id="bushes"> Bushes</li>
+          <li><input type="checkbox" id="flowers"> Flowers</li>
+          <li><input type="checkbox" id="fences"> Fences Around Gardens</li>
+          <li><input type="checkbox" id="logs"> Logs</li>
+          <li><input type="checkbox" id="crates"> Crates</li>
+        </ul>
       </div>
-      <p id="giveawayStatus">No active giveaway</p>
     </div>
+  </section>
 
-    <!-- Admin Panel (only visible to admins) -->
-    <div id="adminPanel" class="admin-panel" style="display:none;">
-      <h2>Admin Controls</h2>
-      <p>Start and manage giveaways</p>
-      <button id="startGiveawayBtn">Start New Giveaway</button>
-      <button id="endGiveawayBtn" style="display:none;">End Current Giveaway</button>
+  <!-- Crops -->
+  <section>
+    <h2>Crops & Produce</h2>
+    <div class="checklist">
+      <div class="card">
+        <h3>Apple</h3>
+        <ul>
+          <li><input type="checkbox" id="appleSeed"> Apple Seed</li>
+          <li><input type="checkbox" id="applePlant"> Planted Apple Plant</li>
+          <li><input type="checkbox" id="appleFruit"> Harvestable Apple</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Carrot</h3>
+        <ul>
+          <li><input type="checkbox" id="carrotSeed"> Carrot Seed</li>
+          <li><input type="checkbox" id="carrotPlant"> Planted Carrot Plant</li>
+          <li><input type="checkbox" id="carrotFruit"> Harvestable Carrot</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Tomato</h3>
+        <ul>
+          <li><input type="checkbox" id="tomatoSeed"> Tomato Seed</li>
+          <li><input type="checkbox" id="tomatoPlant"> Planted Tomato Plant</li>
+          <li><input type="checkbox" id="tomatoFruit"> Harvestable Tomato</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Cucumber</h3>
+        <ul>
+          <li><input type="checkbox" id="cucumberSeed"> Cucumber Seed</li>
+          <li><input type="checkbox" id="cucumberPlant"> Planted Cucumber Plant</li>
+          <li><input type="checkbox" id="cucumberFruit"> Harvestable Cucumber</li>
+        </ul>
+      </div>
     </div>
+  </section>
 
-    <button id="dashboardLogoutBtn">Logout</button>
+  <!-- Weapons -->
+  <section>
+    <h2>Weapons & Utility</h2>
+    <div class="checklist">
+      <div class="card">
+        <h3>Swords</h3>
+        <ul>
+          <li><input type="checkbox" id="woodSword"> Wood Sword</li>
+          <li><input type="checkbox" id="stoneSword"> Stone Sword</li>
+          <li><input type="checkbox" id="ironSword"> Iron Sword</li>
+          <li><input type="checkbox" id="diamondSword"> Diamond Sword</li>
+          <li><input type="checkbox" id="emeraldSword"> Emerald Sword</li>
+          <li><input type="checkbox" id="excalibur"> Excalibur</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Bow & Arrows</h3>
+        <ul>
+          <li><input type="checkbox" id="bow"> Bow</li>
+          <li><input type="checkbox" id="arrow"> Arrow (Single)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Utility</h3>
+        <ul>
+          <li><input type="checkbox" id="waterBucket"> Water Bucket</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Armor -->
+  <section>
+    <h2>Armor Sets</h2>
+    <div class="checklist">
+      <div class="card">
+        <h3>Armor</h3>
+        <ul>
+          <li><input type="checkbox" id="leatherArmor"> Leather Armor Set</li>
+          <li><input type="checkbox" id="ironArmor"> Iron Armor Set</li>
+          <li><input type="checkbox" id="diamondArmor"> Diamond Armor Set</li>
+          <li><input type="checkbox" id="emeraldArmor"> Emerald Armor Set</li>
+          <li><input type="checkbox" id="obsidianArmor"> Obsidian Armor Set</li>
+          <li><input type="checkbox" id="backpack"> Backpack</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Collectibles -->
+  <section>
+    <h2>Collectibles / Shop Items</h2>
+    <div class="checklist">
+      <div class="card">
+        <h3>Collectibles</h3>
+        <ul>
+          <li><input type="checkbox" id="coins"> Coins</li>
+          <li><input type="checkbox" id="shopAppleSeed"> Apple Seed (Shop)</li>
+          <li><input type="checkbox" id="shopCarrotSeed"> Carrot Seed (Shop)</li>
+          <li><input type="checkbox" id="shopTomatoSeed"> Tomato Seed (Shop)</li>
+          <li><input type="checkbox" id="shopCucumberSeed"> Cucumber Seed (Shop)</li>
+          <li><input type="checkbox" id="shopTable"> Shop Table</li>
+          <li><input type="checkbox" id="baskets"> Baskets / Crates</li>
+          <li><input type="checkbox" id="upgradeMarkers"> Upgrade Markers</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Player -->
+  <section>
+    <h2>Player</h2>
+    <div class="checklist">
+      <div class="card">
+        <h3>Character</h3>
+        <ul>
+          <li><input type="checkbox" id="playerModel"> Default Player Model</li>
+          <li><input type="checkbox" id="inventoryItems"> Inventory 3D Items (Optional)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div style="text-align:center;">
+    <button id="resetBtn">Reset All</button>
   </div>
-</div>
 
-<!-- SCREEN 3: Giveaway Lobby -->
-<div id="lobbyScreen" class="screen" style="display:none;">
-  <h1>Giveaway Lobby</h1>
-  <p id="lobbyStatus">Waiting for admin to start the giveaway...</p>
-  
-  <div id="participantsGrid"></div>
-  
-  <button id="startBtn" style="display:none;">Start Giveaway</button>
-</div>
-
-<!-- SCREEN 4: Countdown -->
-<div id="countdownScreen" class="screen" style="display:none;">
-  <div id="countdown">3</div>
-</div>
-
-<!-- SCREEN 5: Elimination Screen -->
-<div id="drawScreen" class="screen" style="display:none;">
-  <h1>Last One Standing</h1>
-  
-  <div id="scrollContainer">
-    <div id="scrollList"></div>
-  </div>
-  
-  <div id="currentName">Waiting for elimination...</div>
-  
-  <button id="nextBtn" style="display:none;">Next Elimination</button>
-  
-  <div id="winnerDisplay" class="winner"></div>
+  <footer>
+    <p>© 2025 Seed of Wars | 3D Model Checklist</p>
+  </footer>
 </div>
 
 <script>
-// Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyCwcWUoSwb0ztseiCFZoQeK9Z0RGKTdRNI",
-  authDomain: "struckbylightn-e416f.firebaseapp.com",
-  databaseURL: "https://struckbylightn-e416f-default-rtdb.firebaseio.com/",
-  projectId: "struckbylightn-e416f",
-  storageBucket: "struckbylightn-e416f.appspot.com",
-  messagingSenderId: "6352638251",
-  appId: "1:6352638251:web:383980ccf8428102c0b56e",
-  measurementId: "G-GY2WRS8K8X"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+  // Function to get EST time
+  function updateESTTime() {
+    const now = new Date();
+    const estOffset = -5; // EST offset from UTC
+    const est = new Date(now.getTime() + (estOffset - now.getTimezoneOffset()/60) * 60*60*1000);
+    const hours = est.getHours().toString().padStart(2,'0');
+    const minutes = est.getMinutes().toString().padStart(2,'0');
+    const seconds = est.getSeconds().toString().padStart(2,'0');
+    return `${hours}:${minutes}:${seconds} EST`;
+  }
 
-// Admins (admins cannot participate in giveaway)
-const admins = ["StruckByLightn","Yaunt"];
-let currentUser = null;
-let isAdmin = false;
+  // Show EST time in cutscene and move it later
+  const cutTime = document.getElementById('cutTime');
+  const currentTime = document.getElementById('currentTime');
+  cutTime.textContent = updateESTTime();
+  setInterval(() => {
+    cutTime.textContent = updateESTTime();
+    currentTime.textContent = updateESTTime();
+  },1000);
 
-// Giveaway state
-let users = [];
-let eliminatedUsers = [];
-let activeUsers = [];
-let isEliminationRunning = false;
+  // Show main content after cutscene
+  setTimeout(() => {
+    document.getElementById('mainContent').classList.add('visible');
+    currentTime.style.display = 'block';
+  },4000);
 
-// UI elements
-const screens = {
-  welcome: document.getElementById('welcomeScreen'),
-  dashboard: document.getElementById('dashboardScreen'),
-  lobby: document.getElementById('lobbyScreen'),
-  countdown: document.getElementById('countdownScreen'),
-  draw: document.getElementById('drawScreen')
-};
-
-const usernameInput = document.getElementById('usernameInput');
-const passwordInput = document.getElementById('passwordInput');
-const loginBtn = document.getElementById('loginBtn');
-const signupBtn = document.getElementById('signupBtn');
-const dashboardLogoutBtn = document.getElementById('dashboardLogoutBtn');
-const dashboardUsername = document.getElementById('dashboardUsername');
-const onlineCount = document.getElementById('onlineCount');
-const onlineUsers = document.getElementById('onlineUsers');
-const giveawayStatus = document.getElementById('giveawayStatus');
-const adminPanel = document.getElementById('adminPanel');
-const startGiveawayBtn = document.getElementById('startGiveawayBtn');
-const endGiveawayBtn = document.getElementById('endGiveawayBtn');
-const participantsGrid = document.getElementById('participantsGrid');
-const startBtn = document.getElementById('startBtn');
-const lobbyStatus = document.getElementById('lobbyStatus');
-const countdownEl = document.getElementById('countdown');
-const scrollList = document.getElementById('scrollList');
-const currentName = document.getElementById('currentName');
-const nextBtn = document.getElementById('nextBtn');
-const winnerDisplay = document.getElementById('winnerDisplay');
-
-// Giveaway reference
-const giveawayRef = db.ref("currentGiveaway");
-
-// Show only one screen at a time
-function showScreen(screenName) {
-  // Hide all screens first
-  Object.values(screens).forEach(screen => {
-    screen.style.display = 'none';
+  // Save checkbox states in localStorage
+  const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+  checkboxes.forEach(chk => {
+    const id = chk.id;
+    if(localStorage.getItem(id) === 'true') chk.checked = true;
+    chk.addEventListener('change', () => localStorage.setItem(id, chk.checked));
   });
-  
-  // Show the requested screen
-  screens[screenName].style.display = 'flex';
-}
 
-// Login / Signup
-signupBtn.onclick = () => {
-    const username = usernameInput.value.trim();
-    const password = passwordInput.value;
-    if(!username || !password) return alert("Enter both username and password");
-    
-    db.ref("users/"+username).set({password}).then(() => {
-        alert("Account created! Please login.");
-        usernameInput.value = '';
-        passwordInput.value = '';
+  // Reset all button
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    checkboxes.forEach(chk => {
+      chk.checked = false;
+      localStorage.setItem(chk.id, false);
     });
-};
-
-loginBtn.onclick = () => {
-    const username = usernameInput.value.trim();
-    const password = passwordInput.value;
-    
-    db.ref("users/"+username).get().then(snap => {
-        if(!snap.exists()) return alert("User not found");
-        if(snap.val().password !== password) return alert("Wrong password");
-        
-        currentUser = username;
-        isAdmin = admins.includes(currentUser);
-        
-        // Update UI
-        dashboardUsername.textContent = currentUser + (isAdmin ? " (Admin)" : "");
-        usernameInput.value = '';
-        passwordInput.value = '';
-        
-        // Show admin panel if user is admin
-        adminPanel.style.display = isAdmin ? 'block' : 'none';
-        
-        // Mark online
-        const userRef = db.ref("onlineUsers/"+currentUser);
-        userRef.set(true);
-        userRef.onDisconnect().remove();
-        
-        // Go to dashboard
-        showScreen('dashboard');
-    });
-};
-
-// Logout from dashboard
-dashboardLogoutBtn.onclick = () => {
-    if(currentUser){
-        db.ref("onlineUsers/"+currentUser).remove();
-        currentUser = null;
-        isAdmin = false;
-        showScreen('welcome');
-    }
-};
-
-// Update online users list on dashboard
-db.ref("onlineUsers").on("value", snap => {
-    onlineUsers.innerHTML = '';
-    users = [];
-    let userCount = 0;
-    
-    snap.forEach(u => {
-        userCount++;
-        const userDiv = document.createElement('div');
-        userDiv.className = 'user';
-        userDiv.textContent = u.key + (admins.includes(u.key) ? " 👑" : "");
-        userDiv.style.margin = '5px 0';
-        userDiv.style.padding = '8px';
-        userDiv.style.fontSize = '0.9rem';
-        onlineUsers.appendChild(userDiv);
-        
-        // Add to users list for giveaway (excluding admins)
-        if(!admins.includes(u.key)) {
-            users.push(u.key);
-        }
-    });
-    
-    onlineCount.textContent = userCount;
-    
-    // Update participants grid in lobby
-    updateParticipantsGrid();
-});
-
-// Update participants grid in lobby
-function updateParticipantsGrid() {
-    participantsGrid.innerHTML = '';
-    users.forEach(user => {
-        const div = document.createElement('div');
-        div.className = 'user';
-        div.textContent = user;
-        participantsGrid.appendChild(div);
-    });
-    
-    // Show start button only for admin in lobby
-    startBtn.style.display = isAdmin ? 'inline-block' : 'none';
-}
-
-// Listen for giveaway state changes
-giveawayRef.on("value", snap => {
-    const giveaway = snap.val();
-    
-    if (giveaway && giveaway.started) {
-        // Update dashboard status
-        giveawayStatus.textContent = "Giveaway in progress!";
-        giveawayStatus.style.color = "#00ff99";
-        
-        // If user is logged in, show lobby
-        if (currentUser && screens.dashboard.style.display !== 'none') {
-            showScreen('lobby');
-        }
-        
-        eliminatedUsers = giveaway.eliminatedUsers || [];
-        
-        // Update end giveaway button for admin
-        endGiveawayBtn.style.display = isAdmin ? 'inline-block' : 'none';
-        
-        // Handle different phases
-        if (giveaway.phase === "countdown") {
-            startCountdown();
-        } else if (giveaway.phase === "elimination") {
-            startEliminationRound();
-        } else if (giveaway.winner) {
-            showWinner(giveaway.winner);
-        }
-    } else {
-        // No active giveaway
-        giveawayStatus.textContent = "No active giveaway";
-        giveawayStatus.style.color = "#00ccff";
-        endGiveawayBtn.style.display = 'none';
-        
-        // If we're in lobby but no giveaway, return to dashboard
-        if (currentUser && screens.lobby.style.display !== 'none') {
-            showScreen('dashboard');
-        }
-    }
-});
-
-// Start giveaway from dashboard (ADMIN ONLY)
-startGiveawayBtn.onclick = () => {
-    if(!isAdmin) return;
-    
-    if (users.length < 2) {
-        alert("Need at least 2 users to start a giveaway!");
-        return;
-    }
-    
-    // Start the giveaway with countdown phase
-    giveawayRef.set({
-        id: Date.now(),
-        type: "lastOneStanding",
-        admin: currentUser,
-        started: true,
-        phase: "countdown",
-        users: users,
-        eliminatedUsers: []
-    });
-};
-
-// End giveaway button (ADMIN ONLY)
-endGiveawayBtn.onclick = () => {
-    if(!isAdmin) return;
-    giveawayRef.remove();
-};
-
-// Start giveaway from lobby (ADMIN ONLY)
-startBtn.onclick = () => {
-    if(!isAdmin) return;
-    
-    // Move to countdown phase
-    giveawayRef.update({
-        phase: "countdown"
-    });
-};
-
-// Countdown function
-function startCountdown() {
-    showScreen('countdown');
-    
-    let count = 3;
-    countdownEl.textContent = count;
-    
-    const countdownInterval = setInterval(() => {
-        count--;
-        if (count > 0) {
-            countdownEl.textContent = count;
-        } else {
-            clearInterval(countdownInterval);
-            countdownEl.textContent = "GO!";
-            
-            // Move to elimination phase after a brief pause
-            setTimeout(() => {
-                giveawayRef.update({
-                    phase: "elimination",
-                    drawing: false
-                });
-            }, 1000);
-        }
-    }, 1000);
-}
-
-// Start elimination round
-function startEliminationRound() {
-    showScreen('draw');
-    nextBtn.style.display = isAdmin ? 'inline-block' : 'none';
-    winnerDisplay.textContent = "";
-    
-    // Get active users (not eliminated and not admins)
-    activeUsers = users.filter(u => !eliminatedUsers.includes(u));
-    
-    if (activeUsers.length <= 1) {
-        // We have a winner!
-        const winner = activeUsers[0] || "No one";
-        showWinner(winner);
-        return;
-    }
-    
-    // Populate scroll with active users
-    populateScroll(activeUsers);
-    
-    // Reset current name display
-    currentName.textContent = "Ready for next elimination...";
-}
-
-// Elimination animation
-function eliminateNext() {
-    if (isEliminationRunning) return;
-    
-    isEliminationRunning = true;
-    nextBtn.disabled = true;
-    
-    // Get active users (not eliminated and not admins)
-    activeUsers = users.filter(u => !eliminatedUsers.includes(u));
-    
-    if (activeUsers.length <= 1) {
-        // We have a winner!
-        const winner = activeUsers[0] || "No one";
-        showWinner(winner);
-        return;
-    }
-    
-    let totalScrolls = 30;
-    let speed = 40;
-    let i = 0;
-    
-    function step() {
-        if (activeUsers.length === 0) return;
-        
-        // Clone first element and append to end, then remove first
-        if (scrollList.children.length > 0) {
-            scrollList.appendChild(scrollList.firstElementChild.cloneNode(true));
-            scrollList.removeChild(scrollList.firstElementChild);
-        }
-        
-        i++;
-        if (i < totalScrolls) {
-            // Slow down at end
-            const newSpeed = speed + (i * 5);
-            setTimeout(step, newSpeed);
-        } else {
-            // Select random user to eliminate
-            const idx = Math.floor(Math.random() * activeUsers.length);
-            const eliminated = activeUsers.splice(idx, 1)[0];
-            
-            // Update UI
-            currentName.textContent = `🚫 Eliminated: ${eliminated}`;
-            
-            // Update Firebase
-            eliminatedUsers.push(eliminated);
-            giveawayRef.update({
-                eliminatedUsers: eliminatedUsers,
-                drawing: false
-            });
-            
-            // Re-enable the next button after a short delay
-            setTimeout(() => {
-                isEliminationRunning = false;
-                nextBtn.disabled = false;
-                
-                // Check if we have a winner after this elimination
-                if (activeUsers.length <= 1) {
-                    const winner = activeUsers[0] || "No one";
-                    showWinner(winner);
-                }
-            }, 1500);
-        }
-    }
-    
-    step();
-}
-
-// Populate scroll list with users
-function populateScroll(userList) {
-    scrollList.innerHTML = '';
-    userList.forEach(u => {
-        const div = document.createElement('div');
-        div.className = 'user';
-        div.textContent = u;
-        scrollList.append(div);
-    });
-}
-
-// Show winner
-function showWinner(winner) {
-    currentName.textContent = `🎉 Winner: ${winner} 🎉`;
-    winnerDisplay.textContent = `Congratulations ${winner}!`;
-    nextBtn.style.display = 'none';
-    
-    // Update Firebase
-    giveawayRef.update({
-        winner: winner,
-        drawing: false
-    });
-    
-    // After 5 seconds, return to dashboard and reset giveaway
-    setTimeout(() => {
-        if (currentUser) {
-            showScreen('dashboard');
-            // Reset giveaway after delay
-            setTimeout(() => {
-                giveawayRef.remove();
-            }, 1000);
-        }
-    }, 5000);
-}
-
-// Next elimination button (ADMIN ONLY)
-nextBtn.addEventListener('click', () => {
-    if (!isAdmin) return;
-    
-    // Update Firebase to indicate we're drawing
-    giveawayRef.update({
-        drawing: true
-    });
-    
-    // Start the elimination animation
-    eliminateNext();
-});
-
-// Initialize - Start with welcome screen
-showScreen('welcome');
+  });
 </script>
+
 </body>
 </html>
